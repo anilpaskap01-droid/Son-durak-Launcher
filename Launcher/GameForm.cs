@@ -28,6 +28,8 @@ namespace SonDurakLauncher
             web = new WebView2 { Dock = DockStyle.Fill, DefaultBackgroundColor = Color.FromArgb(5, 7, 11) };
             Controls.Add(web);
             KeyPreview = true;
+            // the game starts fullscreen; F11 in the game switches to a (maximised) window and back
+            Shown += (o, e) => SetFull(true);
             Load += async (o, e) =>
             {
                 var env = await Program.GetEnv();

@@ -9,7 +9,7 @@
     <RootNamespace>SonDurakSetup</RootNamespace>
     <ApplicationIcon>..\icon.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>1.2.0</Version>
+    <Version>1.2.1</Version>
     <Product>Son Durak Setup</Product>
     <Company>Gökhan Abi ile Projeler</Company>
     <DebugType>none</DebugType>

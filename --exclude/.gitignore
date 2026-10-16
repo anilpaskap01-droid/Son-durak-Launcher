@@ -1,0 +1,5 @@
+bin/
+obj/
+dist/
+Setup/payload.zip
+Launcher/token.bin

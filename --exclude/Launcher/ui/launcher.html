@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Son Durak Launcher</title>
+<style>
+  :root { --amber: #ffb020; --text: #e9ecef; --muted: #9aa3ad; --line: rgba(255,255,255,.12); --green: #3fbf6a; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #07090d; color: var(--text);
+    font-family: "Segoe UI", system-ui, sans-serif; user-select: none; }
+  .bg { position: fixed; inset: 0; background: url("{{BG}}") center / cover no-repeat; filter: saturate(.9); transform: scale(1.04); animation: drift 40s ease-in-out infinite alternate; }
+  @keyframes drift { from { transform: scale(1.04) translateX(-1%); } to { transform: scale(1.08) translateX(1%); } }
+  .shade { position: fixed; inset: 0; background:
+    linear-gradient(90deg, rgba(5,7,10,.96) 0%, rgba(5,7,10,.82) 38%, rgba(5,7,10,.35) 70%, rgba(5,7,10,.55) 100%),
+    linear-gradient(0deg, rgba(5,7,10,.9) 0%, rgba(5,7,10,0) 40%); }
+  .bar { position: fixed; top: 0; left: 0; right: 0; height: 38px; display: flex; align-items: center; padding-left: 16px; z-index: 5; }
+  .bar .t { flex: 1; font-size: 12px; letter-spacing: .2em; color: var(--muted); }
+  .bar button { width: 46px; height: 38px; border: 0; background: transparent; color: var(--muted); font-size: 16px; cursor: pointer; }
+  .bar button:hover { background: rgba(255,255,255,.08); color: #fff; }
+  .bar button.x:hover { background: #c42b1c; }
+  .bar .langs { display: flex; margin-right: 8px; }
+  .bar .langs button { width: 40px; font-size: 12px; font-weight: 700; letter-spacing: .08em; }
+  .bar .langs button.sel { color: var(--amber); box-shadow: inset 0 -2px 0 var(--amber); }
+  main { position: relative; z-index: 2; height: 100%; display: grid; grid-template-columns: 1fr 330px; gap: 28px; padding: 64px 40px 30px 52px; }
+  .logo { font-family: Consolas, "Courier New", monospace; font-weight: 800; letter-spacing: .18em; color: var(--amber);
+    text-shadow: 0 0 22px rgba(255,176,32,.55); font-size: 58px; margin: 0; }
+  .sub { color: var(--muted); letter-spacing: .08em; margin: 6px 0 0; }
+  .left { display: flex; flex-direction: column; }
+  .spacer { flex: 1; }
+  .status { font-size: 15px; color: var(--muted); min-height: 22px; margin-bottom: 10px; }
+  .status b { color: var(--text); }
+  .badge { display: inline-block; background: rgba(63,191,106,.18); border: 1px solid rgba(63,191,106,.6); color: #7fe0a0; border-radius: 6px;
+    padding: 2px 8px; font-size: 12px; font-weight: 700; letter-spacing: .06em; margin-left: 8px; vertical-align: 2px; }
+  .badge.up { background: rgba(255,176,32,.16); border-color: rgba(255,176,32,.7); color: var(--amber); animation: pulse 1.6s infinite; }
+  @keyframes pulse { 50% { box-shadow: 0 0 0 6px rgba(255,176,32,0); } 0% { box-shadow: 0 0 0 0 rgba(255,176,32,.45); } }
+  .main-btn { width: 300px; height: 64px; border: 0; border-radius: 12px; font: 800 24px "Segoe UI", sans-serif; letter-spacing: .12em; cursor: pointer;
+    color: #1a1204; background: linear-gradient(180deg, #ffc24a, #ff9f10); box-shadow: 0 10px 30px rgba(255,160,20,.35); transition: transform .08s, filter .15s; }
+  .main-btn:hover { filter: brightness(1.08); }
+  .main-btn:active { transform: translateY(1px); }
+  .main-btn:disabled { filter: grayscale(.8) brightness(.6); cursor: default; box-shadow: none; }
+  .main-btn.play { background: linear-gradient(180deg, #4fd47e, #2fa85a); color: #04140a; box-shadow: 0 10px 30px rgba(47,168,90,.35); }
+  .row { display: flex; gap: 14px; align-items: center; margin-top: 12px; }
+  .link { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 13px; padding: 0; text-decoration: underline; text-underline-offset: 3px; }
+  .link:hover { color: #fff; }
+  .progress { width: 420px; max-width: 100%; margin-top: 16px; display: none; }
+  .progress.show { display: block; }
+  .track { height: 8px; background: rgba(255,255,255,.1); border-radius: 6px; overflow: hidden; }
+  .fill { height: 100%; width: 0; background: linear-gradient(90deg, #ffb020, #ffd27a); transition: width .2s; }
+  .pinfo { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .err { color: #ff7b7b; font-size: 13px; margin-top: 10px; min-height: 18px; max-width: 520px; }
+  aside { background: rgba(10,13,19,.78); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; backdrop-filter: blur(6px); }
+  aside h3 { margin: 0 0 12px; font-size: 13px; letter-spacing: .14em; color: var(--muted); text-transform: uppercase; display: flex; justify-content: space-between; }
+  .log { flex: 1; overflow: auto; display: flex; flex-direction: column; gap: 10px; }
+  .log .c { border-left: 2px solid var(--line); padding-left: 10px; }
+  .log .c.new { border-color: var(--amber); }
+  .log .m { font-size: 14px; line-height: 1.35; }
+  .log .d { font-size: 11px; color: var(--muted); margin-top: 3px; font-family: Consolas, monospace; }
+  .ver { font-size: 11px; color: #6b7480; margin-top: 12px; font-family: Consolas, monospace; line-height: 1.6; }
+  .spin { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,.25); border-top-color: var(--amber); border-radius: 50%; animation: s 0.8s linear infinite; vertical-align: -1px; margin-right: 6px; }
+  @keyframes s { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="bg"></div><div class="shade"></div>
+<div class="bar" id="bar"><div class="t">SON DURAK · LAUNCHER</div><div class="langs" id="langs"><button data-l="tr">TR</button><button data-l="en">EN</button></div><button id="min" title="—">&#8211;</button><button class="x" id="close" title="×">&#10005;</button></div>
+<main>
+  <section class="left">
+    <h1 class="logo">SON DURAK</h1>
+    <p class="sub" id="sub"></p>
+    <div class="spacer"></div>
+    <div class="status" id="status"></div>
+    <button class="main-btn" id="main" disabled></button>
+    <div class="progress" id="progress">
+      <div class="track"><div class="fill" id="fill"></div></div>
+      <div class="pinfo"><span id="pfile"></span><span id="pnum"></span></div>
+    </div>
+    <div class="row">
+      <button class="link" id="playAnyway" style="display:none"></button>
+      <button class="link" id="recheck"></button>
+      <button class="link" id="folder"></button>
+    </div>
+    <div class="err" id="err"></div>
+  </section>
+  <aside>
+    <h3><span id="logTitle"></span><button class="link" id="repo">GitHub</button></h3>
+    <div class="log" id="log"></div>
+    <div class="ver" id="ver"></div>
+  </aside>
+</main>
+<script>
+  const STR = { tr: {
+    sub: 'T9 Gece Hattı · Anomali Avı', checking: 'Güncellemeler denetleniyor…', install: 'YÜKLE', update: 'GÜNCELLE', play: 'OYNA', busy: 'İNDİRİLİYOR…',
+    notInstalled: 'Oyun henüz yüklü değil.', ready: 'Oyun güncel.', updateAvail: 'Yeni bir güncelleme var!', offline: 'İnternet bağlantısı yok — yüklü sürümle oynayabilirsin.',
+    offlineNoGame: 'İnternet bağlantısı yok. Oyunu indirmek için bağlantı gerekli.', playAnyway: 'Güncellemeden oyna', recheck: 'Yeniden denetle', folder: 'Oyun klasörü',
+    log: 'Güncellemeler', installed: 'Yüklü sürüm', latest: 'Son sürüm', none: '—', files: 'dosya', badgeOk: 'GÜNCEL', badgeUp: 'GÜNCELLEME VAR', error: 'Hata: ',
+    errors: { 'repo-not-found': 'Oyun deposuna erişilemedi.', 'auth': 'Launcher\'ın erişim anahtarı geçersiz. Launcher\'ın yeni sürümünü kur.', 'rate-limit': 'GitHub istek sınırı aşıldı, biraz sonra tekrar dene.', 'launcher-update': 'Launcher güncellenemedi, eski sürümle devam ediliyor.' },
+    selfUpdate: 'Launcher güncelleniyor…', selfUpdateBtn: 'GÜNCELLENİYOR…', launcherUpdated: 'güncellendi',
+  }, en: {
+    sub: 'T9 Night Line · Anomaly Hunt', checking: 'Checking for updates…', install: 'INSTALL', update: 'UPDATE', play: 'PLAY', busy: 'DOWNLOADING…',
+    notInstalled: 'The game is not installed yet.', ready: 'The game is up to date.', updateAvail: 'A new update is available!', offline: 'No internet — you can play the installed version.',
+    offlineNoGame: 'No internet. A connection is needed to download the game.', playAnyway: 'Play without updating', recheck: 'Check again', folder: 'Game folder',
+    log: 'Updates', installed: 'Installed', latest: 'Latest', none: '—', files: 'files', badgeOk: 'UP TO DATE', badgeUp: 'UPDATE AVAILABLE', error: 'Error: ',
+    errors: { 'repo-not-found': 'Could not reach the game repository.', 'auth': 'The launcher\'s access key is no longer valid. Install the latest launcher.', 'rate-limit': 'GitHub rate limit reached, try again later.', 'launcher-update': 'The launcher could not update itself; continuing with this version.' },
+    selfUpdate: 'Updating the launcher…', selfUpdateBtn: 'UPDATING…', launcherUpdated: 'updated',
+  } };
+  // language: the launcher sends its saved choice with every state; TR / EN buttons change it
+  let lang = (navigator.language || 'tr').toLowerCase().startsWith('tr') ? 'tr' : 'en', L = STR[lang], last = null;
+  const $ = (id) => document.getElementById(id);
+  const send = (cmd, extra) => window.chrome.webview.postMessage({ cmd, ...extra });
+  const short = (s) => s ? s.slice(0, 7) : L.none;
+  const fmtDate = (d) => d ? new Date(d).toLocaleString(lang === 'tr' ? 'tr-TR' : 'en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+  const mb = (b) => (b / 1048576).toFixed(1) + ' MB';
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  function applyStatic() {
+    document.documentElement.lang = lang;
+    $('sub').textContent = L.sub; $('logTitle').textContent = L.log; $('playAnyway').textContent = L.playAnyway;
+    $('recheck').textContent = L.recheck; $('folder').textContent = L.folder;
+    for (const b of $('langs').children) b.classList.toggle('sel', b.dataset.l === lang);
+  }
+  function setLang(l) {
+    if (!STR[l]) return;
+    lang = l; L = STR[l];
+    applyStatic();
+    if (last) render(last);
+  }
+  applyStatic();
+  for (const b of $('langs').children) b.onclick = () => { setLang(b.dataset.l); send('lang', { lang: b.dataset.l }); };
+  $('bar').addEventListener('mousedown', (e) => { if (e.target.id === 'bar' || e.target.classList.contains('t')) send('drag'); });
+  $('min').onclick = () => send('min'); $('close').onclick = () => send('close');
+  $('repo').onclick = () => send('repo'); $('recheck').onclick = () => send('check'); $('folder').onclick = () => send('folder');
+  $('playAnyway').onclick = () => send('play');
+  let action = null;
+  $('main').onclick = () => action && send(action);
+
+  function render(s) {
+    last = s;
+    const btn = $('main'), st = $('status');
+    $('progress').classList.toggle('show', s.status === 'busy' || s.status === 'selfUpdate');
+    $('playAnyway').style.display = s.status === 'update' ? '' : 'none';
+    $('err').textContent = s.error ? L.error + (L.errors[s.error] || s.error) : '';
+    btn.classList.remove('play');
+    btn.disabled = false;
+    switch (s.status) {
+      case 'checking': st.innerHTML = '<span class="spin"></span>' + L.checking; btn.textContent = s.installed ? L.play : L.install; btn.disabled = !s.installed; action = s.installed ? 'play' : null; if (s.installed) btn.classList.add('play'); break;
+      case 'selfUpdate': st.innerHTML = '<span class="spin"></span>' + L.selfUpdate; btn.textContent = L.selfUpdateBtn; btn.disabled = true; action = null; break;
+      case 'busy': st.innerHTML = '<span class="spin"></span>' + L.busy; btn.textContent = L.busy; btn.disabled = true; action = null; break;
+      case 'notInstalled': st.textContent = L.notInstalled + (s.plan ? ` (${mb(s.plan.bytes)})` : ''); btn.textContent = L.install; action = 'install'; break;
+      case 'offlineNoGame': st.textContent = L.offlineNoGame; btn.textContent = L.install; btn.disabled = true; action = null; break;
+      case 'update': st.innerHTML = `<b>${L.updateAvail}</b><span class="badge up">${L.badgeUp}</span>` + (s.plan ? `<br>${s.plan.files} ${L.files} · ${mb(s.plan.bytes)}` : ''); btn.textContent = L.update; action = 'update'; break;
+      default: st.innerHTML = (s.offline ? L.offline : L.ready) + (s.offline ? '' : `<span class="badge">${L.badgeOk}</span>`); btn.textContent = L.play; btn.classList.add('play'); action = 'play';
+    }
+    const log = s.remote ? s.remote.log : (s.local ? [{ sha: s.local.sha, message: s.local.message, date: s.local.date }] : []);
+    $('log').innerHTML = log.map((c, i) => `<div class="c ${s.local && c.sha !== s.local.sha && i === 0 ? 'new' : ''}"><div class="m">${esc(c.message)}</div><div class="d">${short(c.sha)} · ${fmtDate(c.date)}</div></div>`).join('');
+    $('ver').innerHTML = `${L.installed}: ${s.local ? short(s.local.sha) + ' · ' + fmtDate(s.local.date) : L.none}<br>${L.latest}: ${s.remote ? short(s.remote.sha) : L.none}<br>Launcher ${esc(s.version || '')}${s.launcherUpdated ? ` <span class="badge">${L.launcherUpdated}</span>` : ''}`;
+  }
+  function progress(p) {
+    const k = p.total ? p.done / p.total : (p.filesTotal ? p.files / p.filesTotal : 1);
+    $('fill').style.width = (k * 100).toFixed(1) + '%';
+    $('pfile').textContent = p.current || '';
+    $('pnum').textContent = `${mb(p.done)} / ${mb(p.total)} · ${p.files}/${p.filesTotal} ${L.files}`;
+  }
+  window.chrome.webview.addEventListener('message', (e) => {
+    const m = e.data;
+    if (m.type === 'state') { if (m.lang && m.lang !== lang) { lang = m.lang; L = STR[lang] || L; applyStatic(); } render(m); }
+    else if (m.type === 'progress') progress(m);
+  });
+  send('ready');
+</script>
+</body>
+</html>

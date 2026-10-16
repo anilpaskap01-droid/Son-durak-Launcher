@@ -93,7 +93,7 @@ namespace SonDurakLauncher
                     if (game)
                     {
                         cw.SetVirtualHostNameToFolderMapping("sondurak.game", Config.GameDir, CoreWebView2HostResourceAccessKind.Allow);
-                        cw.Navigate("https://sondurak.game/index.html");
+                        cw.Navigate("https://sondurak.game/index.html?lang=" + Lang.Current);
                     }
                     else
                     {
@@ -115,7 +115,7 @@ namespace SonDurakLauncher
                     {
                         // fake a state so the page renders like a real "update available" launcher
                         await Task.Delay(800);
-                        cw.PostWebMessageAsJson("{\"type\":\"state\",\"status\":\"update\",\"installed\":true,\"local\":{\"sha\":\"786554f0\",\"message\":\"Son Durak\",\"date\":\"2026-10-16T18:30:00Z\"},\"remote\":{\"sha\":\"c13e12f7\",\"message\":\"Yeni insan modelleri\",\"date\":\"2026-10-16T19:57:00Z\",\"log\":[{\"sha\":\"c13e12f7\",\"message\":\"Son Durak: yeni insan modelleri, konusma, karakter secimi, grafik\",\"date\":\"2026-10-16T19:57:00Z\"},{\"sha\":\"786554f0\",\"message\":\"README: Son Durak projesi eklendi\",\"date\":\"2026-10-16T18:30:00Z\"}]},\"repo\":\"\",\"version\":\"1.0.0\"}");
+                        cw.PostWebMessageAsJson("{\"type\":\"state\",\"status\":\"update\",\"installed\":true,\"local\":{\"sha\":\"786554f0\",\"message\":\"Son Durak\",\"date\":\"2026-10-16T18:30:00Z\"},\"remote\":{\"sha\":\"c13e12f7\",\"message\":\"Yeni insan modelleri\",\"date\":\"2026-10-16T19:57:00Z\",\"log\":[{\"sha\":\"c13e12f7\",\"message\":\"Son Durak: yeni insan modelleri, konusma, karakter secimi, grafik\",\"date\":\"2026-10-16T19:57:00Z\"},{\"sha\":\"786554f0\",\"message\":\"README: Son Durak projesi eklendi\",\"date\":\"2026-10-16T18:30:00Z\"}]},\"repo\":\"\",\"version\":\"" + System.Windows.Forms.Application.ProductVersion + "\",\"lang\":\"" + Lang.Current + "\"}");
                         await Task.Delay(800);
                         using (var fs = File.Create(png)) await cw.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, fs);
                     }

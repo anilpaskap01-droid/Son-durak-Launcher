@@ -13,6 +13,19 @@ namespace SonDurakLauncher
         public static CoreWebView2Environment Env;
 
         [DllImport("user32.dll")] static extern bool SetProcessDPIAware();
+        [DllImport("user32.dll")] static extern uint GetDpiForSystem();
+
+        // Window size for a 96-dpi design size. (A per-monitor-aware form reports 96 dpi until its
+        // window exists, which made the launcher open too small on 125 % / 150 % displays.)
+        // Never larger than 94 % of the screen's work area.
+        public static System.Drawing.Size ScaledSize(int w, int h)
+        {
+            float s = 1f;
+            try { s = GetDpiForSystem() / 96f; } catch { /* Windows 8.1 and older */ }
+            var area = Screen.PrimaryScreen.WorkingArea;
+            var fit = Math.Min(1f, Math.Min(area.Width * 0.94f / (w * s), area.Height * 0.94f / (h * s)));
+            return new System.Drawing.Size((int)(w * s * fit), (int)(h * s * fit));
+        }
 
         [STAThread]
         static void Main(string[] args)

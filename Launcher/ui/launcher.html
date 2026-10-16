@@ -106,6 +106,10 @@
   // language: the launcher sends its saved choice with every state; TR / EN buttons change it
   let lang = (navigator.language || 'tr').toLowerCase().startsWith('tr') ? 'tr' : 'en', L = STR[lang], last = null;
   const $ = (id) => document.getElementById(id);
+  // The UI is designed for 1000 x 600 CSS px; scale it to whatever the window really is (DPI,
+  // small screens) so the main button never ends up below the bottom edge.
+  const fit = () => { const k = Math.min(innerWidth / 1000, innerHeight / 600); document.documentElement.style.zoom = Math.abs(k - 1) < 0.01 ? '' : String(k); };
+  addEventListener('resize', fit); fit();
   const send = (cmd, extra) => window.chrome.webview.postMessage({ cmd, ...extra });
   const short = (s) => s ? s.slice(0, 7) : L.none;
   const fmtDate = (d) => d ? new Date(d).toLocaleString(lang === 'tr' ? 'tr-TR' : 'en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';

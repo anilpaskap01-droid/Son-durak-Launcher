@@ -39,8 +39,7 @@ namespace SonDurakLauncher
             StartPosition = FormStartPosition.CenterScreen;
             BackColor = Color.FromArgb(7, 9, 13);
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
-            var s = DeviceDpi / 96f;
-            ClientSize = new Size((int)(1000 * s), (int)(600 * s));
+            ClientSize = Program.ScaledSize(1000, 600);
             web = new WebView2 { Dock = DockStyle.Fill, DefaultBackgroundColor = Color.FromArgb(7, 9, 13) };
             Controls.Add(web);
             Load += async (o, e) => await InitAsync();

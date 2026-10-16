@@ -5,19 +5,21 @@
 <title>Son Durak Launcher</title>
 <style>
   :root {
-    --bg: #0e141b; --panel: #151e29; --card: #1b2838; --line: rgba(255,255,255,.06);
-    --text: #dfe3e6; --soft: #b8c2cc; --muted: #8f98a0; --blue: #67c1f5; --amber: #ffb020;
+    --bg: #0e141b; --panel: #151e29; --card: #1b2838; --side: #111922; --line: rgba(255,255,255,.06);
+    --text: #dfe3e6; --soft: #b8c2cc; --muted: #8f98a0; --blue: #67c1f5; --amber: #ffb020; --green: #8bd34b;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--text);
     font-family: "Segoe UI", system-ui, sans-serif; user-select: none; }
+  input { user-select: text; }
   .app { height: 100%; display: flex; flex-direction: column; }
+  button { font-family: inherit; }
 
   /* title bar */
   .titlebar { height: 34px; flex: none; display: flex; align-items: center; padding-left: 14px; background: #0a0f15; border-bottom: 1px solid var(--line); position: relative; z-index: 5; }
   .brand { flex: 1; display: flex; align-items: center; gap: 9px; font-size: 12px; letter-spacing: .22em; color: var(--muted); }
   .brand i { width: 9px; height: 9px; border-radius: 2px; background: var(--amber); box-shadow: 0 0 8px var(--amber); }
-  .titlebar button { height: 34px; border: 0; background: transparent; color: var(--muted); cursor: pointer; font: 13px "Segoe UI", sans-serif; }
+  .titlebar button { height: 34px; border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; }
   .titlebar button:hover { background: rgba(255,255,255,.07); color: #fff; }
   .titlebar .win { width: 44px; font-size: 15px; }
   .titlebar .x:hover { background: #c42b1c; }
@@ -25,20 +27,23 @@
   .langs button { width: 38px; font-weight: 700; font-size: 11px; letter-spacing: .08em; }
   .langs button.sel { color: var(--blue); box-shadow: inset 0 -2px 0 var(--blue); }
 
+  .body { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 320px; }
+  .main { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+
   /* hero art */
-  .hero { position: relative; height: 300px; flex: none; background: url("{{BG}}") center 42% / cover no-repeat; }
+  .hero { position: relative; height: 270px; flex: none; background: url("bg.jpg") center 42% / cover no-repeat; }
   .hero::after { content: ''; position: absolute; inset: 0;
     background: linear-gradient(180deg, rgba(14,20,27,0) 35%, rgba(14,20,27,.7) 75%, var(--bg) 100%),
                 linear-gradient(90deg, rgba(14,20,27,.88) 0%, rgba(14,20,27,.35) 45%, rgba(14,20,27,0) 70%); }
-  .hero .txt { position: absolute; left: 40px; bottom: 44px; z-index: 2; }
-  .logo { margin: 0; font-family: Consolas, "Courier New", monospace; font-weight: 800; font-size: 56px; letter-spacing: .2em; color: var(--amber); text-shadow: 0 0 26px rgba(255,176,32,.5); }
+  .hero .txt { position: absolute; left: 36px; bottom: 42px; z-index: 2; }
+  .logo { margin: 0; font-family: Consolas, "Courier New", monospace; font-weight: 800; font-size: 52px; letter-spacing: .2em; color: var(--amber); text-shadow: 0 0 26px rgba(255,176,32,.5); }
   .sub { margin: 2px 0 12px; color: #c9d1d8; letter-spacing: .06em; }
   .tags span { display: inline-block; font-size: 11px; padding: 3px 9px; margin-right: 6px; border-radius: 3px; background: rgba(103,193,245,.16); color: var(--blue); }
 
-  /* action bar (play / update + stats) */
-  .actionbar { flex: none; position: relative; z-index: 3; margin: -26px 24px 0; display: flex; align-items: center; gap: 22px; padding: 14px 18px;
+  /* action bar */
+  .actionbar { flex: none; position: relative; z-index: 3; margin: -26px 22px 0; display: flex; align-items: center; gap: 20px; padding: 14px 16px;
     background: linear-gradient(90deg, rgba(24,33,46,.97), rgba(28,41,58,.97)); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 12px 34px rgba(0,0,0,.5); }
-  .main-btn { flex: none; min-width: 200px; height: 52px; padding: 0 26px; border: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; gap: 12px;
+  .main-btn { flex: none; min-width: 190px; height: 52px; padding: 0 24px; border: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; gap: 12px;
     font: 700 19px "Segoe UI", sans-serif; letter-spacing: .08em; color: #fff; cursor: pointer; transition: filter .15s, transform .08s; }
   .main-btn svg { width: 20px; height: 20px; fill: currentColor; }
   .main-btn.play { background: linear-gradient(90deg, #6fb522, #4f9c19); box-shadow: 0 6px 18px rgba(111,181,34,.25); }
@@ -47,7 +52,7 @@
   .main-btn:active:not(:disabled) { transform: translateY(1px); }
   .main-btn:disabled { filter: grayscale(.75) brightness(.6); cursor: default; box-shadow: none; }
   .astatus { flex: 1; min-width: 0; }
-  .astatus .st { font-size: 14px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .astatus .st { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .astatus .st b { color: #fff; }
   .astatus .sm { margin-top: 3px; font-size: 12px; color: var(--muted); min-height: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .astatus .sm .link { margin-left: 10px; }
@@ -55,22 +60,23 @@
   .progress.show { display: block; }
   .fill { height: 100%; width: 0; background: linear-gradient(90deg, #1a9fff, #67c1f5); transition: width .2s; }
   .err { margin-top: 4px; font-size: 12px; color: #ff8a80; }
-  .stats { flex: none; display: flex; gap: 24px; padding-left: 18px; border-left: 1px solid var(--line); }
+  .stats { flex: none; display: flex; gap: 18px; padding-left: 16px; border-left: 1px solid var(--line); }
   .stat label { display: block; font-size: 10px; letter-spacing: .14em; color: var(--muted); margin-bottom: 3px; }
-  .stat b { font-size: 14px; font-weight: 600; color: var(--text); }
+  .stat b { font-size: 14px; font-weight: 600; }
   .tools { flex: none; display: flex; gap: 6px; }
-  .tool { width: 36px; height: 36px; border: 0; border-radius: 4px; background: rgba(255,255,255,.06); color: #c7d5e0; cursor: pointer; display: grid; place-items: center; }
+  .tool { width: 34px; height: 34px; border: 0; border-radius: 4px; background: rgba(255,255,255,.06); color: #c7d5e0; cursor: pointer; display: grid; place-items: center; }
   .tool:hover { background: rgba(255,255,255,.13); color: #fff; }
-  .tool svg { width: 17px; height: 17px; fill: currentColor; }
+  .tool svg { width: 16px; height: 16px; fill: currentColor; }
   .spin { display: inline-block; width: 12px; height: 12px; margin-right: 7px; vertical-align: -1px; border: 2px solid rgba(255,255,255,.25); border-top-color: var(--blue); border-radius: 50%; animation: s .8s linear infinite; }
   @keyframes s { to { transform: rotate(360deg); } }
   .link { background: none; border: 0; padding: 0; color: var(--blue); cursor: pointer; font: inherit; }
   .link:hover { text-decoration: underline; }
 
-  /* content: patch notes + side boxes */
-  .content { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 300px; gap: 20px; padding: 20px 24px 16px; }
-  h2 { margin: 0 0 10px; font-size: 12px; font-weight: 600; letter-spacing: .16em; color: var(--muted); }
-  .news { min-height: 0; display: flex; flex-direction: column; }
+  /* news / about */
+  .content { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 16px 22px 14px; }
+  .tabs { display: flex; gap: 18px; margin-bottom: 10px; }
+  .tabs button { background: none; border: 0; padding: 0 0 4px; font-size: 12px; font-weight: 600; letter-spacing: .16em; color: var(--muted); cursor: pointer; }
+  .tabs button.sel { color: #fff; box-shadow: inset 0 -2px 0 var(--blue); }
   .list { flex: 1; min-height: 0; overflow: auto; padding-right: 6px; display: flex; flex-direction: column; gap: 10px; }
   .card { background: var(--card); border-radius: 5px; padding: 12px 15px; border-left: 3px solid transparent; }
   .card.new { border-left-color: var(--blue); }
@@ -80,15 +86,74 @@
   .badge { font-size: 10px; font-weight: 700; letter-spacing: .08em; color: #0e141b; background: var(--blue); padding: 2px 6px; border-radius: 3px; }
   .date { margin-left: auto; font-size: 12px; color: var(--muted); }
   .card ul { margin: 8px 0 0; padding-left: 18px; font-size: 13px; line-height: 1.55; color: var(--soft); }
-  .empty { color: var(--muted); font-size: 13px; }
-  aside { min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 12px; }
-  .box { background: var(--panel); border-radius: 5px; padding: 12px 14px; }
-  .box p { margin: 0; font-size: 13px; line-height: 1.55; color: var(--soft); }
-  .facts { list-style: none; margin: 10px 0 0; padding: 0; }
-  .facts li { font-size: 13px; padding: 5px 0; border-top: 1px solid var(--line); color: #c7d5e0; }
+  .card p { margin: 0; font-size: 13px; line-height: 1.6; color: var(--soft); }
+  .card h4 { margin: 0 0 6px; font-size: 12px; letter-spacing: .14em; color: var(--muted); }
+  .facts { list-style: none; padding: 0 !important; }
   .facts li::before { content: '▸'; color: var(--blue); margin-right: 8px; }
-  .lver { margin-top: auto; font-size: 11px; color: #56616c; }
+  .empty { color: var(--muted); font-size: 13px; line-height: 1.5; }
+  .lver { font-size: 11px; color: #56616c; margin-top: 8px; }
   .lver .badge { margin-left: 6px; }
+
+  /* friends sidebar */
+  .side { min-height: 0; display: flex; flex-direction: column; background: var(--side); border-left: 1px solid var(--line); position: relative; }
+  .me { display: flex; align-items: center; gap: 11px; padding: 14px 14px 12px; border-bottom: 1px solid var(--line); }
+  .av { flex: none; width: 38px; height: 38px; border-radius: 4px; display: grid; place-items: center; font-weight: 700; font-size: 17px; color: #fff; position: relative; }
+  .av.sm { width: 32px; height: 32px; font-size: 14px; }
+  .av .dot { position: absolute; right: -3px; bottom: -3px; width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--side); background: #6b7480; }
+  .dot.online { background: var(--blue) !important; } .dot.ingame { background: var(--green) !important; } .dot.connecting { background: var(--amber) !important; } .dot.taken { background: #ff6b5e !important; }
+  .mid { min-width: 0; flex: 1; }
+  .mename { display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 600; color: #fff; }
+  .mename span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mename input { width: 100%; font: 600 14px "Segoe UI"; color: #fff; background: #0b1118; border: 1px solid var(--blue); border-radius: 3px; padding: 2px 6px; outline: none; }
+  .ico { flex: none; border: 0; background: none; color: var(--muted); cursor: pointer; padding: 2px 4px; border-radius: 3px; font-size: 13px; }
+  .ico:hover { color: #fff; background: rgba(255,255,255,.08); }
+  .mesub { font-size: 12px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .codebox { margin: 10px 14px 0; display: flex; align-items: center; gap: 8px; background: #0b1118; border: 1px solid var(--line); border-radius: 4px; padding: 7px 10px; }
+  .codebox label { font-size: 10px; letter-spacing: .14em; color: var(--muted); }
+  .codebox b { font-family: Consolas, monospace; font-size: 15px; letter-spacing: .12em; color: var(--amber); flex: 1; }
+  .add { display: flex; gap: 6px; margin: 10px 14px 0; }
+  .add input { flex: 1; min-width: 0; font: 13px Consolas, monospace; letter-spacing: .08em; text-transform: uppercase; color: #fff; background: #0b1118; border: 1px solid var(--line); border-radius: 4px; padding: 7px 9px; outline: none; }
+  .add input:focus { border-color: var(--blue); }
+  .add input::placeholder { text-transform: none; letter-spacing: 0; font-family: "Segoe UI"; color: #5d6872; }
+  .btn { border: 0; border-radius: 4px; padding: 7px 12px; font-size: 12px; font-weight: 600; color: #fff; background: #2a475e; cursor: pointer; white-space: nowrap; }
+  .btn:hover { filter: brightness(1.15); }
+  .btn.blue { background: #1a73c9; } .btn.green { background: #4f9c19; } .btn.ghost { background: rgba(255,255,255,.07); color: var(--soft); }
+  .addnote { margin: 6px 14px 0; font-size: 12px; color: var(--muted); min-height: 16px; }
+  .addnote.bad { color: #ff8a80; }
+  .flist { flex: 1; min-height: 0; overflow: auto; padding: 6px 6px 12px; margin-top: 4px; }
+  .sect { font-size: 11px; letter-spacing: .14em; color: var(--muted); padding: 12px 8px 6px; }
+  .fr { display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 4px; cursor: pointer; }
+  .fr:hover { background: rgba(255,255,255,.05); }
+  .fr .fi { flex: 1; min-width: 0; }
+  .fn { font-size: 14px; color: #e6eaee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fs { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fs.online { color: var(--blue); } .fs.ingame { color: var(--green); }
+  .fr.off .fn { color: #8f98a0; }
+  .fa { display: flex; gap: 4px; align-items: center; }
+  .unread { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--blue); color: #0e141b; font-size: 11px; font-weight: 700; display: grid; place-items: center; }
+
+  /* chat */
+  .chat { position: absolute; inset: 0; background: var(--side); display: none; flex-direction: column; z-index: 4; }
+  .chat.show { display: flex; }
+  .ch { display: flex; align-items: center; gap: 10px; padding: 10px 10px; border-bottom: 1px solid var(--line); }
+  .msgs { flex: 1; min-height: 0; overflow: auto; padding: 12px 12px; display: flex; flex-direction: column; gap: 6px; user-select: text; }
+  .bub { max-width: 82%; padding: 7px 10px; border-radius: 8px; font-size: 13px; line-height: 1.4; word-wrap: break-word; white-space: pre-wrap; }
+  .bub.them { align-self: flex-start; background: #24364a; border-bottom-left-radius: 2px; }
+  .bub.mine { align-self: flex-end; background: #1a6fbf; border-bottom-right-radius: 2px; }
+  .bub.pending { opacity: .6; }
+  .bub small { display: block; margin-top: 3px; font-size: 10px; color: rgba(255,255,255,.55); }
+  .chatnote { text-align: center; color: var(--muted); font-size: 12px; margin: auto 0; padding: 20px; }
+  .ci { display: flex; gap: 6px; padding: 10px; border-top: 1px solid var(--line); }
+  .ci input { flex: 1; min-width: 0; font: 13px "Segoe UI"; color: #fff; background: #0b1118; border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; outline: none; }
+  .ci input:focus { border-color: var(--blue); }
+
+  /* toasts */
+  .toasts { position: fixed; right: 336px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 20; width: 300px; }
+  .toast { background: #1e2d3e; border: 1px solid rgba(103,193,245,.35); border-radius: 6px; padding: 11px 13px; box-shadow: 0 10px 28px rgba(0,0,0,.5); animation: tin .25s ease-out; cursor: default; }
+  .toast .tt { font-size: 13px; color: #fff; }
+  .toast .ts { font-size: 12px; color: var(--soft); margin-top: 3px; word-wrap: break-word; }
+  .toast .tb { display: flex; gap: 6px; margin-top: 9px; }
+  @keyframes tin { from { transform: translateY(12px); opacity: 0; } }
   ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 4px; } ::-webkit-scrollbar-track { background: transparent; }
 </style>
 </head>
@@ -99,78 +164,116 @@
     <div class="langs" id="langs"><button data-l="tr">TR</button><button data-l="en">EN</button></div>
     <button class="win" id="min" title="—">&#8211;</button><button class="win x" id="close" title="×">&#10005;</button>
   </div>
+  <div class="body">
+    <div class="main">
+      <header class="hero"><div class="txt"><h1 class="logo">SON DURAK</h1><p class="sub" id="sub"></p><div class="tags" id="tags"></div></div></header>
+      <div class="actionbar">
+        <button class="main-btn play" id="main" disabled></button>
+        <div class="astatus">
+          <div class="st" id="status"></div>
+          <div class="sm" id="small"></div>
+          <div class="progress" id="progress"><div class="fill" id="fill"></div></div>
+          <div class="err" id="err"></div>
+        </div>
+        <div class="stats">
+          <div class="stat"><label id="lVer"></label><b id="sVer">—</b></div>
+          <div class="stat"><label id="lTime"></label><b id="sTime">—</b></div>
+          <div class="stat"><label id="lLast"></label><b id="sLast">—</b></div>
+        </div>
+        <div class="tools">
+          <button class="tool" id="recheck"><svg viewBox="0 0 24 24"><path d="M12 4a8 8 0 0 1 7.4 5H17v2h6V5h-2v2.3A10 10 0 1 0 22 12h-2a8 8 0 1 1-8-8z"/></svg></button>
+          <button class="tool" id="folder"><svg viewBox="0 0 24 24"><path d="M3 5h7l2 2h9v12H3z"/></svg></button>
+        </div>
+      </div>
+      <div class="content">
+        <div class="tabs"><button id="tabNews" class="sel"></button><button id="tabAbout"></button></div>
+        <div class="list" id="news"></div>
+        <div class="list" id="aboutPane" style="display:none"></div>
+      </div>
+    </div>
 
-  <header class="hero">
-    <div class="txt">
-      <h1 class="logo">SON DURAK</h1>
-      <p class="sub" id="sub"></p>
-      <div class="tags" id="tags"></div>
-    </div>
-  </header>
-
-  <div class="actionbar">
-    <button class="main-btn play" id="main" disabled></button>
-    <div class="astatus">
-      <div class="st" id="status"></div>
-      <div class="sm" id="small"></div>
-      <div class="progress" id="progress"><div class="fill" id="fill"></div></div>
-      <div class="err" id="err"></div>
-    </div>
-    <div class="stats">
-      <div class="stat"><label id="lVer"></label><b id="sVer">—</b></div>
-      <div class="stat"><label id="lTime"></label><b id="sTime">—</b></div>
-      <div class="stat"><label id="lLast"></label><b id="sLast">—</b></div>
-    </div>
-    <div class="tools">
-      <button class="tool" id="recheck"><svg viewBox="0 0 24 24"><path d="M12 4a8 8 0 0 1 7.4 5H17v2h6V5h-2v2.3A10 10 0 1 0 22 12h-2a8 8 0 1 1-8-8z"/></svg></button>
-      <button class="tool" id="folder"><svg viewBox="0 0 24 24"><path d="M3 5h7l2 2h9v12H3z"/></svg></button>
-    </div>
-  </div>
-
-  <div class="content">
-    <section class="news">
-      <h2 id="hNews"></h2>
-      <div class="list" id="news"></div>
-    </section>
-    <aside>
-      <div class="box"><h2 id="hAbout"></h2><p id="about"></p><ul class="facts" id="facts"></ul></div>
-      <div class="box"><h2 id="hMp"></h2><p id="mp"></p></div>
-      <div class="lver" id="lver"></div>
+    <aside class="side">
+      <div class="me">
+        <div class="av" id="meAv"><span></span><i class="dot" id="meDot"></i></div>
+        <div class="mid">
+          <div class="mename" id="meNameRow"><span id="meName"></span><button class="ico" id="editName">✎</button></div>
+          <div class="mesub" id="meSub"></div>
+        </div>
+      </div>
+      <div class="codebox"><label id="lCode"></label><b id="meCode"></b><button class="ico" id="copyCode">⧉</button></div>
+      <div class="add"><input id="addIn" maxlength="12" autocomplete="off" spellcheck="false"><button class="btn blue" id="addBtn"></button></div>
+      <div class="addnote" id="addNote"></div>
+      <div class="flist" id="flist"></div>
+      <div class="chat" id="chat">
+        <div class="ch"><button class="ico" id="back">←</button><div class="av sm" id="chAv"><span></span><i class="dot"></i></div>
+          <div class="mid"><div class="fn" id="chName"></div><div class="fs" id="chSt"></div></div>
+          <span id="chActs" class="fa"></span><button class="ico" id="chRemove">⋯</button></div>
+        <div class="msgs" id="msgs"></div>
+        <div class="ci"><input id="msgIn" maxlength="500" autocomplete="off"><button class="btn blue" id="msgSend"></button></div>
+      </div>
     </aside>
   </div>
 </div>
+<div class="toasts" id="toasts"></div>
+<script src="peerjs.min.js"></script>
 <script>
+  // ============================================================== launcher page
+  // The C# host sends {type:'state'|'progress'|'from-game'|'game-state'}; the page sends {cmd}.
+  // (In a plain browser - tests - the host is a stub.)
+  const HOST = (window.chrome && window.chrome.webview) || { postMessage() {}, addEventListener() {} };
   const STR = {
     tr: {
       sub: 'T9 Gece Hattı · Anomali Avı', tags: ['Korku', 'Bulmaca', 'Co-op'],
-      play: 'OYNA', install: 'YÜKLE', update: 'GÜNCELLE', busy: 'İNDİRİLİYOR', selfBtn: 'GÜNCELLENİYOR',
+      play: 'OYNA', install: 'YÜKLE', update: 'GÜNCELLE', busy: 'İNDİRİLİYOR', selfBtn: 'GÜNCELLENİYOR', running: 'OYUN AÇIK',
       checking: 'Güncellemeler denetleniyor…', ready: 'Oyun güncel', updateReady: 'Güncelleme hazır', notInstalled: 'Oyun henüz yüklü değil',
       offline: 'Çevrimdışı — yüklü sürümle oynayabilirsin', offlineNoGame: 'İnternet bağlantısı yok. Oyunu indirmek için bağlantı gerekli.',
-      selfUpdate: 'Launcher güncelleniyor…', downloading: 'İndiriliyor…', playAnyway: 'Güncellemeden oyna', files: 'dosya',
+      selfUpdate: 'Launcher güncelleniyor…', downloading: 'İndiriliyor…', playAnyway: 'Güncellemeden oyna', files: 'dosya', gameOpen: 'Oyun açık',
       lVer: 'SÜRÜM', lTime: 'OYNAMA SÜRESİ', lLast: 'SON OYNAMA', never: 'Hiç', today: 'Bugün', yesterday: 'Dün', hours: 'saat', minutes: 'dk',
-      hNews: 'YENİLİKLER', hAbout: 'OYUN HAKKINDA', hMp: 'ARKADAŞLARINLA OYNA', fresh: 'YENİ', noNews: 'Yenilikler internete bağlanınca görünecek.',
+      tabNews: 'YENİLİKLER', tabAbout: 'OYUN HAKKINDA', fresh: 'YENİ', noNews: 'Yenilikler internete bağlanınca görünecek.', mpTitle: 'ARKADAŞLARINLA OYNA',
       recheck: 'Güncellemeleri denetle', folder: 'Oyun klasörü', launcherUpdated: 'güncellendi',
       errors: { 'repo-not-found': 'Güncelleme sunucusuna ulaşılamadı.', 'auth': 'Güncelleme sunucusuna bağlanılamadı. Launcher\'ın en yeni sürümünü kur.', 'rate-limit': 'Sunucu şu an meşgul, biraz sonra tekrar dene.', 'launcher-update': 'Launcher güncellenemedi, bu sürümle devam ediliyor.', other: 'Güncelleme alınamadı, biraz sonra tekrar dene.' },
+      // friends
+      lCode: 'KODUN', copy: 'Kodu kopyala', copied: 'Kod kopyalandı', addPh: 'Arkadaş kodu, ör. K7Q2-9XMB', add: 'Ekle', editName: 'Adını değiştir',
+      reqIn: 'GELEN İSTEKLER', reqOut: 'GÖNDERİLEN İSTEKLER', secOnline: 'ÇEVRİMİÇİ', secOffline: 'ÇEVRİMDIŞI',
+      stOnline: 'Çevrimiçi', stIngame: 'Oyunda', stOffline: 'Çevrimdışı', stWaiting: 'Yanıt bekleniyor', room: 'Oda',
+      netOnline: 'Çevrimiçi', netConnecting: 'Bağlanıyor…', netOffline: 'Çevrimdışı', netTaken: 'Bu kod başka bir launcher\'da açık',
+      accept: 'Kabul et', decline: 'Reddet', cancel: 'İptal', msg: 'Mesaj', join: 'Katıl', invite: 'Davet et', removeQ: '{n} arkadaşlıktan çıkarılsın mı?',
+      noFriends: 'Henüz arkadaşın yok. Kodunu arkadaşına gönder ya da onun kodunu yukarıya yaz.',
+      sentReq: 'İstek gönderildi.', queuedReq: 'İstek sırada: arkadaşın launcher\'ı açılınca iletilecek.', badCode: 'Kod 8 karakter olmalı (ör. K7Q2-9XMB).', ownCode: 'Bu senin kendi kodun.', already: 'Zaten arkadaşsınız.', reqExists: 'Bu kişiye zaten istek gönderdin.',
+      msgPh: 'Mesaj yaz…', send: 'Gönder', sending: 'gönderiliyor', chatEmpty: 'Henüz mesaj yok. Bir merhaba de!', chatOffline: '{n} şu an çevrimdışı; mesajların çevrimiçi olunca iletilir.',
+      tReq: '{n} sana arkadaşlık isteği gönderdi', tAcc: '{n} arkadaşlık isteğini kabul etti', tInv: '{n} seni odasına davet etti', tMsg: '{n}',
+      inviteSent: 'Davet gönderildi: {n}', inviteOffline: '{n} şu an çevrimdışı', inviteNoRoom: 'Önce oyunda bir oda kur ya da bir odaya katıl.',
     },
     en: {
       sub: 'T9 Night Line · Anomaly Hunt', tags: ['Horror', 'Puzzle', 'Co-op'],
-      play: 'PLAY', install: 'INSTALL', update: 'UPDATE', busy: 'DOWNLOADING', selfBtn: 'UPDATING',
+      play: 'PLAY', install: 'INSTALL', update: 'UPDATE', busy: 'DOWNLOADING', selfBtn: 'UPDATING', running: 'RUNNING',
       checking: 'Checking for updates…', ready: 'Up to date', updateReady: 'Update ready', notInstalled: 'The game is not installed yet',
       offline: 'Offline — you can play the installed version', offlineNoGame: 'No internet. A connection is needed to download the game.',
-      selfUpdate: 'Updating the launcher…', downloading: 'Downloading…', playAnyway: 'Play without updating', files: 'files',
+      selfUpdate: 'Updating the launcher…', downloading: 'Downloading…', playAnyway: 'Play without updating', files: 'files', gameOpen: 'The game is running',
       lVer: 'VERSION', lTime: 'PLAY TIME', lLast: 'LAST PLAYED', never: 'Never', today: 'Today', yesterday: 'Yesterday', hours: 'hrs', minutes: 'min',
-      hNews: "WHAT'S NEW", hAbout: 'ABOUT', hMp: 'PLAY WITH FRIENDS', fresh: 'NEW', noNews: 'News will appear once you are online.',
+      tabNews: "WHAT'S NEW", tabAbout: 'ABOUT', fresh: 'NEW', noNews: 'News will appear once you are online.', mpTitle: 'PLAY WITH FRIENDS',
       recheck: 'Check for updates', folder: 'Game folder', launcherUpdated: 'updated',
       errors: { 'repo-not-found': 'Could not reach the update server.', 'auth': 'Could not connect to the update server. Please install the latest launcher.', 'rate-limit': 'The server is busy, try again in a bit.', 'launcher-update': 'The launcher could not update itself; continuing with this version.', other: 'Could not get the update, try again in a bit.' },
+      lCode: 'YOUR CODE', copy: 'Copy code', copied: 'Code copied', addPh: 'Friend code, e.g. K7Q2-9XMB', add: 'Add', editName: 'Change your name',
+      reqIn: 'FRIEND REQUESTS', reqOut: 'SENT REQUESTS', secOnline: 'ONLINE', secOffline: 'OFFLINE',
+      stOnline: 'Online', stIngame: 'In game', stOffline: 'Offline', stWaiting: 'Waiting for an answer', room: 'Room',
+      netOnline: 'Online', netConnecting: 'Connecting…', netOffline: 'Offline', netTaken: 'This code is open in another launcher',
+      accept: 'Accept', decline: 'Decline', cancel: 'Cancel', msg: 'Message', join: 'Join', invite: 'Invite', removeQ: 'Remove {n} from your friends?',
+      noFriends: 'No friends yet. Send your code to a friend or type theirs above.',
+      sentReq: 'Request sent.', queuedReq: 'Request queued: it arrives when your friend opens their launcher.', badCode: 'A code has 8 characters (e.g. K7Q2-9XMB).', ownCode: 'That is your own code.', already: 'You are already friends.', reqExists: 'You already sent them a request.',
+      msgPh: 'Type a message…', send: 'Send', sending: 'sending', chatEmpty: 'No messages yet. Say hi!', chatOffline: '{n} is offline; your messages are delivered when they come online.',
+      tReq: '{n} sent you a friend request', tAcc: '{n} accepted your friend request', tInv: '{n} invited you to their room', tMsg: '{n}',
+      inviteSent: 'Invite sent to {n}', inviteOffline: '{n} is offline', inviteNoRoom: 'Host or join a room in the game first.',
     },
   };
-  let lang = (navigator.language || 'tr').toLowerCase().startsWith('tr') ? 'tr' : 'en', L = STR[lang], last = null, action = null;
+  let lang = (navigator.language || 'tr').toLowerCase().startsWith('tr') ? 'tr' : 'en', L = STR[lang], last = null, action = null, tab = 'news';
   const $ = (id) => document.getElementById(id);
-  const send = (cmd, extra) => window.chrome.webview.postMessage({ cmd, ...extra });
-  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const send = (cmd, extra) => HOST.postMessage({ cmd, ...extra });
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const fmt = (s, n) => String(s).replace('{n}', n);
   const mb = (b) => (b / 1048576).toFixed(1).replace('.', lang === 'tr' ? ',' : '.') + ' MB';
-  // The design is 1120 x 680 CSS px; scale it to the real window (DPI, small screens).
-  const fit = () => { const k = Math.min(innerWidth / 1120, innerHeight / 680); document.documentElement.style.zoom = Math.abs(k - 1) < 0.01 ? '' : String(k); };
+  // the design is 1200 x 700 CSS px; scale it to the real window (DPI, small screens)
+  const fit = () => { const k = Math.min(innerWidth / 1200, innerHeight / 700); document.documentElement.style.zoom = Math.abs(k - 1) < 0.01 ? '' : String(k); };
   addEventListener('resize', fit); fit();
 
   const ICON = {
@@ -178,29 +281,26 @@
     dl: '<svg viewBox="0 0 24 24"><path d="M11 3h2v10l4-4 1.4 1.4L12 16.8 5.6 10.4 7 9l4 4zM4 19h16v2H4z"/></svg>',
   };
   function cmpVer(a, b) { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) - (y[i] || 0); } return 0; }
-  function fmtDate(d) { if (!d) return ''; const t = new Date(d); return isNaN(t) ? d : t.toLocaleDateString(lang === 'tr' ? 'tr-TR' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' }); }
-  function fmtTime(sec) {
-    if (!sec) return '0 ' + L.minutes;
-    if (sec < 3600) return Math.max(1, Math.round(sec / 60)) + ' ' + L.minutes;
-    return (sec / 3600).toFixed(1).replace('.', lang === 'tr' ? ',' : '.') + ' ' + L.hours;
-  }
+  const loc = () => (lang === 'tr' ? 'tr-TR' : 'en-GB');
+  function fmtDate(d) { if (!d) return ''; const t = new Date(d); return isNaN(t) ? d : t.toLocaleDateString(loc(), { day: 'numeric', month: 'long', year: 'numeric' }); }
+  function fmtTime(sec) { if (!sec) return '0 ' + L.minutes; if (sec < 3600) return Math.max(1, Math.round(sec / 60)) + ' ' + L.minutes; return (sec / 3600).toFixed(1).replace('.', lang === 'tr' ? ',' : '.') + ' ' + L.hours; }
   function fmtLast(iso) {
     if (!iso) return L.never;
-    const d = new Date(iso), now = new Date(), day = 86400000;
-    const startOf = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-    const diff = Math.round((startOf(now) - startOf(d)) / day);
-    return diff <= 0 ? L.today : diff === 1 ? L.yesterday : d.toLocaleDateString(lang === 'tr' ? 'tr-TR' : 'en-GB', { day: 'numeric', month: 'short' });
+    const d = new Date(iso), now = new Date(), startOf = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+    const diff = Math.round((startOf(now) - startOf(d)) / 86400000);
+    return diff <= 0 ? L.today : diff === 1 ? L.yesterday : d.toLocaleDateString(loc(), { day: 'numeric', month: 'short' });
   }
 
   function applyStatic() {
     document.documentElement.lang = lang;
     $('sub').textContent = L.sub;
     $('tags').innerHTML = L.tags.map((t) => `<span>${esc(t)}</span>`).join('');
-    for (const k of ['lVer', 'lTime', 'lLast', 'hNews', 'hAbout', 'hMp']) $(k).textContent = L[k];
-    $('recheck').title = L.recheck; $('folder').title = L.folder;
+    for (const k of ['lVer', 'lTime', 'lLast', 'tabNews', 'tabAbout', 'lCode']) $(k).textContent = L[k];
+    $('recheck').title = L.recheck; $('folder').title = L.folder; $('copyCode').title = L.copy; $('editName').title = L.editName;
+    $('addIn').placeholder = L.addPh; $('addBtn').textContent = L.add; $('msgIn').placeholder = L.msgPh; $('msgSend').textContent = L.send;
     for (const b of $('langs').children) b.classList.toggle('sel', b.dataset.l === lang);
   }
-  function setLang(l) { if (!STR[l]) return; lang = l; L = STR[l]; applyStatic(); if (last) render(last); }
+  function setLang(l) { if (!STR[l]) return; lang = l; L = STR[l]; applyStatic(); if (last) render(last); renderFriends(); }
 
   function setButton(kind, text, act, disabled = false) {
     const b = $('main');
@@ -227,11 +327,11 @@
         setButton('dl', L.update, 'update'); break;
       default: status = s.offline ? L.offline : `<b>${L.ready}</b>`; small = v(s.installedVersion); setButton('play', L.play, 'play');
     }
+    if (gameOpen && (s.status === 'ready' || s.status === 'update' || s.status === 'checking')) { status = `<b>${L.gameOpen}</b>`; setButton('play', L.running, 'play'); }
     $('status').innerHTML = status;
     $('small').innerHTML = small;
     const anyway = $('anyway'); if (anyway) anyway.onclick = () => send('play');
     $('err').textContent = s.error ? (L.errors[s.error] || L.errors.other) : '';
-
     $('sVer').textContent = v(s.installedVersion || (s.installed ? null : s.latestVersion));
     $('sTime').textContent = fmtTime(s.playSeconds);
     $('sLast').textContent = fmtLast(s.lastPlayed);
@@ -242,30 +342,392 @@
       return `<div class="card ${fresh ? 'new' : ''}"><div class="hd"><span class="ver">v${esc(n.version)}</span><span class="ttl">${esc(t.title)}</span>${fresh ? `<span class="badge">${L.fresh}</span>` : ''}<span class="date">${esc(fmtDate(n.date))}</span></div>`
         + `<ul>${(t.items || []).map((i) => `<li>${esc(i)}</li>`).join('')}</ul></div>`;
     }).join('') : `<div class="empty">${L.noNews}</div>`;
-    $('about').textContent = game.about || '';
-    $('facts').innerHTML = (game.facts || []).map((f) => `<li>${esc(f)}</li>`).join('');
-    $('mp').textContent = game.multiplayer || '';
-    $('lver').innerHTML = `Launcher ${esc(s.version || '')}${s.launcherUpdated ? `<span class="badge">${L.launcherUpdated}</span>` : ''}`;
+    $('aboutPane').innerHTML = `<div class="card"><p>${esc(game.about || '')}</p><ul class="facts">${(game.facts || []).map((f) => `<li>${esc(f)}</li>`).join('')}</ul></div>`
+      + (game.multiplayer ? `<div class="card"><h4>${L.mpTitle}</h4><p>${esc(game.multiplayer)}</p></div>` : '')
+      + `<div class="lver">Launcher ${esc(s.version || '')}${s.launcherUpdated ? `<span class="badge">${L.launcherUpdated}</span>` : ''}</div>`;
   }
-
   function progress(p) {
     const k = p.total ? p.done / p.total : (p.filesTotal ? p.files / p.filesTotal : 1);
     $('fill').style.width = (k * 100).toFixed(1) + '%';
     $('small').textContent = `${mb(p.done)} / ${mb(p.total)} · ${p.files}/${p.filesTotal} ${L.files}`;
   }
+  function showTab(t) { tab = t; $('tabNews').classList.toggle('sel', t === 'news'); $('tabAbout').classList.toggle('sel', t === 'about'); $('news').style.display = t === 'news' ? '' : 'none'; $('aboutPane').style.display = t === 'about' ? '' : 'none'; }
+
+  // ============================================================== friends (peer-to-peer)
+  // Every launcher joins the public PeerJS broker as "sondurak-fr-<friend code>"; requests,
+  // messages, invites and status go straight from launcher to launcher over WebRTC data channels.
+  // Nothing is kept on a server: friends, chats and unsent messages live in this page's storage.
+  // Each friendship has a random secret, exchanged once when the request is accepted; every new
+  // connection is challenged with it (the secret itself is never sent again), so nobody can pose
+  // as a friend just by knowing their code.
+  const FR_PREFIX = 'sondurak-fr-';
+  const FR_KEY = 'sondurak.friends.v1' + (new URLSearchParams(location.search).get('profile') || '');
+  const ICE = [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:stun.cloudflare.com:3478' }];
+  const ALPHA = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const rand = (n, alpha = ALPHA) => { const b = new Uint32Array(n); crypto.getRandomValues(b); return [...b].map((x) => alpha[x % alpha.length]).join(''); };
+  const hex = (n) => rand(n, '0123456789abcdef');
+  const clean = (s, max = 16) => String(s ?? '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, max);
+  const fmtCode = (c) => c.slice(0, 4) + '-' + c.slice(4);
+  const normCode = (s) => [...String(s || '').toUpperCase()].filter((ch) => ALPHA.includes(ch)).join('');
+  const peerId = (c) => FR_PREFIX + c.toLowerCase();
+  const codeOf = (pid) => { const s = String(pid || '').toLowerCase(); return s.startsWith(FR_PREFIX) ? s.slice(FR_PREFIX.length).toUpperCase() : null; };
+  const sha = async (s) => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))].map((b) => b.toString(16).padStart(2, '0')).join('');
+  const hue = (c) => { let h = 0; for (const ch of c) h = (h * 31 + ch.charCodeAt(0)) % 360; return h; };
+  const avatar = (el, code, name, st) => { el.style.background = `hsl(${hue(code)},45%,38%)`; el.querySelector('span').textContent = (clean(name, 2)[0] || '?').toUpperCase(); const d = el.querySelector('.dot'); if (d) d.className = 'dot ' + (st || ''); };
+
+  function loadF() {
+    let f = null;
+    try { f = JSON.parse(localStorage.getItem(FR_KEY) || 'null'); } catch { f = null; }
+    f = f && typeof f === 'object' ? f : {};
+    f.me = f.me || {};
+    if (!/^[A-Z2-9]{8}$/.test(f.me.code || '')) f.me.code = rand(8);
+    if (!f.me.name) f.me.name = 'Yolcu' + (10 + Math.floor(Math.random() * 90));
+    for (const k of ['friends', 'inReq', 'outReq', 'accOut', 'chats', 'unread']) if (!f[k] || typeof f[k] !== 'object') f[k] = {};
+    return f;
+  }
+  const F = loadF();
+  const saveF = () => { try { localStorage.setItem(FR_KEY, JSON.stringify(F)); } catch { /* storage full / blocked */ } };
+  saveF();
+  let peer = null, net = 'connecting', gameOpen = false, myRoom = null, chatWith = null;
+  const conns = {}, dialing = {}, authed = {}, live = {}, nonces = {}, queues = {}, heard = {};
+
+  function setNet(n) { net = n; renderMe(); }
+  const myStatus = () => (gameOpen ? 'ingame' : 'online');
+  const isOnline = (c) => !!(authed[c] && conns[c] && conns[c].open);
+
+  function startPeer() {
+    if (!window.Peer) { setNet('offline'); return; }
+    if (peer) { try { peer.destroy(); } catch { /* ignore */ } }
+    for (const c of Object.keys(conns)) delete conns[c];
+    for (const c of Object.keys(authed)) delete authed[c];
+    setNet('connecting');
+    const p = peer = new window.Peer(peerId(F.me.code), { debug: 0, config: { iceServers: ICE } });
+    p.on('open', () => { if (p === peer) { setNet('online'); poll(); } });
+    p.on('connection', (c) => { if (p === peer) wire(c); });
+    p.on('disconnected', () => {
+      if (p !== peer || p.destroyed) return;
+      setNet('connecting');
+      setTimeout(() => { if (p === peer && !p.destroyed && p.disconnected) { try { p.reconnect(); } catch { startPeer(); } } }, 3000);
+    });
+    p.on('error', (e) => {
+      if (p !== peer) return;
+      const type = e && e.type;
+      if (type === 'peer-unavailable') { const m = /sondurak-fr-[a-z0-9]+/i.exec((e && e.message) || ''); const code = m && codeOf(m[0]); if (code) delete dialing[code]; return; }
+      if (type === 'unavailable-id') { setNet('taken'); setTimeout(() => { if (p === peer) startPeer(); }, 20000); return; }
+      setNet('connecting');
+      setTimeout(() => { if (p === peer && (p.destroyed || p.disconnected)) startPeer(); }, 8000);
+    });
+  }
+
+  function wire(c) {
+    const code = codeOf(c.peer);
+    if (!code || code === F.me.code) { try { c.close(); } catch { /* ignore */ } return; }
+    c.on('open', () => {
+      delete dialing[code]; heard[code] = Date.now();
+      const old = conns[code];
+      conns[code] = c; delete authed[code];
+      if (old && old !== c) { try { old.close(); } catch { /* ignore */ } }
+      greet(code);
+    });
+    c.on('data', (d) => { if (conns[code] === c) heard[code] = Date.now(); queues[code] = (queues[code] || Promise.resolve()).then(() => onData(code, d, c)).catch(() => {}); });
+    const gone = () => { if (conns[code] === c) { delete conns[code]; delete authed[code]; delete live[code]; renderFriends(); if (chatWith === code) renderChat(); } };
+    c.on('close', gone); c.on('error', gone);
+    // a launcher that is closed or loses its connection does not always close the channel:
+    // watch the ICE state (like the game does) and the heartbeat below
+    const watch = () => {
+      const pc = c.peerConnection; if (!pc) return;
+      pc.addEventListener('iceconnectionstatechange', () => {
+        const bad = () => ['failed', 'closed', 'disconnected'].includes(pc.iceConnectionState);
+        if (bad()) setTimeout(() => { if (bad()) { try { c.close(); } catch { /* ignore */ } gone(); } }, 4000);
+      });
+    };
+    if (c.peerConnection) watch(); else c.on('open', watch);
+  }
+  // heartbeat: every 10 s a ping to each verified friend; silence for 35 s = gone
+  setInterval(() => {
+    for (const code of Object.keys(conns)) {
+      if (!authed[code]) continue;
+      if (Date.now() - (heard[code] || 0) > 35000) { const c = conns[code]; try { c.close(); } catch { /* ignore */ } delete conns[code]; delete authed[code]; delete live[code]; renderFriends(); if (chatWith === code) renderChat(); continue; }
+      raw(code, { t: 'ping' });
+    }
+  }, 10000);
+  function dial(code) {
+    if (!peer || peer.destroyed || peer.disconnected || net !== 'online') return;
+    if (conns[code] || (dialing[code] && Date.now() - dialing[code] < 15000)) return;
+    dialing[code] = Date.now();
+    wire(peer.connect(peerId(code), { reliable: true, serialization: 'json' }));
+  }
+  function poll() { for (const c of new Set([...Object.keys(F.friends), ...Object.keys(F.outReq), ...Object.keys(F.accOut)])) dial(c); }
+  setInterval(poll, 20000);
+
+  function raw(code, obj) { const c = conns[code]; if (c && c.open) { try { c.send(obj); return true; } catch { /* closing */ } } return false; }
+  function status(code) { if (isOnline(code)) raw(code, { t: 'st', name: F.me.name, st: myStatus(), room: myRoom }); }
+  function broadcastStatus() { for (const c of Object.keys(F.friends)) status(c); renderMe(); }
+
+  // first thing on every new connection: a pending acceptance (before the challenge, so the other
+  // side already counts us as a friend when the challenge arrives), a challenge, a pending request
+  function greet(code) {
+    const fr = F.friends[code];
+    if (fr && F.accOut[code]) { if (raw(code, { t: 'acc', name: F.me.name, key: fr.key })) { delete F.accOut[code]; saveF(); } }
+    const n = hex(24);
+    nonces[code] = [...(nonces[code] || []).slice(-3), n]; // a few recent challenges stay valid
+    raw(code, { t: 'hi', n, name: F.me.name });
+    if (!fr && F.outReq[code]) { if (raw(code, { t: 'req', name: F.me.name })) { F.outReq[code].sent = true; saveF(); renderFriends(); } }
+  }
+  function flush(code) {
+    for (const m of F.chats[code] || []) if (m.me && !m.ok) raw(code, { t: 'msg', id: m.id, text: m.text, ts: m.ts });
+  }
+
+  async function onData(code, d, c) {
+    if (!d || typeof d !== 'object' || conns[code] !== c) return;
+    const fr = F.friends[code];
+    switch (d.t) {
+      case 'hi':
+        if (fr && typeof d.n === 'string') raw(code, { t: 'proof', p: await sha(fr.key + ':' + d.n + ':' + F.me.code) });
+        return;
+      case 'proof': {
+        if (!fr || typeof d.p !== 'string' || authed[code]) return;
+        for (const n of nonces[code] || []) if (d.p === await sha(fr.key + ':' + n + ':' + code)) { authed[code] = true; break; }
+        if (authed[code]) { status(code); flush(code); renderFriends(); if (chatWith === code) renderChat(); }
+        return;
+      }
+      case 'req':
+        if (fr) { raw(code, { t: 'acc', name: F.me.name, key: fr.key }); return; } // they lost their list: re-accept
+        if (F.outReq[code]) { acceptFriend(code, clean(d.name)); return; }        // both asked: friends
+        if (!F.inReq[code]) { F.inReq[code] = { name: clean(d.name) || '?', t: Date.now() }; saveF(); renderFriends(); notify({ title: fmt(L.tReq, F.inReq[code].name), kind: 'req', code }); }
+        return;
+      case 'acc':
+        if (typeof d.key !== 'string' || d.key.length < 16) return;
+        // both accepted each other's request at once: the side with the smaller code wins the key
+        if (fr) { if (fr.key !== d.key && F.me.code > code) { fr.key = d.key.slice(0, 64); delete authed[code]; saveF(); greet(code); } return; }
+        if (!F.outReq[code]) return; // we never asked
+        F.friends[code] = { name: clean(d.name) || '?', key: d.key.slice(0, 64), since: Date.now() };
+        delete F.outReq[code]; delete F.inReq[code]; saveF();
+        notify({ title: fmt(L.tAcc, F.friends[code].name), kind: 'acc', code });
+        greet(code); renderFriends();
+        return;
+      case 'dec': if (F.outReq[code]) { delete F.outReq[code]; saveF(); renderFriends(); } return;
+    }
+    if (!fr || !authed[code]) return; // everything below only from a verified friend
+    switch (d.t) {
+      case 'st':
+        live[code] = { st: d.st === 'ingame' ? 'ingame' : 'online', room: typeof d.room === 'string' ? clean(d.room, 8) : null };
+        if (d.name && clean(d.name) !== fr.name) { fr.name = clean(d.name); saveF(); }
+        renderFriends(); if (chatWith === code) renderChat();
+        break;
+      case 'msg': {
+        const list = F.chats[code] = F.chats[code] || [];
+        const id = clean(d.id, 40);
+        if (!list.some((m) => m.id === id)) {
+          list.push({ id, me: false, text: clean(d.text, 500), ts: Date.now() });
+          if (list.length > 300) list.splice(0, list.length - 300);
+          if (chatWith !== code || !document.hasFocus()) F.unread[code] = (F.unread[code] || 0) + 1;
+          saveF(); renderFriends(); if (chatWith === code) renderChat();
+          if (chatWith !== code || !document.hasFocus()) notify({ title: fr.name, sub: clean(d.text, 120), kind: 'msg', code });
+        }
+        raw(code, { t: 'ack', id });
+        break;
+      }
+      case 'ack': { const m = (F.chats[code] || []).find((x) => x.id === d.id && x.me); if (m && !m.ok) { m.ok = true; saveF(); if (chatWith === code) renderChat(); } break; }
+      case 'inv': {
+        const room = clean(d.room, 8).toUpperCase();
+        if (room) notify({ title: fmt(L.tInv, fr.name), sub: `${L.room}: ${room}`, kind: 'inv', code, room });
+        break;
+      }
+      case 'rm': delete F.friends[code]; delete F.chats[code]; delete F.unread[code]; delete live[code]; delete authed[code]; saveF(); if (chatWith === code) closeChat(); renderFriends(); break;
+    }
+  }
+
+  // ---- actions
+  function addFriend() {
+    const code = normCode($('addIn').value);
+    const note = (t, bad) => { $('addNote').textContent = t; $('addNote').className = 'addnote' + (bad ? ' bad' : ''); };
+    if (code.length !== 8) return note(L.badCode, true);
+    if (code === F.me.code) return note(L.ownCode, true);
+    if (F.friends[code]) return note(L.already, true);
+    if (F.inReq[code]) { acceptFriend(code, F.inReq[code].name); $('addIn').value = ''; return note(''); }
+    if (F.outReq[code]) return note(L.reqExists, true);
+    F.outReq[code] = { t: Date.now(), sent: false }; saveF();
+    $('addIn').value = '';
+    note(L.queuedReq);
+    if (conns[code]) greet(code); else dial(code);
+    renderFriends();
+  }
+  function acceptFriend(code, name) {
+    F.friends[code] = { name: clean(name) || '?', key: hex(48), since: Date.now() };
+    delete F.inReq[code]; delete F.outReq[code];
+    F.accOut[code] = { t: Date.now() };
+    saveF();
+    if (conns[code]) greet(code); else dial(code);
+    renderFriends();
+  }
+  function declineFriend(code) { delete F.inReq[code]; saveF(); raw(code, { t: 'dec' }); renderFriends(); }
+  function cancelRequest(code) { delete F.outReq[code]; saveF(); renderFriends(); }
+  function removeFriend(code) {
+    const fr = F.friends[code]; if (!fr || !confirm(fmt(L.removeQ, fr.name))) return;
+    if (isOnline(code)) raw(code, { t: 'rm' });
+    delete F.friends[code]; delete F.chats[code]; delete F.unread[code]; delete F.accOut[code]; delete live[code]; delete authed[code]; saveF();
+    closeChat(); renderFriends();
+  }
+  function sendChat() {
+    const code = chatWith, text = clean($('msgIn').value, 500);
+    if (!code || !text) return;
+    const m = { id: Date.now().toString(36) + hex(6), me: true, text, ts: Date.now(), ok: false };
+    (F.chats[code] = F.chats[code] || []).push(m);
+    saveF(); $('msgIn').value = '';
+    if (isOnline(code)) raw(code, { t: 'msg', id: m.id, text: m.text, ts: m.ts });
+    renderChat();
+  }
+  function inviteFriend(code, room, fromGame) {
+    const fr = F.friends[code]; if (!fr) return;
+    room = room || myRoom;
+    let text;
+    if (!room) text = L.inviteNoRoom;
+    else text = isOnline(code) && raw(code, { t: 'inv', room, name: F.me.name }) ? fmt(L.inviteSent, fr.name) : fmt(L.inviteOffline, fr.name);
+    if (fromGame) toGame({ type: 'toast', text });
+    notify({ title: text, kind: 'info' });
+  }
+  const joinRoom = (room) => send('play', { join: room });
+  function setMyName(name, fromUser) {
+    name = clean(name); if (!name || name === F.me.name) { renderMe(); return; }
+    F.me.name = name; saveF();
+    send('profile', { name });
+    if (fromUser) toGame({ type: 'name', name });
+    broadcastStatus();
+  }
+
+  // ---- game bridge (the game runs in another window of this launcher)
+  const toGame = (payload) => { if (gameOpen) send('to-game', { payload }); };
+  function friendList() {
+    return Object.entries(F.friends).map(([code, f]) => ({ code, name: f.name, st: isOnline(code) ? (live[code] && live[code].st) || 'online' : 'offline', room: (live[code] && live[code].room) || null }))
+      .sort((a, b) => (a.st === 'offline') - (b.st === 'offline') || a.name.localeCompare(b.name));
+  }
+  function fromGame(m) {
+    if (typeof m !== 'string') return;
+    if (m === 'friends') toGame({ type: 'friends', list: friendList() });
+    else if (m.startsWith('invite:')) { try { const o = JSON.parse(m.slice(7)); inviteFriend(normCode(o.code), clean(o.room, 8).toUpperCase(), true); } catch { /* bad message */ } }
+    else if (m.startsWith('name:')) setMyName(m.slice(5), false);
+    else if (m.startsWith('room:')) { myRoom = clean(m.slice(5), 8).toUpperCase() || null; broadcastStatus(); renderFriends(); }
+  }
+
+  // ---- notifications (toast here, a toast / popup in the game, taskbar flash)
+  function notify({ title, sub = '', kind, code, room }) {
+    const box = document.createElement('div');
+    box.className = 'toast';
+    box.innerHTML = `<div class="tt">${esc(title)}</div>${sub ? `<div class="ts">${esc(sub)}</div>` : ''}<div class="tb"></div>`;
+    const btns = box.querySelector('.tb');
+    const add = (label, cls, fn) => { const b = document.createElement('button'); b.className = 'btn ' + cls; b.textContent = label; b.onclick = (e) => { e.stopPropagation(); fn(); box.remove(); }; btns.appendChild(b); };
+    if (kind === 'req') { add(L.accept, 'green', () => acceptFriend(code, F.inReq[code] && F.inReq[code].name)); add(L.decline, 'ghost', () => declineFriend(code)); }
+    if (kind === 'inv') { add(L.join, 'green', () => joinRoom(room)); add(L.cancel, 'ghost', () => {}); }
+    if (kind === 'msg') { box.style.cursor = 'pointer'; box.onclick = () => { openChat(code); box.remove(); }; }
+    if (!btns.children.length) btns.remove();
+    $('toasts').appendChild(box);
+    while ($('toasts').children.length > 4) $('toasts').firstChild.remove();
+    setTimeout(() => box.remove(), kind === 'inv' || kind === 'req' ? 30000 : 7000);
+    if (kind === 'inv') toGame({ type: 'invite', from: F.friends[code] ? F.friends[code].name : '?', room });
+    else if (kind && kind !== 'info') toGame({ type: 'toast', text: sub ? `${title}: ${sub}` : title });
+    if (!document.hasFocus() && kind !== 'info') send('flash');
+  }
+
+  // ---- rendering
+  function stText(st, room) { return st === 'ingame' ? L.stIngame + (room ? ` · ${L.room} ${room}` : '') : st === 'online' ? L.stOnline : L.stOffline; }
+  function renderMe() {
+    const st = net === 'online' ? myStatus() : net;
+    avatar($('meAv'), F.me.code, F.me.name, st);
+    if (!$('meNameRow').querySelector('input')) $('meName').textContent = F.me.name;
+    $('meCode').textContent = fmtCode(F.me.code);
+    $('meSub').textContent = net === 'online' ? stText(myStatus(), myRoom) : { connecting: L.netConnecting, offline: L.netOffline, taken: L.netTaken }[net] || '';
+  }
+  function row(code, name, st, sub, acts, unread = 0) {
+    return `<div class="fr ${st === 'offline' ? 'off' : ''}" data-code="${code}">`
+      + `<div class="av sm" style="background:hsl(${hue(code)},45%,38%)"><span>${esc((clean(name, 2)[0] || '?').toUpperCase())}</span><i class="dot ${st}"></i></div>`
+      + `<div class="fi"><div class="fn">${esc(name)}</div><div class="fs ${st}">${esc(sub)}</div></div>`
+      + `<div class="fa">${acts}${unread ? `<span class="unread">${unread}</span>` : ''}</div></div>`;
+  }
+  const actBtn = (act, code, label, cls) => `<button class="btn ${cls}" data-act="${act}" data-code="${code}">${esc(label)}</button>`;
+  function renderFriends() {
+    renderMe();
+    let h = '';
+    const inq = Object.entries(F.inReq);
+    if (inq.length) h += `<div class="sect">${L.reqIn}</div>` + inq.map(([c, r]) => row(c, r.name, 'online', fmtCode(c), actBtn('acc', c, '✓', 'green') + actBtn('dec', c, '✕', 'ghost'))).join('');
+    const list = friendList();
+    const on = list.filter((f) => f.st !== 'offline'), off = list.filter((f) => f.st === 'offline');
+    const actsFor = (f) => (f.st === 'ingame' && f.room && f.room !== myRoom ? actBtn('join', f.code, L.join, 'green') : '')
+      + (f.st !== 'offline' && myRoom && f.room !== myRoom ? actBtn('inv', f.code, L.invite, 'blue') : '');
+    if (on.length) h += `<div class="sect">${L.secOnline} (${on.length})</div>` + on.map((f) => row(f.code, f.name, f.st, stText(f.st, f.room), actsFor(f), F.unread[f.code] || 0)).join('');
+    if (off.length) h += `<div class="sect">${L.secOffline} (${off.length})</div>` + off.map((f) => row(f.code, f.name, 'offline', L.stOffline, '', F.unread[f.code] || 0)).join('');
+    const outq = Object.keys(F.outReq);
+    if (outq.length) h += `<div class="sect">${L.reqOut}</div>` + outq.map((c) => row(c, fmtCode(c), 'offline', L.stWaiting, actBtn('cancel', c, '✕', 'ghost'))).join('');
+    if (!inq.length && !list.length && !outq.length) h = `<div class="empty" style="padding:14px 8px">${L.noFriends}</div>`;
+    $('flist').innerHTML = h;
+  }
+  function openChat(code) {
+    if (!F.friends[code]) return;
+    chatWith = code; delete F.unread[code]; saveF();
+    $('chat').classList.add('show'); renderChat(); renderFriends();
+    setTimeout(() => $('msgIn').focus(), 0);
+  }
+  function closeChat() { chatWith = null; $('chat').classList.remove('show'); }
+  function renderChat() {
+    const code = chatWith, fr = F.friends[code]; if (!fr) return closeChat();
+    const st = isOnline(code) ? (live[code] && live[code].st) || 'online' : 'offline', room = live[code] && live[code].room;
+    avatar($('chAv'), code, fr.name, st);
+    $('chName').textContent = fr.name;
+    $('chSt').textContent = stText(st, room); $('chSt').className = 'fs ' + st;
+    $('chActs').innerHTML = (st === 'ingame' && room && room !== myRoom ? actBtn('join', code, L.join, 'green') : '') + (st !== 'offline' && myRoom && room !== myRoom ? actBtn('inv', code, L.invite, 'blue') : '');
+    const msgs = F.chats[code] || [];
+    const time = (t) => new Date(t).toLocaleTimeString(loc(), { hour: '2-digit', minute: '2-digit' });
+    $('msgs').innerHTML = (msgs.length ? msgs.map((m) => `<div class="bub ${m.me ? 'mine' : 'them'} ${m.me && !m.ok ? 'pending' : ''}">${esc(m.text)}<small>${time(m.ts)}${m.me && !m.ok ? ' · ' + L.sending : ''}</small></div>`).join('') : `<div class="chatnote">${L.chatEmpty}</div>`)
+      + (st === 'offline' ? `<div class="chatnote">${esc(fmt(L.chatOffline, fr.name))}</div>` : '');
+    $('msgs').scrollTop = $('msgs').scrollHeight;
+  }
+
+  // ---- wiring
+  $('flist').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-act]');
+    if (b) { const c = b.dataset.code; ({ acc: () => acceptFriend(c, F.inReq[c] && F.inReq[c].name), dec: () => declineFriend(c), cancel: () => cancelRequest(c), join: () => joinRoom(live[c] && live[c].room), inv: () => inviteFriend(c) })[b.dataset.act](); return; }
+    const r = e.target.closest('.fr'); if (r && F.friends[r.dataset.code]) openChat(r.dataset.code);
+  });
+  $('chActs').addEventListener('click', (e) => { const b = e.target.closest('[data-act]'); if (!b) return; if (b.dataset.act === 'join') joinRoom(live[chatWith] && live[chatWith].room); else inviteFriend(chatWith); });
+  $('back').onclick = closeChat;
+  $('chRemove').onclick = () => removeFriend(chatWith);
+  $('msgSend').onclick = sendChat;
+  $('msgIn').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChat(); if (e.key === 'Escape') closeChat(); });
+  $('addBtn').onclick = addFriend;
+  $('addIn').addEventListener('keydown', (e) => { if (e.key === 'Enter') addFriend(); });
+  $('copyCode').onclick = async () => { try { await navigator.clipboard.writeText(fmtCode(F.me.code)); notify({ title: L.copied, kind: 'info' }); } catch { /* clipboard blocked */ } };
+  $('editName').onclick = () => {
+    const rowEl = $('meNameRow'); if (rowEl.querySelector('input')) return;
+    const inp = document.createElement('input'); inp.maxLength = 16; inp.value = F.me.name;
+    rowEl.innerHTML = ''; rowEl.appendChild(inp); inp.focus(); inp.select();
+    const done = (save) => { const v = inp.value; rowEl.innerHTML = '<span id="meName"></span><button class="ico" id="editName">✎</button>'; $('editName').onclick = editHandler; $('editName').title = L.editName; if (save) setMyName(v, true); renderMe(); };
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') done(true); if (e.key === 'Escape') done(false); });
+    inp.addEventListener('blur', () => done(true));
+  };
+  const editHandler = $('editName').onclick;
+  window.addEventListener('focus', () => { if (chatWith && F.unread[chatWith]) { delete F.unread[chatWith]; saveF(); renderFriends(); } });
 
   applyStatic();
+  showTab('news');
+  $('tabNews').onclick = () => showTab('news'); $('tabAbout').onclick = () => showTab('about');
   for (const b of $('langs').children) b.onclick = () => { setLang(b.dataset.l); send('lang', { lang: b.dataset.l }); };
   $('bar').addEventListener('mousedown', (e) => { if (e.target.id === 'bar' || e.target.closest('.brand')) send('drag'); });
   $('min').onclick = () => send('min'); $('close').onclick = () => send('close');
   $('recheck').onclick = () => send('check'); $('folder').onclick = () => send('folder');
   $('main').onclick = () => action && send(action);
-  window.chrome.webview.addEventListener('message', (e) => {
+  HOST.addEventListener('message', (e) => {
     const m = e.data;
-    if (m.type === 'state') { if (m.lang && m.lang !== lang && STR[m.lang]) { lang = m.lang; L = STR[lang]; applyStatic(); } render(m); }
+    if (m.type === 'state') { if (m.lang && m.lang !== lang && STR[m.lang]) { lang = m.lang; L = STR[lang]; applyStatic(); renderFriends(); } render(m); }
     else if (m.type === 'progress') progress(m);
+    else if (m.type === 'from-game') fromGame(m.msg);
+    else if (m.type === 'game-state') { gameOpen = !!m.open; if (!gameOpen) myRoom = null; broadcastStatus(); renderFriends(); if (last) render(last); }
   });
+  renderFriends();
+  send('profile', { name: F.me.name });
+  startPeer();
   send('ready');
+  // test hooks (the automated two-launcher test drives these)
+  window.__fr = { F, addFriendCode: (c) => { $('addIn').value = c; addFriend(); }, acceptFriend, sendTo: (c, t) => { openChat(c); $('msgIn').value = t; sendChat(); }, inviteFriend, fromGame, isOnline, get net() { return net; }, live };
 </script>
 </body>
 </html>

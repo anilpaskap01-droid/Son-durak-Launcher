@@ -82,7 +82,10 @@ namespace SonDurakLauncher
         public static async System.Threading.Tasks.Task<CoreWebView2Environment> GetEnv()
         {
             if (Env != null) return Env;
-            var opts = new CoreWebView2EnvironmentOptions("--force_high_performance_gpu --autoplay-policy=no-user-gesture-required");
+            // the launcher page stays connected to friends while the game covers it or it is minimised,
+            // so its timers / page must not be throttled as "hidden"
+            var opts = new CoreWebView2EnvironmentOptions("--force_high_performance_gpu --autoplay-policy=no-user-gesture-required"
+                + " --disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows --disable-features=CalculateNativeWinOcclusion");
             Env = await CoreWebView2Environment.CreateAsync(null, Config.WebViewData, opts);
             return Env;
         }

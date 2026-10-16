@@ -33,6 +33,8 @@ namespace SonDurakLauncher
 
         [DllImport("user32.dll")] static extern bool ReleaseCapture();
         [DllImport("user32.dll")] static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
+        [DllImport("user32.dll")] static extern bool FlashWindowEx(ref FLASHWINFO pwfi);
+        [StructLayout(LayoutKind.Sequential)] struct FLASHWINFO { public uint cbSize; public IntPtr hwnd; public uint dwFlags; public uint uCount; public uint dwTimeout; }
 
         public LauncherForm(bool justUpdated = false)
         {
@@ -42,10 +44,17 @@ namespace SonDurakLauncher
             StartPosition = FormStartPosition.CenterScreen;
             BackColor = Color.FromArgb(7, 9, 13);
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
-            ClientSize = Program.ScaledSize(1120, 680);
+            ClientSize = Program.ScaledSize(1200, 700);
             web = new WebView2 { Dock = DockStyle.Fill, DefaultBackgroundColor = Color.FromArgb(7, 9, 13) };
             Controls.Add(web);
             Load += async (o, e) => await InitAsync();
+            // automated tests run the launcher off-screen
+            if (Environment.GetEnvironmentVariable("SONDURAK_TEST_OFFSCREEN") == "1") { StartPosition = FormStartPosition.Manual; Location = new Point(-5000, -5000); ShowInTaskbar = false; }
+            // while the game runs the launcher stays open (friends, chat, invites): closing it only minimises it
+            FormClosing += (o, e) =>
+            {
+                if (e.CloseReason == CloseReason.UserClosing && game != null && !game.IsDisposed) { e.Cancel = true; WindowState = FormWindowState.Minimized; }
+            };
         }
 
         async Task InitAsync()
@@ -68,7 +77,9 @@ namespace SonDurakLauncher
             cw.Settings.AreDevToolsEnabled = Environment.GetEnvironmentVariable("SONDURAK_DEVTOOLS") == "1";
             cw.WebMessageReceived += OnMessage;
             cw.NewWindowRequested += (o, e) => { e.Handled = true; OpenUrl(e.Uri); };
-            cw.NavigateToString(Ui.LauncherHtml());
+            Ui.Prepare();
+            cw.SetVirtualHostNameToFolderMapping(Ui.Host, Ui.Folder, CoreWebView2HostResourceAccessKind.Allow);
+            cw.Navigate(Ui.Url);
         }
 
         void Send(object msg)
@@ -198,23 +209,40 @@ namespace SonDurakLauncher
             SendState();
         }
 
-        void Play()
+        // join: a room code from an accepted invite. The launcher stays open next to the game.
+        void Play(string join = null)
         {
             if (busy || !Updater.IsInstalled(Updater.LoadState())) return;
-            if (game != null && !game.IsDisposed) { game.Activate(); return; }
-            game = new GameForm();
+            if (game != null && !game.IsDisposed)
+            {
+                if (!string.IsNullOrEmpty(join)) game.PostJson(json.Serialize(new { type = "join", room = join }));
+                game.Activate();
+                return;
+            }
+            game = new GameForm(join);
             playStart = DateTime.UtcNow;
+            game.HostMessage += (m) =>
+            {
+                if (m.StartsWith("lang:")) SendState();
+                Send(new { type = "from-game", msg = m });
+            };
             game.FormClosed += (o, e) =>
             {
                 game = null;
                 PlayStats.Add(DateTime.UtcNow - playStart);
+                Send(new { type = "game-state", open = false });
                 SendState(); // the language may have been changed in the game
-                Show();
-                Activate();
                 _ = CheckAsync();
             };
             game.Show();
-            Hide();
+            Send(new { type = "game-state", open = true });
+        }
+
+        void Flash()
+        {
+            if (Form.ActiveForm == this) return;
+            var fi = new FLASHWINFO { cbSize = (uint)Marshal.SizeOf(typeof(FLASHWINFO)), hwnd = Handle, dwFlags = 3 | 12 /* all, until foreground */, uCount = 3, dwTimeout = 0 };
+            FlashWindowEx(ref fi);
         }
 
         async void OnMessage(object sender, CoreWebView2WebMessageReceivedEventArgs e)
@@ -230,7 +258,10 @@ namespace SonDurakLauncher
                 case "check": if (!busy) await CheckAsync(); break;
                 case "install":
                 case "update": await InstallAsync(); break;
-                case "play": Play(); break;
+                case "play": Play(msg.TryGetValue("join", out var j) ? j as string : null); break;
+                case "to-game": if (game != null && !game.IsDisposed && msg.TryGetValue("payload", out var pl)) game.PostJson(json.Serialize(pl)); break;
+                case "profile": if (msg.TryGetValue("name", out var n) && n is string ns) Prefs.Set("name", ns); break;
+                case "flash": Flash(); break;
                 case "folder": Directory.CreateDirectory(Config.GameDir); Process.Start("explorer.exe", Config.GameDir); break;
                 case "min": WindowState = FormWindowState.Minimized; break;
                 case "close": Close(); break;

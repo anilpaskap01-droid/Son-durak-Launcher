@@ -28,7 +28,10 @@ namespace SonDurakLauncher
         // only the files the game needs at runtime (the repo folder also has tools, launcher sources …)
         public static readonly string[] Runtime = { "index.html", "CREDITS.md", "news.json", "css/", "js/", "vendor/", "assets/" };
 
-        public static readonly string DataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SonDurak");
+        // (SONDURAK_DATA_DIR: a separate profile for tests, e.g. two launchers befriending each other)
+        public static readonly string DataDir = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SONDURAK_DATA_DIR"))
+            ? Environment.GetEnvironmentVariable("SONDURAK_DATA_DIR")
+            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SonDurak");
         public static string GameDir => Path.Combine(DataDir, "game");
         public static string StateFile => Path.Combine(DataDir, "state.json");
         public static string WebViewData => Path.Combine(DataDir, "webview");

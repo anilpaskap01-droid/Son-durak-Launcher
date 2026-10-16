@@ -78,7 +78,7 @@ namespace SonDurakLauncher
         // Off-screen window that hosts one WebView2, runs `script` after load and saves the result.
         public static void Shot(string png, bool game)
         {
-            var form = new Form { StartPosition = FormStartPosition.Manual, Location = new Point(-4000, -4000), ClientSize = new Size(1120, 680), ShowInTaskbar = false, FormBorderStyle = FormBorderStyle.None };
+            var form = new Form { StartPosition = FormStartPosition.Manual, Location = new Point(-4000, -4000), ClientSize = new Size(1200, 700), ShowInTaskbar = false, FormBorderStyle = FormBorderStyle.None };
             var web = new WebView2 { Dock = DockStyle.Fill };
             form.Controls.Add(web);
             form.Load += async (o, e) =>
@@ -98,7 +98,9 @@ namespace SonDurakLauncher
                     else
                     {
                         cw.WebMessageReceived += (s, a) => { };
-                        cw.NavigateToString(Ui.LauncherHtml());
+                        Ui.Prepare();
+                        cw.SetVirtualHostNameToFolderMapping(Ui.Host, Ui.Folder, CoreWebView2HostResourceAccessKind.Allow);
+                        cw.Navigate(Ui.Url);
                     }
                     await loaded.Task;
                     if (game)

@@ -13,10 +13,13 @@ namespace SonDurakLauncher
     {
         readonly WebView2 web;
         bool full;
+        // messages from the game page the launcher page handles (friends list, invites, name, room)
+        public event Action<string> HostMessage;
         FormWindowState prevState;
         Rectangle prevBounds;
 
-        public GameForm()
+        // join: a room code to join right away (an accepted invite)
+        public GameForm(string join = null)
         {
             Text = "Son Durak";
             BackColor = Color.Black;
@@ -46,7 +49,13 @@ namespace SonDurakLauncher
                     try { m = a.TryGetWebMessageAsString(); } catch { return; }
                     if (m == "quit") Close();
                     else if (m == "fullscreen") SetFull(!full);
-                    else if (m != null && m.StartsWith("lang:")) Lang.Set(m.Substring(5));
+                    else if (m == null) return;
+                    else
+                    {
+                        if (m.StartsWith("lang:")) Lang.Set(m.Substring(5));
+                        if (m.StartsWith("name:")) Prefs.Set("name", m.Substring(5));
+                        HostMessage?.Invoke(m);
+                    }
                 };
                 cw.ContainsFullScreenElementChanged += (s2, a) => SetFull(cw.ContainsFullScreenElement);
                 cw.NewWindowRequested += (s2, a) =>
@@ -54,8 +63,16 @@ namespace SonDurakLauncher
                     a.Handled = true;
                     if (a.Uri.StartsWith("https://") || a.Uri.StartsWith("http://")) Process.Start(new ProcessStartInfo(a.Uri) { UseShellExecute = true });
                 };
-                cw.Navigate("https://sondurak.game/index.html?lang=" + Lang.Current);
+                var url = "https://sondurak.game/index.html?lang=" + Lang.Current;
+                if (Prefs.Get("name") is string name && name.Length > 0) url += "&name=" + Uri.EscapeDataString(name);
+                if (!string.IsNullOrEmpty(join)) url += "&join=" + Uri.EscapeDataString(join);
+                cw.Navigate(url);
             };
+        }
+
+        public void PostJson(string json)
+        {
+            if (web.CoreWebView2 != null) web.CoreWebView2.PostWebMessageAsJson(json);
         }
 
         void SetFull(bool on)

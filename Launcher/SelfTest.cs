@@ -78,7 +78,7 @@ namespace SonDurakLauncher
         // Off-screen window that hosts one WebView2, runs `script` after load and saves the result.
         public static void Shot(string png, bool game)
         {
-            var form = new Form { StartPosition = FormStartPosition.Manual, Location = new Point(-4000, -4000), ClientSize = new Size(1280, 720), ShowInTaskbar = false, FormBorderStyle = FormBorderStyle.None };
+            var form = new Form { StartPosition = FormStartPosition.Manual, Location = new Point(-4000, -4000), ClientSize = new Size(1120, 680), ShowInTaskbar = false, FormBorderStyle = FormBorderStyle.None };
             var web = new WebView2 { Dock = DockStyle.Fill };
             form.Controls.Add(web);
             form.Load += async (o, e) =>
@@ -113,9 +113,22 @@ namespace SonDurakLauncher
                     }
                     else
                     {
-                        // fake a state so the page renders like a real "update available" launcher
+                        // fake a state so the page renders like a real launcher (status from SONDURAK_SHOT_STATUS,
+                        // patch notes from SONDURAK_NEWS_FILE or the last downloaded ones)
                         await Task.Delay(800);
-                        cw.PostWebMessageAsJson("{\"type\":\"state\",\"status\":\"update\",\"installed\":true,\"local\":{\"sha\":\"786554f0\",\"message\":\"Son Durak\",\"date\":\"2026-10-16T18:30:00Z\"},\"remote\":{\"sha\":\"c13e12f7\",\"message\":\"Yeni insan modelleri\",\"date\":\"2026-10-16T19:57:00Z\",\"log\":[{\"sha\":\"c13e12f7\",\"message\":\"Son Durak: yeni insan modelleri, konusma, karakter secimi, grafik\",\"date\":\"2026-10-16T19:57:00Z\"},{\"sha\":\"786554f0\",\"message\":\"README: Son Durak projesi eklendi\",\"date\":\"2026-10-16T18:30:00Z\"}]},\"repo\":\"\",\"version\":\"" + System.Windows.Forms.Application.ProductVersion + "\",\"lang\":\"" + Lang.Current + "\"}");
+                        var newsFile = Environment.GetEnvironmentVariable("SONDURAK_NEWS_FILE");
+                        if (string.IsNullOrEmpty(newsFile)) newsFile = Path.Combine(Config.DataDir, "news.json");
+                        var js = new JavaScriptSerializer { MaxJsonLength = int.MaxValue };
+                        object news = File.Exists(newsFile) ? js.DeserializeObject(File.ReadAllText(newsFile, System.Text.Encoding.UTF8)) : null;
+                        var st = Environment.GetEnvironmentVariable("SONDURAK_SHOT_STATUS") ?? "update";
+                        cw.PostWebMessageAsJson(js.Serialize(new
+                        {
+                            type = "state", status = st, installed = true, offline = false, error = (string)null,
+                            plan = st == "update" ? new { files = 7, bytes = 131072 } : null,
+                            version = Application.ProductVersion, launcherUpdated = false, lang = Lang.Current, news,
+                            installedVersion = st == "update" ? "1.4.0" : "1.4.1", latestVersion = "1.4.1",
+                            playSeconds = 7560, lastPlayed = DateTime.UtcNow.AddDays(-1).ToString("o"),
+                        }));
                         await Task.Delay(800);
                         using (var fs = File.Create(png)) await cw.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, fs);
                     }

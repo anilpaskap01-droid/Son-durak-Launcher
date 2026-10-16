@@ -26,7 +26,7 @@ namespace SonDurakLauncher
         public const string Branch = "main";
         public const string Folder = "Son Durak";
         // only the files the game needs at runtime (the repo folder also has tools, launcher sources …)
-        public static readonly string[] Runtime = { "index.html", "CREDITS.md", "css/", "js/", "vendor/", "assets/" };
+        public static readonly string[] Runtime = { "index.html", "CREDITS.md", "news.json", "css/", "js/", "vendor/", "assets/" };
 
         public static readonly string DataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SonDurak");
         public static string GameDir => Path.Combine(DataDir, "game");
@@ -223,6 +223,23 @@ namespace SonDurakLauncher
             var wanted = (await GetFolderAsync(commitSha, ct).ConfigureAwait(false)).Where(kv => IsRuntime(kv.Key)).ToDictionary(kv => kv.Key, kv => kv.Value);
             if (!wanted.ContainsKey("index.html")) throw new Exception("bad-remote");
             return wanted;
+        }
+
+        // Player-facing patch notes and game info ("Son Durak/news.json") at a commit; null if missing.
+        public static async Task<string> NewsJsonAsync(string commitSha, CancellationToken ct)
+        {
+            var path = string.Join("/", (Config.Folder + "/news.json").Split('/').Select(Uri.EscapeDataString));
+            var url = !string.IsNullOrEmpty(Config.Token) ? Api($"/contents/{path}?ref={commitSha}") : $"https://raw.githubusercontent.com/{Config.Owner}/{Config.Repo}/{commitSha}/{path}";
+            using (var req = new HttpRequestMessage(HttpMethod.Get, url))
+            {
+                req.Headers.Accept.ParseAdd("application/vnd.github.raw");
+                using (var res = await http.SendAsync(req, ct).ConfigureAwait(false))
+                {
+                    if (res.StatusCode == HttpStatusCode.NotFound) return null;
+                    res.EnsureSuccessStatusCode();
+                    return Encoding.UTF8.GetString(await res.Content.ReadAsByteArrayAsync().ConfigureAwait(false));
+                }
+            }
         }
 
         // ---------------------------------------------------------------- launcher self-update

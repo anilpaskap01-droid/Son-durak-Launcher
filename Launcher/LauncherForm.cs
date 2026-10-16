@@ -7,6 +7,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
@@ -27,6 +28,8 @@ namespace SonDurakLauncher
         Updater.Plan plan;
         string error;
         GameForm game;
+        DateTime playStart;
+        static string NewsCache => Path.Combine(Config.DataDir, "news.json");
 
         [DllImport("user32.dll")] static extern bool ReleaseCapture();
         [DllImport("user32.dll")] static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
@@ -39,7 +42,7 @@ namespace SonDurakLauncher
             StartPosition = FormStartPosition.CenterScreen;
             BackColor = Color.FromArgb(7, 9, 13);
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
-            ClientSize = Program.ScaledSize(1000, 600);
+            ClientSize = Program.ScaledSize(1120, 680);
             web = new WebView2 { Dock = DockStyle.Fill, DefaultBackgroundColor = Color.FromArgb(7, 9, 13) };
             Controls.Add(web);
             Load += async (o, e) => await InitAsync();
@@ -85,6 +88,9 @@ namespace SonDurakLauncher
             else if (!installed) status = remote == null ? "offlineNoGame" : "notInstalled";
             else if (remote != null && remote.Sha != local.sha) status = "update";
             else status = "ready";
+            // what the page shows: patch notes written for players (news.json), versions, play stats.
+            // No commit messages / ids and nothing about the update mechanism.
+            var installedNews = Path.Combine(Config.GameDir, "news.json");
             Send(new
             {
                 type = "state",
@@ -92,14 +98,33 @@ namespace SonDurakLauncher
                 installed,
                 offline,
                 error,
-                local = installed ? new { sha = local.sha, message = local.message, date = local.date } : null,
-                remote = remote == null ? null : new { sha = remote.Sha, message = remote.Message, date = remote.Date, log = remote.Log.Select(c => new { sha = c.Sha, message = c.Message, date = c.Date }).ToArray() },
-                repo = Config.RepoUrl,
                 plan = plan == null ? null : new { files = plan.Files, bytes = plan.Bytes },
                 version = Application.ProductVersion,
                 launcherUpdated = justUpdated,
                 lang = Lang.Current,
+                news = ReadJson(File.Exists(NewsCache) ? NewsCache : installedNews),
+                installedVersion = installed ? NewsVersion(installedNews) : null,
+                latestVersion = NewsVersion(NewsCache),
+                playSeconds = PlayStats.Seconds,
+                lastPlayed = PlayStats.LastPlayed,
             });
+        }
+
+        object ReadJson(string file)
+        {
+            try { return File.Exists(file) ? json.DeserializeObject(File.ReadAllText(file, Encoding.UTF8)) : null; }
+            catch { return null; }
+        }
+
+        // newest version in a news.json ("1.4.1"), or null
+        string NewsVersion(string file)
+        {
+            try
+            {
+                var notes = ((Dictionary<string, object>)ReadJson(file))["notes"] as System.Collections.IList;
+                return notes != null && notes.Count > 0 ? ((Dictionary<string, object>)notes[0])["version"] as string : null;
+            }
+            catch { return null; }
         }
 
         async Task CheckAsync()
@@ -119,6 +144,12 @@ namespace SonDurakLauncher
                     if (lp.files != null && lp.files.Count > 0 && await SelfUpdateAsync(lp.commit, lp.files)) return;
                 }
                 remote = await Task.Run(() => Updater.CheckAsync(CancellationToken.None));
+                try
+                {
+                    var news = await Task.Run(() => Updater.NewsJsonAsync(remote.Sha, CancellationToken.None));
+                    if (news != null) File.WriteAllText(NewsCache, news, Encoding.UTF8);
+                }
+                catch { /* the notes are nice to have; keep the last ones */ }
                 var st = Updater.LoadState();
                 if (remote.Sha != st.sha)
                 {
@@ -172,9 +203,11 @@ namespace SonDurakLauncher
             if (busy || !Updater.IsInstalled(Updater.LoadState())) return;
             if (game != null && !game.IsDisposed) { game.Activate(); return; }
             game = new GameForm();
+            playStart = DateTime.UtcNow;
             game.FormClosed += (o, e) =>
             {
                 game = null;
+                PlayStats.Add(DateTime.UtcNow - playStart);
                 SendState(); // the language may have been changed in the game
                 Show();
                 Activate();
@@ -198,7 +231,6 @@ namespace SonDurakLauncher
                 case "install":
                 case "update": await InstallAsync(); break;
                 case "play": Play(); break;
-                case "repo": OpenUrl(Config.RepoUrl); break;
                 case "folder": Directory.CreateDirectory(Config.GameDir); Process.Start("explorer.exe", Config.GameDir); break;
                 case "min": WindowState = FormWindowState.Minimized; break;
                 case "close": Close(); break;

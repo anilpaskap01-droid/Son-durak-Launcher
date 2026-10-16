@@ -1,6 +1,9 @@
-// Launcher language (tr / en): saved in %LOCALAPPDATA%\SonDurak\launcher.json, defaults to the
-// Windows display language. Shared with the game: passed as index.html?lang=.. and reported
-// back by the game when it is changed there.
+// Launcher preferences and play statistics, saved in %LOCALAPPDATA%\SonDurak\launcher.json:
+//   lang         tr / en (default: the Windows display language); shared with the game, which is
+//                opened as index.html?lang=.. and reports back when it is changed there
+//   playSeconds  total time the game window was open
+//   lastPlayed   when the game window was last closed (UTC, ISO 8601)
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -9,39 +12,64 @@ using System.Web.Script.Serialization;
 
 namespace SonDurakLauncher
 {
-    static class Lang
+    static class Prefs
     {
-        static string SettingsFile => Path.Combine(Config.DataDir, "launcher.json");
-        static string current;
+        static Dictionary<string, object> data;
+        static string FilePath => Path.Combine(Config.DataDir, "launcher.json");
 
-        public static string Current => current ?? (current = Load());
-        public static bool En => Current == "en";
-        public static string T(string tr, string en) => En ? en : tr;
+        static Dictionary<string, object> Data => data ?? (data = Load());
 
-        static string Load()
+        static Dictionary<string, object> Load()
         {
             try
             {
-                if (File.Exists(SettingsFile))
-                {
-                    var d = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(File.ReadAllText(SettingsFile, Encoding.UTF8));
-                    if (d != null && d.TryGetValue("lang", out var l) && (l as string == "tr" || l as string == "en")) return (string)l;
-                }
+                if (File.Exists(FilePath))
+                    return new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(File.ReadAllText(FilePath, Encoding.UTF8)) ?? new Dictionary<string, object>();
             }
-            catch { /* unreadable: use the default */ }
-            return CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "tr" ? "tr" : "en";
+            catch { /* unreadable: start again */ }
+            return new Dictionary<string, object>();
         }
 
-        public static void Set(string lang)
+        public static object Get(string key) => Data.TryGetValue(key, out var v) ? v : null;
+
+        public static void Set(string key, object value)
         {
-            if (lang != "tr" && lang != "en") return;
-            current = lang;
+            Data[key] = value;
             try
             {
                 Directory.CreateDirectory(Config.DataDir);
-                File.WriteAllText(SettingsFile, new JavaScriptSerializer().Serialize(new Dictionary<string, object> { ["lang"] = lang }), Encoding.UTF8);
+                File.WriteAllText(FilePath, new JavaScriptSerializer().Serialize(Data), Encoding.UTF8);
             }
             catch { /* not fatal */ }
+        }
+    }
+
+    static class Lang
+    {
+        public static string Current
+        {
+            get
+            {
+                var l = Prefs.Get("lang") as string;
+                if (l == "tr" || l == "en") return l;
+                return CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "tr" ? "tr" : "en";
+            }
+        }
+        public static bool En => Current == "en";
+        public static string T(string tr, string en) => En ? en : tr;
+        public static void Set(string lang) { if (lang == "tr" || lang == "en") Prefs.Set("lang", lang); }
+    }
+
+    static class PlayStats
+    {
+        public static double Seconds { get { try { return Convert.ToDouble(Prefs.Get("playSeconds") ?? 0, CultureInfo.InvariantCulture); } catch { return 0; } } }
+        public static string LastPlayed => Prefs.Get("lastPlayed") as string;
+
+        public static void Add(TimeSpan played)
+        {
+            if (played.TotalSeconds < 1) return;
+            Prefs.Set("playSeconds", Math.Round(Seconds + played.TotalSeconds));
+            Prefs.Set("lastPlayed", DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture));
         }
     }
 }

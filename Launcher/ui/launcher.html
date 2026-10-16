@@ -4,169 +4,265 @@
 <meta charset="utf-8">
 <title>Son Durak Launcher</title>
 <style>
-  :root { --amber: #ffb020; --text: #e9ecef; --muted: #9aa3ad; --line: rgba(255,255,255,.12); --green: #3fbf6a; }
+  :root {
+    --bg: #0e141b; --panel: #151e29; --card: #1b2838; --line: rgba(255,255,255,.06);
+    --text: #dfe3e6; --soft: #b8c2cc; --muted: #8f98a0; --blue: #67c1f5; --amber: #ffb020;
+  }
   * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #07090d; color: var(--text);
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--text);
     font-family: "Segoe UI", system-ui, sans-serif; user-select: none; }
-  .bg { position: fixed; inset: 0; background: url("{{BG}}") center / cover no-repeat; filter: saturate(.9); transform: scale(1.04); animation: drift 40s ease-in-out infinite alternate; }
-  @keyframes drift { from { transform: scale(1.04) translateX(-1%); } to { transform: scale(1.08) translateX(1%); } }
-  .shade { position: fixed; inset: 0; background:
-    linear-gradient(90deg, rgba(5,7,10,.96) 0%, rgba(5,7,10,.82) 38%, rgba(5,7,10,.35) 70%, rgba(5,7,10,.55) 100%),
-    linear-gradient(0deg, rgba(5,7,10,.9) 0%, rgba(5,7,10,0) 40%); }
-  .bar { position: fixed; top: 0; left: 0; right: 0; height: 38px; display: flex; align-items: center; padding-left: 16px; z-index: 5; }
-  .bar .t { flex: 1; font-size: 12px; letter-spacing: .2em; color: var(--muted); }
-  .bar button { width: 46px; height: 38px; border: 0; background: transparent; color: var(--muted); font-size: 16px; cursor: pointer; }
-  .bar button:hover { background: rgba(255,255,255,.08); color: #fff; }
-  .bar button.x:hover { background: #c42b1c; }
-  .bar .langs { display: flex; margin-right: 8px; }
-  .bar .langs button { width: 40px; font-size: 12px; font-weight: 700; letter-spacing: .08em; }
-  .bar .langs button.sel { color: var(--amber); box-shadow: inset 0 -2px 0 var(--amber); }
-  main { position: relative; z-index: 2; height: 100%; display: grid; grid-template-columns: 1fr 330px; gap: 28px; padding: 64px 40px 30px 52px; }
-  .logo { font-family: Consolas, "Courier New", monospace; font-weight: 800; letter-spacing: .18em; color: var(--amber);
-    text-shadow: 0 0 22px rgba(255,176,32,.55); font-size: 58px; margin: 0; }
-  .sub { color: var(--muted); letter-spacing: .08em; margin: 6px 0 0; }
-  .left { display: flex; flex-direction: column; }
-  .spacer { flex: 1; }
-  .status { font-size: 15px; color: var(--muted); min-height: 22px; margin-bottom: 10px; }
-  .status b { color: var(--text); }
-  .badge { display: inline-block; background: rgba(63,191,106,.18); border: 1px solid rgba(63,191,106,.6); color: #7fe0a0; border-radius: 6px;
-    padding: 2px 8px; font-size: 12px; font-weight: 700; letter-spacing: .06em; margin-left: 8px; vertical-align: 2px; }
-  .badge.up { background: rgba(255,176,32,.16); border-color: rgba(255,176,32,.7); color: var(--amber); animation: pulse 1.6s infinite; }
-  @keyframes pulse { 50% { box-shadow: 0 0 0 6px rgba(255,176,32,0); } 0% { box-shadow: 0 0 0 0 rgba(255,176,32,.45); } }
-  .main-btn { width: 300px; height: 64px; border: 0; border-radius: 12px; font: 800 24px "Segoe UI", sans-serif; letter-spacing: .12em; cursor: pointer;
-    color: #1a1204; background: linear-gradient(180deg, #ffc24a, #ff9f10); box-shadow: 0 10px 30px rgba(255,160,20,.35); transition: transform .08s, filter .15s; }
-  .main-btn:hover { filter: brightness(1.08); }
-  .main-btn:active { transform: translateY(1px); }
-  .main-btn:disabled { filter: grayscale(.8) brightness(.6); cursor: default; box-shadow: none; }
-  .main-btn.play { background: linear-gradient(180deg, #4fd47e, #2fa85a); color: #04140a; box-shadow: 0 10px 30px rgba(47,168,90,.35); }
-  .row { display: flex; gap: 14px; align-items: center; margin-top: 12px; }
-  .link { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 13px; padding: 0; text-decoration: underline; text-underline-offset: 3px; }
-  .link:hover { color: #fff; }
-  .progress { width: 420px; max-width: 100%; margin-top: 16px; display: none; }
+  .app { height: 100%; display: flex; flex-direction: column; }
+
+  /* title bar */
+  .titlebar { height: 34px; flex: none; display: flex; align-items: center; padding-left: 14px; background: #0a0f15; border-bottom: 1px solid var(--line); position: relative; z-index: 5; }
+  .brand { flex: 1; display: flex; align-items: center; gap: 9px; font-size: 12px; letter-spacing: .22em; color: var(--muted); }
+  .brand i { width: 9px; height: 9px; border-radius: 2px; background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+  .titlebar button { height: 34px; border: 0; background: transparent; color: var(--muted); cursor: pointer; font: 13px "Segoe UI", sans-serif; }
+  .titlebar button:hover { background: rgba(255,255,255,.07); color: #fff; }
+  .titlebar .win { width: 44px; font-size: 15px; }
+  .titlebar .x:hover { background: #c42b1c; }
+  .langs { display: flex; margin-right: 6px; }
+  .langs button { width: 38px; font-weight: 700; font-size: 11px; letter-spacing: .08em; }
+  .langs button.sel { color: var(--blue); box-shadow: inset 0 -2px 0 var(--blue); }
+
+  /* hero art */
+  .hero { position: relative; height: 300px; flex: none; background: url("{{BG}}") center 42% / cover no-repeat; }
+  .hero::after { content: ''; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(14,20,27,0) 35%, rgba(14,20,27,.7) 75%, var(--bg) 100%),
+                linear-gradient(90deg, rgba(14,20,27,.88) 0%, rgba(14,20,27,.35) 45%, rgba(14,20,27,0) 70%); }
+  .hero .txt { position: absolute; left: 40px; bottom: 44px; z-index: 2; }
+  .logo { margin: 0; font-family: Consolas, "Courier New", monospace; font-weight: 800; font-size: 56px; letter-spacing: .2em; color: var(--amber); text-shadow: 0 0 26px rgba(255,176,32,.5); }
+  .sub { margin: 2px 0 12px; color: #c9d1d8; letter-spacing: .06em; }
+  .tags span { display: inline-block; font-size: 11px; padding: 3px 9px; margin-right: 6px; border-radius: 3px; background: rgba(103,193,245,.16); color: var(--blue); }
+
+  /* action bar (play / update + stats) */
+  .actionbar { flex: none; position: relative; z-index: 3; margin: -26px 24px 0; display: flex; align-items: center; gap: 22px; padding: 14px 18px;
+    background: linear-gradient(90deg, rgba(24,33,46,.97), rgba(28,41,58,.97)); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 12px 34px rgba(0,0,0,.5); }
+  .main-btn { flex: none; min-width: 200px; height: 52px; padding: 0 26px; border: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; gap: 12px;
+    font: 700 19px "Segoe UI", sans-serif; letter-spacing: .08em; color: #fff; cursor: pointer; transition: filter .15s, transform .08s; }
+  .main-btn svg { width: 20px; height: 20px; fill: currentColor; }
+  .main-btn.play { background: linear-gradient(90deg, #6fb522, #4f9c19); box-shadow: 0 6px 18px rgba(111,181,34,.25); }
+  .main-btn.dl { background: linear-gradient(90deg, #1a9fff, #1f6ad8); box-shadow: 0 6px 18px rgba(26,159,255,.25); }
+  .main-btn:hover:not(:disabled) { filter: brightness(1.1); }
+  .main-btn:active:not(:disabled) { transform: translateY(1px); }
+  .main-btn:disabled { filter: grayscale(.75) brightness(.6); cursor: default; box-shadow: none; }
+  .astatus { flex: 1; min-width: 0; }
+  .astatus .st { font-size: 14px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .astatus .st b { color: #fff; }
+  .astatus .sm { margin-top: 3px; font-size: 12px; color: var(--muted); min-height: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .astatus .sm .link { margin-left: 10px; }
+  .progress { height: 6px; margin-top: 8px; border-radius: 3px; background: rgba(255,255,255,.08); overflow: hidden; display: none; }
   .progress.show { display: block; }
-  .track { height: 8px; background: rgba(255,255,255,.1); border-radius: 6px; overflow: hidden; }
-  .fill { height: 100%; width: 0; background: linear-gradient(90deg, #ffb020, #ffd27a); transition: width .2s; }
-  .pinfo { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 6px; }
-  .err { color: #ff7b7b; font-size: 13px; margin-top: 10px; min-height: 18px; max-width: 520px; }
-  aside { background: rgba(10,13,19,.78); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; backdrop-filter: blur(6px); }
-  aside h3 { margin: 0 0 12px; font-size: 13px; letter-spacing: .14em; color: var(--muted); text-transform: uppercase; display: flex; justify-content: space-between; }
-  .log { flex: 1; overflow: auto; display: flex; flex-direction: column; gap: 10px; }
-  .log .c { border-left: 2px solid var(--line); padding-left: 10px; }
-  .log .c.new { border-color: var(--amber); }
-  .log .m { font-size: 14px; line-height: 1.35; }
-  .log .d { font-size: 11px; color: var(--muted); margin-top: 3px; font-family: Consolas, monospace; }
-  .ver { font-size: 11px; color: #6b7480; margin-top: 12px; font-family: Consolas, monospace; line-height: 1.6; }
-  .spin { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,.25); border-top-color: var(--amber); border-radius: 50%; animation: s 0.8s linear infinite; vertical-align: -1px; margin-right: 6px; }
+  .fill { height: 100%; width: 0; background: linear-gradient(90deg, #1a9fff, #67c1f5); transition: width .2s; }
+  .err { margin-top: 4px; font-size: 12px; color: #ff8a80; }
+  .stats { flex: none; display: flex; gap: 24px; padding-left: 18px; border-left: 1px solid var(--line); }
+  .stat label { display: block; font-size: 10px; letter-spacing: .14em; color: var(--muted); margin-bottom: 3px; }
+  .stat b { font-size: 14px; font-weight: 600; color: var(--text); }
+  .tools { flex: none; display: flex; gap: 6px; }
+  .tool { width: 36px; height: 36px; border: 0; border-radius: 4px; background: rgba(255,255,255,.06); color: #c7d5e0; cursor: pointer; display: grid; place-items: center; }
+  .tool:hover { background: rgba(255,255,255,.13); color: #fff; }
+  .tool svg { width: 17px; height: 17px; fill: currentColor; }
+  .spin { display: inline-block; width: 12px; height: 12px; margin-right: 7px; vertical-align: -1px; border: 2px solid rgba(255,255,255,.25); border-top-color: var(--blue); border-radius: 50%; animation: s .8s linear infinite; }
   @keyframes s { to { transform: rotate(360deg); } }
+  .link { background: none; border: 0; padding: 0; color: var(--blue); cursor: pointer; font: inherit; }
+  .link:hover { text-decoration: underline; }
+
+  /* content: patch notes + side boxes */
+  .content { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 300px; gap: 20px; padding: 20px 24px 16px; }
+  h2 { margin: 0 0 10px; font-size: 12px; font-weight: 600; letter-spacing: .16em; color: var(--muted); }
+  .news { min-height: 0; display: flex; flex-direction: column; }
+  .list { flex: 1; min-height: 0; overflow: auto; padding-right: 6px; display: flex; flex-direction: column; gap: 10px; }
+  .card { background: var(--card); border-radius: 5px; padding: 12px 15px; border-left: 3px solid transparent; }
+  .card.new { border-left-color: var(--blue); }
+  .card .hd { display: flex; align-items: center; gap: 10px; }
+  .ver { font-family: Consolas, monospace; font-size: 12px; color: var(--blue); background: rgba(103,193,245,.12); padding: 1px 7px; border-radius: 3px; }
+  .ttl { font-size: 15px; font-weight: 600; color: #fff; }
+  .badge { font-size: 10px; font-weight: 700; letter-spacing: .08em; color: #0e141b; background: var(--blue); padding: 2px 6px; border-radius: 3px; }
+  .date { margin-left: auto; font-size: 12px; color: var(--muted); }
+  .card ul { margin: 8px 0 0; padding-left: 18px; font-size: 13px; line-height: 1.55; color: var(--soft); }
+  .empty { color: var(--muted); font-size: 13px; }
+  aside { min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 12px; }
+  .box { background: var(--panel); border-radius: 5px; padding: 12px 14px; }
+  .box p { margin: 0; font-size: 13px; line-height: 1.55; color: var(--soft); }
+  .facts { list-style: none; margin: 10px 0 0; padding: 0; }
+  .facts li { font-size: 13px; padding: 5px 0; border-top: 1px solid var(--line); color: #c7d5e0; }
+  .facts li::before { content: '▸'; color: var(--blue); margin-right: 8px; }
+  .lver { margin-top: auto; font-size: 11px; color: #56616c; }
+  .lver .badge { margin-left: 6px; }
+  ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 4px; } ::-webkit-scrollbar-track { background: transparent; }
 </style>
 </head>
 <body>
-<div class="bg"></div><div class="shade"></div>
-<div class="bar" id="bar"><div class="t">SON DURAK · LAUNCHER</div><div class="langs" id="langs"><button data-l="tr">TR</button><button data-l="en">EN</button></div><button id="min" title="—">&#8211;</button><button class="x" id="close" title="×">&#10005;</button></div>
-<main>
-  <section class="left">
-    <h1 class="logo">SON DURAK</h1>
-    <p class="sub" id="sub"></p>
-    <div class="spacer"></div>
-    <div class="status" id="status"></div>
-    <button class="main-btn" id="main" disabled></button>
-    <div class="progress" id="progress">
-      <div class="track"><div class="fill" id="fill"></div></div>
-      <div class="pinfo"><span id="pfile"></span><span id="pnum"></span></div>
+<div class="app">
+  <div class="titlebar" id="bar">
+    <div class="brand"><i></i>SON DURAK</div>
+    <div class="langs" id="langs"><button data-l="tr">TR</button><button data-l="en">EN</button></div>
+    <button class="win" id="min" title="—">&#8211;</button><button class="win x" id="close" title="×">&#10005;</button>
+  </div>
+
+  <header class="hero">
+    <div class="txt">
+      <h1 class="logo">SON DURAK</h1>
+      <p class="sub" id="sub"></p>
+      <div class="tags" id="tags"></div>
     </div>
-    <div class="row">
-      <button class="link" id="playAnyway" style="display:none"></button>
-      <button class="link" id="recheck"></button>
-      <button class="link" id="folder"></button>
+  </header>
+
+  <div class="actionbar">
+    <button class="main-btn play" id="main" disabled></button>
+    <div class="astatus">
+      <div class="st" id="status"></div>
+      <div class="sm" id="small"></div>
+      <div class="progress" id="progress"><div class="fill" id="fill"></div></div>
+      <div class="err" id="err"></div>
     </div>
-    <div class="err" id="err"></div>
-  </section>
-  <aside>
-    <h3><span id="logTitle"></span><button class="link" id="repo">GitHub</button></h3>
-    <div class="log" id="log"></div>
-    <div class="ver" id="ver"></div>
-  </aside>
-</main>
+    <div class="stats">
+      <div class="stat"><label id="lVer"></label><b id="sVer">—</b></div>
+      <div class="stat"><label id="lTime"></label><b id="sTime">—</b></div>
+      <div class="stat"><label id="lLast"></label><b id="sLast">—</b></div>
+    </div>
+    <div class="tools">
+      <button class="tool" id="recheck"><svg viewBox="0 0 24 24"><path d="M12 4a8 8 0 0 1 7.4 5H17v2h6V5h-2v2.3A10 10 0 1 0 22 12h-2a8 8 0 1 1-8-8z"/></svg></button>
+      <button class="tool" id="folder"><svg viewBox="0 0 24 24"><path d="M3 5h7l2 2h9v12H3z"/></svg></button>
+    </div>
+  </div>
+
+  <div class="content">
+    <section class="news">
+      <h2 id="hNews"></h2>
+      <div class="list" id="news"></div>
+    </section>
+    <aside>
+      <div class="box"><h2 id="hAbout"></h2><p id="about"></p><ul class="facts" id="facts"></ul></div>
+      <div class="box"><h2 id="hMp"></h2><p id="mp"></p></div>
+      <div class="lver" id="lver"></div>
+    </aside>
+  </div>
+</div>
 <script>
-  const STR = { tr: {
-    sub: 'T9 Gece Hattı · Anomali Avı', checking: 'Güncellemeler denetleniyor…', install: 'YÜKLE', update: 'GÜNCELLE', play: 'OYNA', busy: 'İNDİRİLİYOR…',
-    notInstalled: 'Oyun henüz yüklü değil.', ready: 'Oyun güncel.', updateAvail: 'Yeni bir güncelleme var!', offline: 'İnternet bağlantısı yok — yüklü sürümle oynayabilirsin.',
-    offlineNoGame: 'İnternet bağlantısı yok. Oyunu indirmek için bağlantı gerekli.', playAnyway: 'Güncellemeden oyna', recheck: 'Yeniden denetle', folder: 'Oyun klasörü',
-    log: 'Güncellemeler', installed: 'Yüklü sürüm', latest: 'Son sürüm', none: '—', files: 'dosya', badgeOk: 'GÜNCEL', badgeUp: 'GÜNCELLEME VAR', error: 'Hata: ',
-    errors: { 'repo-not-found': 'Oyun deposuna erişilemedi.', 'auth': 'Launcher\'ın erişim anahtarı geçersiz. Launcher\'ın yeni sürümünü kur.', 'rate-limit': 'GitHub istek sınırı aşıldı, biraz sonra tekrar dene.', 'launcher-update': 'Launcher güncellenemedi, eski sürümle devam ediliyor.' },
-    selfUpdate: 'Launcher güncelleniyor…', selfUpdateBtn: 'GÜNCELLENİYOR…', launcherUpdated: 'güncellendi',
-  }, en: {
-    sub: 'T9 Night Line · Anomaly Hunt', checking: 'Checking for updates…', install: 'INSTALL', update: 'UPDATE', play: 'PLAY', busy: 'DOWNLOADING…',
-    notInstalled: 'The game is not installed yet.', ready: 'The game is up to date.', updateAvail: 'A new update is available!', offline: 'No internet — you can play the installed version.',
-    offlineNoGame: 'No internet. A connection is needed to download the game.', playAnyway: 'Play without updating', recheck: 'Check again', folder: 'Game folder',
-    log: 'Updates', installed: 'Installed', latest: 'Latest', none: '—', files: 'files', badgeOk: 'UP TO DATE', badgeUp: 'UPDATE AVAILABLE', error: 'Error: ',
-    errors: { 'repo-not-found': 'Could not reach the game repository.', 'auth': 'The launcher\'s access key is no longer valid. Install the latest launcher.', 'rate-limit': 'GitHub rate limit reached, try again later.', 'launcher-update': 'The launcher could not update itself; continuing with this version.' },
-    selfUpdate: 'Updating the launcher…', selfUpdateBtn: 'UPDATING…', launcherUpdated: 'updated',
-  } };
-  // language: the launcher sends its saved choice with every state; TR / EN buttons change it
-  let lang = (navigator.language || 'tr').toLowerCase().startsWith('tr') ? 'tr' : 'en', L = STR[lang], last = null;
+  const STR = {
+    tr: {
+      sub: 'T9 Gece Hattı · Anomali Avı', tags: ['Korku', 'Bulmaca', 'Co-op'],
+      play: 'OYNA', install: 'YÜKLE', update: 'GÜNCELLE', busy: 'İNDİRİLİYOR', selfBtn: 'GÜNCELLENİYOR',
+      checking: 'Güncellemeler denetleniyor…', ready: 'Oyun güncel', updateReady: 'Güncelleme hazır', notInstalled: 'Oyun henüz yüklü değil',
+      offline: 'Çevrimdışı — yüklü sürümle oynayabilirsin', offlineNoGame: 'İnternet bağlantısı yok. Oyunu indirmek için bağlantı gerekli.',
+      selfUpdate: 'Launcher güncelleniyor…', downloading: 'İndiriliyor…', playAnyway: 'Güncellemeden oyna', files: 'dosya',
+      lVer: 'SÜRÜM', lTime: 'OYNAMA SÜRESİ', lLast: 'SON OYNAMA', never: 'Hiç', today: 'Bugün', yesterday: 'Dün', hours: 'saat', minutes: 'dk',
+      hNews: 'YENİLİKLER', hAbout: 'OYUN HAKKINDA', hMp: 'ARKADAŞLARINLA OYNA', fresh: 'YENİ', noNews: 'Yenilikler internete bağlanınca görünecek.',
+      recheck: 'Güncellemeleri denetle', folder: 'Oyun klasörü', launcherUpdated: 'güncellendi',
+      errors: { 'repo-not-found': 'Güncelleme sunucusuna ulaşılamadı.', 'auth': 'Güncelleme sunucusuna bağlanılamadı. Launcher\'ın en yeni sürümünü kur.', 'rate-limit': 'Sunucu şu an meşgul, biraz sonra tekrar dene.', 'launcher-update': 'Launcher güncellenemedi, bu sürümle devam ediliyor.', other: 'Güncelleme alınamadı, biraz sonra tekrar dene.' },
+    },
+    en: {
+      sub: 'T9 Night Line · Anomaly Hunt', tags: ['Horror', 'Puzzle', 'Co-op'],
+      play: 'PLAY', install: 'INSTALL', update: 'UPDATE', busy: 'DOWNLOADING', selfBtn: 'UPDATING',
+      checking: 'Checking for updates…', ready: 'Up to date', updateReady: 'Update ready', notInstalled: 'The game is not installed yet',
+      offline: 'Offline — you can play the installed version', offlineNoGame: 'No internet. A connection is needed to download the game.',
+      selfUpdate: 'Updating the launcher…', downloading: 'Downloading…', playAnyway: 'Play without updating', files: 'files',
+      lVer: 'VERSION', lTime: 'PLAY TIME', lLast: 'LAST PLAYED', never: 'Never', today: 'Today', yesterday: 'Yesterday', hours: 'hrs', minutes: 'min',
+      hNews: "WHAT'S NEW", hAbout: 'ABOUT', hMp: 'PLAY WITH FRIENDS', fresh: 'NEW', noNews: 'News will appear once you are online.',
+      recheck: 'Check for updates', folder: 'Game folder', launcherUpdated: 'updated',
+      errors: { 'repo-not-found': 'Could not reach the update server.', 'auth': 'Could not connect to the update server. Please install the latest launcher.', 'rate-limit': 'The server is busy, try again in a bit.', 'launcher-update': 'The launcher could not update itself; continuing with this version.', other: 'Could not get the update, try again in a bit.' },
+    },
+  };
+  let lang = (navigator.language || 'tr').toLowerCase().startsWith('tr') ? 'tr' : 'en', L = STR[lang], last = null, action = null;
   const $ = (id) => document.getElementById(id);
-  // The UI is designed for 1000 x 600 CSS px; scale it to whatever the window really is (DPI,
-  // small screens) so the main button never ends up below the bottom edge.
-  const fit = () => { const k = Math.min(innerWidth / 1000, innerHeight / 600); document.documentElement.style.zoom = Math.abs(k - 1) < 0.01 ? '' : String(k); };
-  addEventListener('resize', fit); fit();
   const send = (cmd, extra) => window.chrome.webview.postMessage({ cmd, ...extra });
-  const short = (s) => s ? s.slice(0, 7) : L.none;
-  const fmtDate = (d) => d ? new Date(d).toLocaleString(lang === 'tr' ? 'tr-TR' : 'en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
-  const mb = (b) => (b / 1048576).toFixed(1) + ' MB';
-  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const mb = (b) => (b / 1048576).toFixed(1).replace('.', lang === 'tr' ? ',' : '.') + ' MB';
+  // The design is 1120 x 680 CSS px; scale it to the real window (DPI, small screens).
+  const fit = () => { const k = Math.min(innerWidth / 1120, innerHeight / 680); document.documentElement.style.zoom = Math.abs(k - 1) < 0.01 ? '' : String(k); };
+  addEventListener('resize', fit); fit();
+
+  const ICON = {
+    play: '<svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg>',
+    dl: '<svg viewBox="0 0 24 24"><path d="M11 3h2v10l4-4 1.4 1.4L12 16.8 5.6 10.4 7 9l4 4zM4 19h16v2H4z"/></svg>',
+  };
+  function cmpVer(a, b) { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) - (y[i] || 0); } return 0; }
+  function fmtDate(d) { if (!d) return ''; const t = new Date(d); return isNaN(t) ? d : t.toLocaleDateString(lang === 'tr' ? 'tr-TR' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' }); }
+  function fmtTime(sec) {
+    if (!sec) return '0 ' + L.minutes;
+    if (sec < 3600) return Math.max(1, Math.round(sec / 60)) + ' ' + L.minutes;
+    return (sec / 3600).toFixed(1).replace('.', lang === 'tr' ? ',' : '.') + ' ' + L.hours;
+  }
+  function fmtLast(iso) {
+    if (!iso) return L.never;
+    const d = new Date(iso), now = new Date(), day = 86400000;
+    const startOf = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+    const diff = Math.round((startOf(now) - startOf(d)) / day);
+    return diff <= 0 ? L.today : diff === 1 ? L.yesterday : d.toLocaleDateString(lang === 'tr' ? 'tr-TR' : 'en-GB', { day: 'numeric', month: 'short' });
+  }
 
   function applyStatic() {
     document.documentElement.lang = lang;
-    $('sub').textContent = L.sub; $('logTitle').textContent = L.log; $('playAnyway').textContent = L.playAnyway;
-    $('recheck').textContent = L.recheck; $('folder').textContent = L.folder;
+    $('sub').textContent = L.sub;
+    $('tags').innerHTML = L.tags.map((t) => `<span>${esc(t)}</span>`).join('');
+    for (const k of ['lVer', 'lTime', 'lLast', 'hNews', 'hAbout', 'hMp']) $(k).textContent = L[k];
+    $('recheck').title = L.recheck; $('folder').title = L.folder;
     for (const b of $('langs').children) b.classList.toggle('sel', b.dataset.l === lang);
   }
-  function setLang(l) {
-    if (!STR[l]) return;
-    lang = l; L = STR[l];
-    applyStatic();
-    if (last) render(last);
+  function setLang(l) { if (!STR[l]) return; lang = l; L = STR[l]; applyStatic(); if (last) render(last); }
+
+  function setButton(kind, text, act, disabled = false) {
+    const b = $('main');
+    b.className = 'main-btn ' + (kind === 'play' ? 'play' : 'dl');
+    b.innerHTML = (kind === 'play' ? ICON.play : ICON.dl) + `<span>${esc(text)}</span>`;
+    b.disabled = disabled; action = act;
   }
-  applyStatic();
-  for (const b of $('langs').children) b.onclick = () => { setLang(b.dataset.l); send('lang', { lang: b.dataset.l }); };
-  $('bar').addEventListener('mousedown', (e) => { if (e.target.id === 'bar' || e.target.classList.contains('t')) send('drag'); });
-  $('min').onclick = () => send('min'); $('close').onclick = () => send('close');
-  $('repo').onclick = () => send('repo'); $('recheck').onclick = () => send('check'); $('folder').onclick = () => send('folder');
-  $('playAnyway').onclick = () => send('play');
-  let action = null;
-  $('main').onclick = () => action && send(action);
 
   function render(s) {
     last = s;
-    const btn = $('main'), st = $('status');
+    const v = (x) => x ? 'v' + x : '—';
+    let status = '', small = '';
     $('progress').classList.toggle('show', s.status === 'busy' || s.status === 'selfUpdate');
-    $('playAnyway').style.display = s.status === 'update' ? '' : 'none';
-    $('err').textContent = s.error ? L.error + (L.errors[s.error] || s.error) : '';
-    btn.classList.remove('play');
-    btn.disabled = false;
     switch (s.status) {
-      case 'checking': st.innerHTML = '<span class="spin"></span>' + L.checking; btn.textContent = s.installed ? L.play : L.install; btn.disabled = !s.installed; action = s.installed ? 'play' : null; if (s.installed) btn.classList.add('play'); break;
-      case 'selfUpdate': st.innerHTML = '<span class="spin"></span>' + L.selfUpdate; btn.textContent = L.selfUpdateBtn; btn.disabled = true; action = null; break;
-      case 'busy': st.innerHTML = '<span class="spin"></span>' + L.busy; btn.textContent = L.busy; btn.disabled = true; action = null; break;
-      case 'notInstalled': st.textContent = L.notInstalled + (s.plan ? ` (${mb(s.plan.bytes)})` : ''); btn.textContent = L.install; action = 'install'; break;
-      case 'offlineNoGame': st.textContent = L.offlineNoGame; btn.textContent = L.install; btn.disabled = true; action = null; break;
-      case 'update': st.innerHTML = `<b>${L.updateAvail}</b><span class="badge up">${L.badgeUp}</span>` + (s.plan ? `<br>${s.plan.files} ${L.files} · ${mb(s.plan.bytes)}` : ''); btn.textContent = L.update; action = 'update'; break;
-      default: st.innerHTML = (s.offline ? L.offline : L.ready) + (s.offline ? '' : `<span class="badge">${L.badgeOk}</span>`); btn.textContent = L.play; btn.classList.add('play'); action = 'play';
+      case 'checking': status = `<span class="spin"></span>${L.checking}`; setButton('play', s.installed ? L.play : L.install, s.installed ? 'play' : null, !s.installed); break;
+      case 'selfUpdate': status = `<span class="spin"></span>${L.selfUpdate}`; setButton('dl', L.selfBtn, null, true); break;
+      case 'busy': status = `<span class="spin"></span>${L.downloading}`; setButton('dl', L.busy, null, true); break;
+      case 'notInstalled': status = `<b>${L.notInstalled}</b>`; small = s.plan ? `${v(s.latestVersion)} · ${mb(s.plan.bytes)}` : v(s.latestVersion); setButton('dl', L.install, 'install'); break;
+      case 'offlineNoGame': status = L.offlineNoGame; setButton('dl', L.install, null, true); break;
+      case 'update':
+        status = `<b>${L.updateReady}</b>`;
+        small = (s.installedVersion && s.latestVersion && s.installedVersion !== s.latestVersion ? `${v(s.installedVersion)} → ${v(s.latestVersion)}` : v(s.latestVersion))
+          + (s.plan ? ` · ${s.plan.files} ${L.files} · ${mb(s.plan.bytes)}` : '') + `<button class="link" id="anyway">${L.playAnyway}</button>`;
+        setButton('dl', L.update, 'update'); break;
+      default: status = s.offline ? L.offline : `<b>${L.ready}</b>`; small = v(s.installedVersion); setButton('play', L.play, 'play');
     }
-    const log = s.remote ? s.remote.log : (s.local ? [{ sha: s.local.sha, message: s.local.message, date: s.local.date }] : []);
-    $('log').innerHTML = log.map((c, i) => `<div class="c ${s.local && c.sha !== s.local.sha && i === 0 ? 'new' : ''}"><div class="m">${esc(c.message)}</div><div class="d">${short(c.sha)} · ${fmtDate(c.date)}</div></div>`).join('');
-    $('ver').innerHTML = `${L.installed}: ${s.local ? short(s.local.sha) + ' · ' + fmtDate(s.local.date) : L.none}<br>${L.latest}: ${s.remote ? short(s.remote.sha) : L.none}<br>Launcher ${esc(s.version || '')}${s.launcherUpdated ? ` <span class="badge">${L.launcherUpdated}</span>` : ''}`;
+    $('status').innerHTML = status;
+    $('small').innerHTML = small;
+    const anyway = $('anyway'); if (anyway) anyway.onclick = () => send('play');
+    $('err').textContent = s.error ? (L.errors[s.error] || L.errors.other) : '';
+
+    $('sVer').textContent = v(s.installedVersion || (s.installed ? null : s.latestVersion));
+    $('sTime').textContent = fmtTime(s.playSeconds);
+    $('sLast').textContent = fmtLast(s.lastPlayed);
+
+    const news = s.news || {}, notes = news.notes || [], game = (news.game || {})[lang] || {};
+    $('news').innerHTML = notes.length ? notes.map((n) => {
+      const t = n[lang] || n.tr || {}, fresh = s.installedVersion && cmpVer(n.version, s.installedVersion) > 0;
+      return `<div class="card ${fresh ? 'new' : ''}"><div class="hd"><span class="ver">v${esc(n.version)}</span><span class="ttl">${esc(t.title)}</span>${fresh ? `<span class="badge">${L.fresh}</span>` : ''}<span class="date">${esc(fmtDate(n.date))}</span></div>`
+        + `<ul>${(t.items || []).map((i) => `<li>${esc(i)}</li>`).join('')}</ul></div>`;
+    }).join('') : `<div class="empty">${L.noNews}</div>`;
+    $('about').textContent = game.about || '';
+    $('facts').innerHTML = (game.facts || []).map((f) => `<li>${esc(f)}</li>`).join('');
+    $('mp').textContent = game.multiplayer || '';
+    $('lver').innerHTML = `Launcher ${esc(s.version || '')}${s.launcherUpdated ? `<span class="badge">${L.launcherUpdated}</span>` : ''}`;
   }
+
   function progress(p) {
     const k = p.total ? p.done / p.total : (p.filesTotal ? p.files / p.filesTotal : 1);
     $('fill').style.width = (k * 100).toFixed(1) + '%';
-    $('pfile').textContent = p.current || '';
-    $('pnum').textContent = `${mb(p.done)} / ${mb(p.total)} · ${p.files}/${p.filesTotal} ${L.files}`;
+    $('small').textContent = `${mb(p.done)} / ${mb(p.total)} · ${p.files}/${p.filesTotal} ${L.files}`;
   }
+
+  applyStatic();
+  for (const b of $('langs').children) b.onclick = () => { setLang(b.dataset.l); send('lang', { lang: b.dataset.l }); };
+  $('bar').addEventListener('mousedown', (e) => { if (e.target.id === 'bar' || e.target.closest('.brand')) send('drag'); });
+  $('min').onclick = () => send('min'); $('close').onclick = () => send('close');
+  $('recheck').onclick = () => send('check'); $('folder').onclick = () => send('folder');
+  $('main').onclick = () => action && send(action);
   window.chrome.webview.addEventListener('message', (e) => {
     const m = e.data;
-    if (m.type === 'state') { if (m.lang && m.lang !== lang) { lang = m.lang; L = STR[lang] || L; applyStatic(); } render(m); }
+    if (m.type === 'state') { if (m.lang && m.lang !== lang && STR[m.lang]) { lang = m.lang; L = STR[lang]; applyStatic(); } render(m); }
     else if (m.type === 'progress') progress(m);
   });
   send('ready');

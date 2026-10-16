@@ -4,6 +4,7 @@
 
 - **Oyun:** launcher, oyunu `Gokhan-Abi` reposunun `Son Durak` klasöründen indirir ve yeni commit'lerde "Güncelleme var" der; sadece değişen dosyaları indirir (git SHA-1 ile doğrulanır).
 - **Launcher'ın kendisi:** bu reponun `release/` klasöründeki derlenmiş launcher'dır. Launcher her açılışta bu dosyaları kendi dosyalarıyla karşılaştırır; fark varsa indirir, doğrular, kendini değiştirir ve yeniden başlar. Launcher'ı güncellemek = `node build.mjs` + `release/`'i bu repoya göndermek.
+- **Görünüm:** Steam kütüphane sayfası gibi: büyük oyun görseli, OYNA / GÜNCELLE düğmesi, sürüm, oynama süresi ve son oynama, altta **Yenilikler**. Yenilikler commit mesajlarından değil, oyun reposundaki `Son Durak/news.json` dosyasından gelir: oyuncular için yazılmış notlar (sürüm, tarih, başlık, maddeler; TR + EN) ve "Oyun hakkında" metni. Yeni bir oyun sürümü çıkınca en üste bir not eklemek yeterli. Oynama süresi `%LOCALAPPDATA%\SonDurak\launcher.json`'da tutulur.
 - **Dil:** üst çubuktaki TR / EN düğmeleri. Seçim `%LOCALAPPDATA%\SonDurak\launcher.json`'a kaydedilir ve oyunla eşitlenir (oyun `index.html?lang=..` ile açılır, oyunda değiştirilirse launcher'a bildirir). Kurulum penceresi de bu seçimi / Windows dilini kullanır.
 
 ## Klasörler

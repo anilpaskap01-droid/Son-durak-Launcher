@@ -31,7 +31,7 @@
   .main { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
 
   /* hero art */
-  .hero { position: relative; height: 270px; flex: none; background: url("bg.jpg") center 42% / cover no-repeat; }
+  .hero { position: relative; height: 238px; flex: none; background: url("bg.jpg") center 42% / cover no-repeat; }
   .hero::after { content: ''; position: absolute; inset: 0;
     background: linear-gradient(180deg, rgba(14,20,27,0) 35%, rgba(14,20,27,.7) 75%, var(--bg) 100%),
                 linear-gradient(90deg, rgba(14,20,27,.88) 0%, rgba(14,20,27,.35) 45%, rgba(14,20,27,0) 70%); }
@@ -91,6 +91,31 @@
   .facts { list-style: none; padding: 0 !important; }
   .facts li::before { content: '▸'; color: var(--blue); margin-right: 8px; }
   .empty { color: var(--muted); font-size: 13px; line-height: 1.5; }
+
+  /* profile & stats */
+  .prof { display: flex; align-items: center; gap: 16px; }
+  .av.big { width: 64px; height: 64px; font-size: 28px; border-radius: 6px; }
+  .prof .who { flex: 1; min-width: 0; }
+  .prof .nm { font-size: 20px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .prof .ti { font-size: 12px; letter-spacing: .14em; color: var(--amber); text-transform: uppercase; margin-top: 2px; }
+  .lvl { width: 230px; flex: none; }
+  .lvl .row { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+  .lvl .row b { color: #fff; font-size: 15px; }
+  .lvl .bar { height: 7px; border-radius: 4px; background: rgba(255,255,255,.08); overflow: hidden; }
+  .lvl .bar i { display: block; height: 100%; background: linear-gradient(90deg, #ffb020, #ffd36b); border-radius: 4px; }
+  .sgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .sbox { background: rgba(0,0,0,.2); border-radius: 4px; padding: 9px 11px; min-width: 0; }
+  .sbox label { display: block; font-size: 10px; letter-spacing: .13em; color: var(--muted); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sbox b { font-size: 18px; font-weight: 600; color: #fff; }
+  .sbox small { font-size: 12px; color: var(--muted); margin-left: 3px; }
+  .runs { display: flex; flex-direction: column; }
+  .run { display: flex; align-items: center; gap: 12px; padding: 7px 0; border-top: 1px solid var(--line); font-size: 13px; color: var(--soft); }
+  .run:first-child { border-top: 0; }
+  .run .ic { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; flex: none; background: rgba(255,255,255,.07); }
+  .run .ic.win { background: rgba(139,211,75,.18); color: var(--green); }
+  .run .what { flex: 1; color: #e6eaee; }
+  .run .when { color: var(--muted); font-size: 12px; }
+  .note { font-size: 11px; color: #56616c; }
 
   /* download screen (replaces the tabs while the game or the launcher downloads) */
   .dl { display: none; flex: 1; min-height: 0; flex-direction: column; gap: 12px; background: var(--card); border-radius: 6px; padding: 16px 18px 14px; }
@@ -206,9 +231,10 @@
         </div>
       </div>
       <div class="content" id="content">
-        <div class="tabs"><button id="tabNews" class="sel"></button><button id="tabAbout"></button></div>
-        <div class="list" id="news"></div>
-        <div class="list" id="aboutPane" style="display:none"></div>
+        <div class="tabs" id="tabs"><button data-tab="news" id="tabNews" class="sel"></button><button data-tab="profile" id="tabProfile"></button><button data-tab="about" id="tabAbout"></button></div>
+        <div class="list" data-pane="news" id="news"></div>
+        <div class="list" data-pane="profile" id="profilePane" style="display:none"></div>
+        <div class="list" data-pane="about" id="aboutPane" style="display:none"></div>
         <div class="dl" id="dl">
           <div class="dlhd"><span class="ttl" id="dlTitle"></span><span class="ver" id="dlVer"></span><span class="dlpct" id="dlPct">0%</span></div>
           <div class="dlbar"><i id="dlFill"></i></div>
@@ -271,6 +297,11 @@
       recheck: 'Güncellemeleri denetle', folder: 'Oyun klasörü', launcherUpdated: 'güncellendi',
       dlInstall: 'SON DURAK İNDİRİLİYOR', dlUpdate: 'GÜNCELLEME İNDİRİLİYOR', dlLauncher: 'LAUNCHER GÜNCELLENİYOR', dlDone: 'TAMAMLANDI',
       lSpeed: 'HIZ', lPeak: 'EN YÜKSEK', lGot: 'İNDİRİLEN', lFiles: 'DOSYALAR', lEta: 'KALAN SÜRE', etaCalc: 'hesaplanıyor', sec: 'sn', left: 'kaldı',
+      // profile & stats
+      tabProfile: 'PROFİL', level: 'Seviye', titles: ['Yolcu', 'Düzenli Yolcu', 'Gece Yolcusu', 'Hat Bekçisi', 'Son Durak Efsanesi'],
+      sRuns: 'SEFER', sWins: 'SON DURAK', sBest: 'EN İYİ SÜRE', sPerfect: 'HATASIZ BİTİŞ', sStreak: 'EN UZUN SERİ', sAcc: 'DOĞRULUK', sFound: 'BULUNAN ANOMALİ', sTime: 'OYNAMA SÜRESİ', sTalks: 'SOHBET', sCoop: 'CO-OP ZAFER',
+      recent: 'SON SEFERLER', rWin: "Son Durak'a ulaştın", rLeft: "{n}. turda indin", solo: 'Tek başına', nPlayers: '{n} kişi', nMistakes: '{n} hata', noMistakes: 'hatasız',
+      noRuns: "Henüz sefer yok. Oyna'ya bas; istatistiklerin, seferlerin ve seviyen burada birikecek.", statsNote: 'İstatistikler bu bilgisayarda, launcher\'da tutulur.',
       errors: { 'repo-not-found': 'Güncelleme sunucusuna ulaşılamadı.', 'auth': 'Güncelleme sunucusuna bağlanılamadı. Launcher\'ın en yeni sürümünü kur.', 'rate-limit': 'Sunucu şu an meşgul, biraz sonra tekrar dene.', 'launcher-update': 'Launcher güncellenemedi, bu sürümle devam ediliyor.', other: 'Güncelleme alınamadı, biraz sonra tekrar dene.' },
       // friends
       lCode: 'KODUN', copy: 'Kodu kopyala', copied: 'Kod kopyalandı', addPh: 'Arkadaş kodu, ör. K7Q2-9XMB', add: 'Ekle', editName: 'Adını değiştir',
@@ -295,6 +326,10 @@
       recheck: 'Check for updates', folder: 'Game folder', launcherUpdated: 'updated',
       dlInstall: 'DOWNLOADING SON DURAK', dlUpdate: 'DOWNLOADING UPDATE', dlLauncher: 'UPDATING THE LAUNCHER', dlDone: 'DONE',
       lSpeed: 'SPEED', lPeak: 'PEAK', lGot: 'DOWNLOADED', lFiles: 'FILES', lEta: 'TIME LEFT', etaCalc: 'calculating', sec: 's', left: 'left',
+      tabProfile: 'PROFILE', level: 'Level', titles: ['Passenger', 'Regular', 'Night Rider', 'Line Keeper', 'Last Stop Legend'],
+      sRuns: 'RIDES', sWins: 'LAST STOP', sBest: 'BEST TIME', sPerfect: 'FLAWLESS', sStreak: 'BEST STREAK', sAcc: 'ACCURACY', sFound: 'ANOMALIES FOUND', sTime: 'PLAY TIME', sTalks: 'CHATS', sCoop: 'CO-OP WINS',
+      recent: 'RECENT RIDES', rWin: 'Reached the Last Stop', rLeft: 'Got off at round {n}', solo: 'Solo', nPlayers: '{n} players', nMistakes: '{n} mistakes', oneMistake: '1 mistake', noMistakes: 'no mistakes',
+      noRuns: 'No rides yet. Press Play; your stats, rides and level build up here.', statsNote: 'Stats are kept on this computer, in the launcher.',
       errors: { 'repo-not-found': 'Could not reach the update server.', 'auth': 'Could not connect to the update server. Please install the latest launcher.', 'rate-limit': 'The server is busy, try again in a bit.', 'launcher-update': 'The launcher could not update itself; continuing with this version.', other: 'Could not get the update, try again in a bit.' },
       lCode: 'YOUR CODE', copy: 'Copy code', copied: 'Code copied', addPh: 'Friend code, e.g. K7Q2-9XMB', add: 'Add', editName: 'Change your name',
       reqIn: 'FRIEND REQUESTS', reqOut: 'SENT REQUESTS', secOnline: 'ONLINE', secOffline: 'OFFLINE',
@@ -337,12 +372,12 @@
     document.documentElement.lang = lang;
     $('sub').textContent = L.sub;
     $('tags').innerHTML = L.tags.map((t) => `<span>${esc(t)}</span>`).join('');
-    for (const k of ['lVer', 'lTime', 'lLast', 'tabNews', 'tabAbout', 'lCode', 'lSpeed', 'lPeak', 'lGot', 'lFiles', 'lEta']) $(k).textContent = L[k];
+    for (const k of ['lVer', 'lTime', 'lLast', 'tabNews', 'tabProfile', 'tabAbout', 'lCode', 'lSpeed', 'lPeak', 'lGot', 'lFiles', 'lEta']) $(k).textContent = L[k];
     $('recheck').title = L.recheck; $('folder').title = L.folder; $('copyCode').title = L.copy; $('editName').title = L.editName;
     $('addIn').placeholder = L.addPh; $('addBtn').textContent = L.add; $('msgIn').placeholder = L.msgPh; $('msgSend').textContent = L.send;
     for (const b of $('langs').children) b.classList.toggle('sel', b.dataset.l === lang);
   }
-  function setLang(l) { if (!STR[l]) return; lang = l; L = STR[l]; applyStatic(); if (last) render(last); renderFriends(); }
+  function setLang(l) { if (!STR[l]) return; lang = l; L = STR[l]; applyStatic(); if (last) render(last); renderFriends(); renderTab(); }
 
   function setButton(kind, text, act, disabled = false) {
     const b = $('main');
@@ -390,6 +425,7 @@
     $('aboutPane').innerHTML = `<div class="card"><p>${esc(game.about || '')}</p><ul class="facts">${(game.facts || []).map((f) => `<li>${esc(f)}</li>`).join('')}</ul></div>`
       + (game.multiplayer ? `<div class="card"><h4>${L.mpTitle}</h4><p>${esc(game.multiplayer)}</p></div>` : '')
       + `<div class="lver">Launcher ${esc(s.version || '')}${s.launcherUpdated ? `<span class="badge">${L.launcherUpdated}</span>` : ''}</div>`;
+    renderTab();
   }
   // ---- download screen: live speed (from the byte counts the host streams), peak, time left
   // and a Steam-like graph of the speed over time
@@ -465,7 +501,122 @@
     if (p.current) $('dlFile').textContent = p.current;
     $('small').textContent = `${pct}% · ${mb(p.done)} / ${mb(p.total)}` + (dl.speed > 0 ? ` · ${rate(dl.speed)}` : '');
   }
-  function showTab(t) { tab = t; $('tabNews').classList.toggle('sel', t === 'news'); $('tabAbout').classList.toggle('sel', t === 'about'); $('news').style.display = t === 'news' ? '' : 'none'; $('aboutPane').style.display = t === 'about' ? '' : 'none'; }
+  function showTab(t) {
+    tab = t;
+    for (const b of $('tabs').children) b.classList.toggle('sel', b.dataset.tab === t);
+    for (const p of document.querySelectorAll('[data-pane]')) p.style.display = p.dataset.pane === t ? '' : 'none';
+    renderTab();
+  }
+  // the panes built from local data (news / about come with the host's state)
+  function renderTab() { if (tab === 'profile') renderProfile(); }
+
+  // ============================================================== stats (from the game's "stat:" reports)
+  // Kept in this page's storage: totals, the anomalies you spotted, achievements, recent rides.
+  const ST_KEY = 'sondurak.stats.v1' + (new URLSearchParams(location.search).get('profile') || '');
+  function loadS() {
+    let s = null;
+    try { s = JSON.parse(localStorage.getItem(ST_KEY) || 'null'); } catch { s = null; }
+    s = s && typeof s === 'object' ? s : {};
+    for (const k of ['runs', 'wins', 'coopRuns', 'coopWins', 'bestTime', 'perfect', 'decisions', 'correct', 'wrong', 'falseAlarms', 'misses', 'streak', 'bestStreak', 'maxRound', 'talks', 'maxPlayers', 'nearMiss'])
+      s[k] = Number.isFinite(s[k]) ? s[k] : 0;
+    for (const k of ['found', 'foundAt', 'ach']) if (!s[k] || typeof s[k] !== 'object') s[k] = {};
+    if (!Array.isArray(s.recent)) s.recent = [];
+    return s;
+  }
+  const S = loadS();
+  const saveS = () => { try { localStorage.setItem(ST_KEY, JSON.stringify(S)); } catch { /* storage full / blocked */ } };
+  let CAT = []; // every anomaly of the installed game: [{ id, tr, en }] (assets/anomalies.json, sent by the host)
+  let ride = null; // the ride in progress: { ts, top, players, mistakes }
+  let where = null; // where the game is: { mode, round, total, players, role }
+  const uniqueFound = () => Object.keys(S.found).length;
+  function endRide(win, extra) {
+    if (!ride) return;
+    S.recent.unshift({ ts: Date.now(), win, top: ride.top, players: ride.players, ...extra });
+    S.recent.length = Math.min(S.recent.length, 12);
+    ride = null;
+  }
+  function spotted(id) {
+    if (!id) return;
+    S.found[id] = (S.found[id] || 0) + 1;
+    if (!S.foundAt[id]) S.foundAt[id] = Date.now();
+  }
+  function onStat(ev) {
+    if (!ev || typeof ev !== 'object') return;
+    const players = Math.max(1, Math.min(6, ev.players | 0));
+    switch (ev.e) {
+      case 'start':
+        endRide(false, {});
+        S.runs++; if (players > 1) S.coopRuns++;
+        ride = { ts: Date.now(), top: ev.round | 0 || 1, players, mistakes: 0 };
+        break;
+      case 'round':
+        S.decisions++;
+        if (ride) { ride.players = Math.max(ride.players, players); }
+        if (ev.correct) {
+          S.correct++; S.streak++; S.bestStreak = Math.max(S.bestStreak, S.streak);
+          spotted(ev.anomaly);
+        } else {
+          S.wrong++; S.streak = 0;
+          if (ev.anomaly) S.misses++; else S.falseAlarms++;
+          if ((ev.from | 0) >= 9) S.nearMiss++;
+          if (ride) ride.mistakes++;
+        }
+        S.maxRound = Math.max(S.maxRound, ev.round | 0);
+        if (ride) ride.top = Math.max(ride.top, ev.round | 0);
+        break;
+      case 'end': {
+        S.decisions++; S.correct++; S.streak++; S.bestStreak = Math.max(S.bestStreak, S.streak);
+        spotted(ev.anomaly);
+        S.wins++; S.maxRound = Math.max(S.maxRound, 10);
+        const time = Math.max(0, ev.time | 0), mistakes = Math.max(0, ev.mistakes | 0);
+        if (time && (!S.bestTime || time < S.bestTime)) S.bestTime = time;
+        if (!mistakes) S.perfect++;
+        if (players > 1) S.coopWins++;
+        if (ride) ride.top = 10;
+        endRide(true, { time, mistakes, players: Math.max(players, ride ? ride.players : 1) });
+        break;
+      }
+      case 'talk': S.talks++; break;
+      case 'where':
+        where = { mode: String(ev.mode || ''), round: ev.round | 0, total: ev.total | 0 || 10, players, role: String(ev.role || '') };
+        if (where.mode === 'menu' || where.mode === 'lobby') endRide(false, {});
+        S.maxPlayers = Math.max(S.maxPlayers, where.mode === 'menu' ? 1 : players);
+        break;
+      default: return;
+    }
+    saveS();
+    statsChanged();
+  }
+  function statsChanged() { renderTab(); }
+
+  // level: XP from right calls, wins, spotted anomalies; level n needs 50·n·(n−1) XP in total
+  function xpOf(s) { return s.correct * 10 + s.wins * 150 + Object.keys(s.found).length * 30 + Object.keys(s.ach || {}).length * 50; }
+  function levelOf(xp) { const n = Math.floor((1 + Math.sqrt(1 + 8 * xp / 100)) / 2); const at = 50 * n * (n - 1), next = 50 * (n + 1) * n; return { n, into: xp - at, need: next - at }; }
+  const titleOf = (n) => L.titles[n >= 12 ? 4 : n >= 8 ? 3 : n >= 5 ? 2 : n >= 3 ? 1 : 0];
+  const mmss = (ms) => { const s = Math.round(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+  function renderProfile() {
+    const lv = levelOf(xpOf(S)), acc = S.decisions ? Math.round(S.correct / S.decisions * 100) + '%' : '—';
+    const box = (label, val, small = '') => `<div class="sbox"><label>${label}</label><b>${val}</b>${small ? `<small>${small}</small>` : ''}</div>`;
+    const total = CAT.length;
+    const when = (ts) => { const d = new Date(ts); return fmtLast(d.toISOString()) + ' ' + d.toLocaleTimeString(loc(), { hour: '2-digit', minute: '2-digit' }); };
+    const runs = S.recent.map((r) => {
+      const who = r.players > 1 ? fmt(L.nPlayers, r.players) : L.solo;
+      const mist = !r.mistakes ? L.noMistakes : r.mistakes === 1 && L.oneMistake ? L.oneMistake : fmt(L.nMistakes, r.mistakes);
+      const what = r.win ? `${L.rWin} · ${mmss(r.time || 0)} · ${mist}` : fmt(L.rLeft, r.top || 1);
+      return `<div class="run"><span class="ic ${r.win ? 'win' : ''}">${r.win ? '★' : '·'}</span><span class="what">${esc(what)}</span><span class="when">${esc(who)} · ${esc(when(r.ts))}</span></div>`;
+    }).join('');
+    $('profilePane').innerHTML =
+      `<div class="card"><div class="prof"><div class="av big" id="profAv"><span></span></div>`
+      + `<div class="who"><div class="nm">${esc(F.me.name)}</div><div class="ti">${esc(titleOf(lv.n))}</div></div>`
+      + `<div class="lvl"><div class="row"><span>${L.level} <b>${lv.n}</b></span><span>${lv.into} / ${lv.need} XP</span></div><div class="bar"><i style="width:${(lv.into / lv.need * 100).toFixed(1)}%"></i></div></div></div></div>`
+      + `<div class="sgrid">`
+      + box(L.sRuns, S.runs) + box(L.sWins, S.wins) + box(L.sBest, S.bestTime ? mmss(S.bestTime) : '—') + box(L.sPerfect, S.perfect) + box(L.sStreak, S.bestStreak)
+      + box(L.sAcc, acc) + box(L.sFound, uniqueFound(), total ? '/ ' + total : '') + box(L.sTime, fmtTime(last ? last.playSeconds : 0)) + box(L.sTalks, S.talks) + box(L.sCoop, S.coopWins)
+      + `</div>`
+      + `<div class="card"><h4>${L.recent}</h4><div class="runs">${runs || `<div class="empty">${L.noRuns}</div>`}</div></div>`
+      + `<div class="note">${L.statsNote}</div>`;
+    avatar($('profAv'), F.me.code, F.me.name);
+  }
 
   // ============================================================== friends (peer-to-peer)
   // Every launcher joins the public PeerJS broker as "sondurak-fr-<friend code>"; requests,
@@ -708,6 +859,7 @@
     send('profile', { name });
     if (fromUser) toGame({ type: 'name', name });
     broadcastStatus();
+    renderTab();
   }
 
   // ---- game bridge (the game runs in another window of this launcher)
@@ -722,6 +874,7 @@
     else if (m.startsWith('invite:')) { try { const o = JSON.parse(m.slice(7)); inviteFriend(normCode(o.code), clean(o.room, 8).toUpperCase(), true); } catch { /* bad message */ } }
     else if (m.startsWith('name:')) setMyName(m.slice(5), false);
     else if (m.startsWith('room:')) { myRoom = clean(m.slice(5), 8).toUpperCase() || null; broadcastStatus(); renderFriends(); }
+    else if (m.startsWith('stat:')) { try { onStat(JSON.parse(m.slice(5))); } catch { /* bad message */ } }
   }
 
   // ---- notifications (toast here, a toast / popup in the game, taskbar flash)
@@ -823,7 +976,7 @@
 
   applyStatic();
   showTab('news');
-  $('tabNews').onclick = () => showTab('news'); $('tabAbout').onclick = () => showTab('about');
+  $('tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) showTab(b.dataset.tab); });
   for (const b of $('langs').children) b.onclick = () => { setLang(b.dataset.l); send('lang', { lang: b.dataset.l }); };
   $('bar').addEventListener('mousedown', (e) => { if (e.target.id === 'bar' || e.target.closest('.brand')) send('drag'); });
   $('min').onclick = () => send('min'); $('close').onclick = () => send('close');
@@ -834,7 +987,11 @@
     if (m.type === 'state') { if (m.lang && m.lang !== lang && STR[m.lang]) { lang = m.lang; L = STR[lang]; applyStatic(); renderFriends(); } render(m); }
     else if (m.type === 'progress') progress(m);
     else if (m.type === 'from-game') fromGame(m.msg);
-    else if (m.type === 'game-state') { gameOpen = !!m.open; if (!gameOpen) myRoom = null; broadcastStatus(); renderFriends(); if (last) render(last); }
+    else if (m.type === 'game-state') {
+      gameOpen = !!m.open;
+      if (!gameOpen) { myRoom = null; where = null; endRide(false, {}); saveS(); statsChanged(); }
+      broadcastStatus(); renderFriends(); if (last) render(last);
+    }
   });
   renderFriends();
   send('profile', { name: F.me.name });

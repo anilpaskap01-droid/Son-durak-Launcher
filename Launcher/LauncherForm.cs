@@ -118,6 +118,8 @@ namespace SonDurakLauncher
                 latestVersion = NewsVersion(NewsCache),
                 playSeconds = PlayStats.Seconds,
                 lastPlayed = PlayStats.LastPlayed,
+                // every anomaly of the installed game, for the collection tab
+                anomalies = installed ? ReadJson(Path.Combine(Config.GameDir, "assets", "anomalies.json")) : null,
             });
         }
 

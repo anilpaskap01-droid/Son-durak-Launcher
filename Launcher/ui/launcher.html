@@ -117,6 +117,26 @@
   .run .when { color: var(--muted); font-size: 12px; }
   .note { font-size: 11px; color: #56616c; }
 
+  /* anomaly collection */
+  .colhd { display: flex; align-items: center; gap: 16px; }
+  .colhd .big { font: 700 26px Consolas, monospace; color: var(--amber); }
+  .colhd .big small { font-size: 15px; color: var(--muted); }
+  .colhd .grow { flex: 1; }
+  .colhd .bar { height: 7px; border-radius: 4px; background: rgba(255,255,255,.08); overflow: hidden; margin-top: 6px; }
+  .colhd .bar i { display: block; height: 100%; background: linear-gradient(90deg, #ffb020, #ffd36b); }
+  .chips { display: flex; gap: 6px; }
+  .chip { border: 1px solid var(--line); background: rgba(255,255,255,.04); color: var(--soft); border-radius: 12px; padding: 3px 11px; font-size: 12px; cursor: pointer; }
+  .chip.sel { background: rgba(255,176,32,.16); border-color: rgba(255,176,32,.5); color: #fff; }
+  .cgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .an { display: flex; gap: 10px; min-height: 58px; padding: 9px 11px; border-radius: 4px; background: rgba(0,0,0,.2); border-left: 3px solid rgba(255,255,255,.06); }
+  .an .no { font: 11px Consolas, monospace; color: #56616c; flex: none; width: 22px; }
+  .an .tx { font-size: 12.5px; line-height: 1.4; color: #e6eaee; }
+  .an .mt { margin-top: 4px; font-size: 11px; color: var(--muted); }
+  .an.got { border-left-color: var(--amber); background: linear-gradient(90deg, rgba(255,176,32,.08), rgba(0,0,0,.2) 60%); }
+  .an.got .no { color: var(--amber); }
+  .an.new { box-shadow: inset 0 0 0 1px rgba(255,176,32,.5); }
+  .an.hid .tx { color: #56616c; letter-spacing: .3em; }
+
   /* download screen (replaces the tabs while the game or the launcher downloads) */
   .dl { display: none; flex: 1; min-height: 0; flex-direction: column; gap: 12px; background: var(--card); border-radius: 6px; padding: 16px 18px 14px; }
   .content.downloading .tabs, .content.downloading .list { display: none !important; }
@@ -231,9 +251,10 @@
         </div>
       </div>
       <div class="content" id="content">
-        <div class="tabs" id="tabs"><button data-tab="news" id="tabNews" class="sel"></button><button data-tab="profile" id="tabProfile"></button><button data-tab="about" id="tabAbout"></button></div>
+        <div class="tabs" id="tabs"><button data-tab="news" id="tabNews" class="sel"></button><button data-tab="profile" id="tabProfile"></button><button data-tab="col" id="tabCol"></button><button data-tab="about" id="tabAbout"></button></div>
         <div class="list" data-pane="news" id="news"></div>
         <div class="list" data-pane="profile" id="profilePane" style="display:none"></div>
+        <div class="list" data-pane="col" id="colPane" style="display:none"></div>
         <div class="list" data-pane="about" id="aboutPane" style="display:none"></div>
         <div class="dl" id="dl">
           <div class="dlhd"><span class="ttl" id="dlTitle"></span><span class="ver" id="dlVer"></span><span class="dlpct" id="dlPct">0%</span></div>
@@ -302,6 +323,9 @@
       sRuns: 'SEFER', sWins: 'SON DURAK', sBest: 'EN İYİ SÜRE', sPerfect: 'HATASIZ BİTİŞ', sStreak: 'EN UZUN SERİ', sAcc: 'DOĞRULUK', sFound: 'BULUNAN ANOMALİ', sTime: 'OYNAMA SÜRESİ', sTalks: 'SOHBET', sCoop: 'CO-OP ZAFER',
       recent: 'SON SEFERLER', rWin: "Son Durak'a ulaştın", rLeft: "{n}. turda indin", solo: 'Tek başına', nPlayers: '{n} kişi', nMistakes: '{n} hata', noMistakes: 'hatasız',
       noRuns: "Henüz sefer yok. Oyna'ya bas; istatistiklerin, seferlerin ve seviyen burada birikecek.", statsNote: 'İstatistikler bu bilgisayarda, launcher\'da tutulur.',
+      // anomaly collection
+      tabCol: 'KOLEKSİYON', colOf: '{n} anomali bulundu', colAll: 'Tümü', colGot: 'Bulunan', colMissing: 'Bulunmayan', colTimes: '{n}× bulundu', colFirst: 'ilk', colLast: 'SON BULUNAN',
+      colHint: 'Bir anomaliyi fark edip GERİ döndüğünde koleksiyonuna eklenir. Bulmadıkların gizli kalır.', colNone: 'Koleksiyon, oyun yüklenince burada görünecek.', colEmptyGot: 'Henüz bir anomali bulmadın.',
       errors: { 'repo-not-found': 'Güncelleme sunucusuna ulaşılamadı.', 'auth': 'Güncelleme sunucusuna bağlanılamadı. Launcher\'ın en yeni sürümünü kur.', 'rate-limit': 'Sunucu şu an meşgul, biraz sonra tekrar dene.', 'launcher-update': 'Launcher güncellenemedi, bu sürümle devam ediliyor.', other: 'Güncelleme alınamadı, biraz sonra tekrar dene.' },
       // friends
       lCode: 'KODUN', copy: 'Kodu kopyala', copied: 'Kod kopyalandı', addPh: 'Arkadaş kodu, ör. K7Q2-9XMB', add: 'Ekle', editName: 'Adını değiştir',
@@ -330,6 +354,8 @@
       sRuns: 'RIDES', sWins: 'LAST STOP', sBest: 'BEST TIME', sPerfect: 'FLAWLESS', sStreak: 'BEST STREAK', sAcc: 'ACCURACY', sFound: 'ANOMALIES FOUND', sTime: 'PLAY TIME', sTalks: 'CHATS', sCoop: 'CO-OP WINS',
       recent: 'RECENT RIDES', rWin: 'Reached the Last Stop', rLeft: 'Got off at round {n}', solo: 'Solo', nPlayers: '{n} players', nMistakes: '{n} mistakes', oneMistake: '1 mistake', noMistakes: 'no mistakes',
       noRuns: 'No rides yet. Press Play; your stats, rides and level build up here.', statsNote: 'Stats are kept on this computer, in the launcher.',
+      tabCol: 'COLLECTION', colOf: '{n} anomalies found', colAll: 'All', colGot: 'Found', colMissing: 'Missing', colTimes: 'spotted {n}×', colFirst: 'first', colLast: 'LATEST FIND',
+      colHint: 'An anomaly joins your collection when you spot it and go back. The ones you have not found stay hidden.', colNone: 'The collection appears here once the game is installed.', colEmptyGot: 'You have not found an anomaly yet.',
       errors: { 'repo-not-found': 'Could not reach the update server.', 'auth': 'Could not connect to the update server. Please install the latest launcher.', 'rate-limit': 'The server is busy, try again in a bit.', 'launcher-update': 'The launcher could not update itself; continuing with this version.', other: 'Could not get the update, try again in a bit.' },
       lCode: 'YOUR CODE', copy: 'Copy code', copied: 'Code copied', addPh: 'Friend code, e.g. K7Q2-9XMB', add: 'Add', editName: 'Change your name',
       reqIn: 'FRIEND REQUESTS', reqOut: 'SENT REQUESTS', secOnline: 'ONLINE', secOffline: 'OFFLINE',
@@ -373,6 +399,7 @@
     $('sub').textContent = L.sub;
     $('tags').innerHTML = L.tags.map((t) => `<span>${esc(t)}</span>`).join('');
     for (const k of ['lVer', 'lTime', 'lLast', 'tabNews', 'tabProfile', 'tabAbout', 'lCode', 'lSpeed', 'lPeak', 'lGot', 'lFiles', 'lEta']) $(k).textContent = L[k];
+    tabBadges();
     $('recheck').title = L.recheck; $('folder').title = L.folder; $('copyCode').title = L.copy; $('editName').title = L.editName;
     $('addIn').placeholder = L.addPh; $('addBtn').textContent = L.add; $('msgIn').placeholder = L.msgPh; $('msgSend').textContent = L.send;
     for (const b of $('langs').children) b.classList.toggle('sel', b.dataset.l === lang);
@@ -388,6 +415,7 @@
 
   function render(s) {
     last = s;
+    if (s.anomalies && Array.isArray(s.anomalies.list)) CAT = s.anomalies.list.filter((a) => a && typeof a.id === 'string' && typeof a.tr === 'string');
     const v = (x) => x ? 'v' + x : '—';
     let status = '', small = '';
     const downloading = s.status === 'busy' || s.status === 'selfUpdate';
@@ -502,13 +530,20 @@
     $('small').textContent = `${pct}% · ${mb(p.done)} / ${mb(p.total)}` + (dl.speed > 0 ? ` · ${rate(dl.speed)}` : '');
   }
   function showTab(t) {
+    if (tab === 'col' && t !== 'col') { S.colSeen = Date.now(); saveS(); } // new finds were seen
     tab = t;
     for (const b of $('tabs').children) b.classList.toggle('sel', b.dataset.tab === t);
     for (const p of document.querySelectorAll('[data-pane]')) p.style.display = p.dataset.pane === t ? '' : 'none';
     renderTab();
+    tabBadges();
+  }
+  // "+3" on the collection tab for finds you have not looked at yet
+  function tabBadges() {
+    const n = newFinds();
+    $('tabCol').innerHTML = esc(L.tabCol) + (n && tab !== 'col' ? ` <span class="badge">+${n}</span>` : '');
   }
   // the panes built from local data (news / about come with the host's state)
-  function renderTab() { if (tab === 'profile') renderProfile(); }
+  function renderTab() { if (tab === 'profile') renderProfile(); else if (tab === 'col') renderCollection(); }
 
   // ============================================================== stats (from the game's "stat:" reports)
   // Kept in this page's storage: totals, the anomalies you spotted, achievements, recent rides.
@@ -521,6 +556,7 @@
       s[k] = Number.isFinite(s[k]) ? s[k] : 0;
     for (const k of ['found', 'foundAt', 'ach']) if (!s[k] || typeof s[k] !== 'object') s[k] = {};
     if (!Array.isArray(s.recent)) s.recent = [];
+    if (!Number.isFinite(s.colSeen)) s.colSeen = Date.now(); // when the collection tab was last left
     return s;
   }
   const S = loadS();
@@ -538,7 +574,7 @@
   function spotted(id) {
     if (!id) return;
     S.found[id] = (S.found[id] || 0) + 1;
-    if (!S.foundAt[id]) S.foundAt[id] = Date.now();
+    if (!S.foundAt[id]) { S.foundAt[id] = Date.now(); S.lastFound = id; }
   }
   function onStat(ev) {
     if (!ev || typeof ev !== 'object') return;
@@ -587,7 +623,7 @@
     saveS();
     statsChanged();
   }
-  function statsChanged() { renderTab(); }
+  function statsChanged() { renderTab(); tabBadges(); }
 
   // level: XP from right calls, wins, spotted anomalies; level n needs 50·n·(n−1) XP in total
   function xpOf(s) { return s.correct * 10 + s.wins * 150 + Object.keys(s.found).length * 30 + Object.keys(s.ach || {}).length * 50; }
@@ -617,6 +653,32 @@
       + `<div class="note">${L.statsNote}</div>`;
     avatar($('profAv'), F.me.code, F.me.name);
   }
+
+  // ---- anomaly collection: every anomaly of the installed game; found ones show what they were
+  let colFilter = 'all';
+  const newFinds = () => Object.values(S.foundAt).filter((t) => t > S.colSeen).length;
+  function renderCollection() {
+    const pane = $('colPane'), keep = pane.scrollTop;
+    if (!CAT.length) { pane.innerHTML = `<div class="empty">${L.colNone}</div>`; return; }
+    const got = CAT.filter((a) => S.found[a.id]).length;
+    const latestA = CAT.find((a) => a.id === S.lastFound);
+    const recentCut = S.colSeen; // finds newer than the last visit get a glow
+    const tiles = CAT.map((a, i) => ({ a, i, n: S.found[a.id] || 0 }))
+      .filter((x) => colFilter === 'all' || (colFilter === 'got' ? x.n : !x.n))
+      .map(({ a, i, n }) => n
+        ? `<div class="an got ${S.foundAt[a.id] > recentCut ? 'new' : ''}"><span class="no">${String(i + 1).padStart(2, '0')}</span><div><div class="tx">${esc(a[lang] || a.tr)}</div><div class="mt">${esc(fmt(L.colTimes, n))} · ${L.colFirst} ${esc(fmtDate(new Date(S.foundAt[a.id]).toISOString()))}</div></div></div>`
+        : `<div class="an hid"><span class="no">${String(i + 1).padStart(2, '0')}</span><div class="tx">? ? ?</div></div>`).join('');
+    pane.innerHTML =
+      `<div class="card"><div class="colhd"><div class="big">${got}<small> / ${CAT.length}</small></div>`
+      + `<div class="grow"><div style="font-size:13px;color:#fff">${esc(fmt(L.colOf, got))}</div><div class="bar"><i style="width:${(got / CAT.length * 100).toFixed(1)}%"></i></div></div>`
+      + `<div class="chips">${['all', 'got', 'missing'].map((f) => `<button class="chip ${colFilter === f ? 'sel' : ''}" data-f="${f}">${{ all: L.colAll, got: L.colGot, missing: L.colMissing }[f]}</button>`).join('')}</div></div>`
+      + (latestA ? `<p style="margin-top:9px"><span style="font-size:10px;letter-spacing:.14em;color:var(--muted)">${L.colLast}</span>&nbsp; ${esc(latestA[lang] || latestA.tr)}</p>` : '')
+      + `</div>`
+      + (tiles ? `<div class="cgrid">${tiles}</div>` : `<div class="empty">${L.colEmptyGot}</div>`)
+      + `<div class="note">${L.colHint}</div>`;
+    pane.scrollTop = keep;
+  }
+  $('colPane').addEventListener('click', (e) => { const c = e.target.closest('[data-f]'); if (c) { colFilter = c.dataset.f; renderCollection(); } });
 
   // ============================================================== friends (peer-to-peer)
   // Every launcher joins the public PeerJS broker as "sondurak-fr-<friend code>"; requests,

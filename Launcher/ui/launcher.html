@@ -150,6 +150,17 @@
   .ach .ap .bar { flex: 1; height: 5px; border-radius: 3px; background: rgba(255,255,255,.08); overflow: hidden; }
   .ach .ap .bar i { display: block; height: 100%; background: var(--blue); }
   .ach .dt { font-size: 11px; color: var(--amber); margin-top: 4px; }
+  /* friend leaderboard */
+  .lb { display: flex; flex-direction: column; gap: 4px; }
+  .lbr { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 4px; background: rgba(0,0,0,.18); }
+  .lbr.me { background: linear-gradient(90deg, rgba(103,193,245,.14), rgba(0,0,0,.18) 70%); box-shadow: inset 3px 0 0 var(--blue); }
+  .lbr .rk { width: 30px; text-align: center; font: 700 15px Consolas, monospace; color: var(--muted); }
+  .lbr .rk.m { font-size: 19px; }
+  .lbr .nmx { flex: 1; min-width: 0; font-size: 14px; color: #e6eaee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lbr .nmx small { margin-left: 8px; font-size: 10px; letter-spacing: .12em; color: var(--blue); }
+  .lbr .nmx .lv { margin-left: 8px; font-size: 11px; color: var(--muted); letter-spacing: 0; }
+  .lbr .val { font: 600 17px Consolas, monospace; color: #fff; min-width: 70px; text-align: right; }
+  .lbr .val.none { color: #56616c; }
   .toast.achtoast { border-color: rgba(255,176,32,.55); background: linear-gradient(100deg, #2b2312, #1e2d3e); }
 
   /* download screen (replaces the tabs while the game or the launcher downloads) */
@@ -266,11 +277,12 @@
         </div>
       </div>
       <div class="content" id="content">
-        <div class="tabs" id="tabs"><button data-tab="news" id="tabNews" class="sel"></button><button data-tab="profile" id="tabProfile"></button><button data-tab="ach" id="tabAch"></button><button data-tab="col" id="tabCol"></button><button data-tab="about" id="tabAbout"></button></div>
+        <div class="tabs" id="tabs"><button data-tab="news" id="tabNews" class="sel"></button><button data-tab="profile" id="tabProfile"></button><button data-tab="ach" id="tabAch"></button><button data-tab="col" id="tabCol"></button><button data-tab="lb" id="tabLb"></button><button data-tab="about" id="tabAbout"></button></div>
         <div class="list" data-pane="news" id="news"></div>
         <div class="list" data-pane="profile" id="profilePane" style="display:none"></div>
         <div class="list" data-pane="ach" id="achPane" style="display:none"></div>
         <div class="list" data-pane="col" id="colPane" style="display:none"></div>
+        <div class="list" data-pane="lb" id="lbPane" style="display:none"></div>
         <div class="list" data-pane="about" id="aboutPane" style="display:none"></div>
         <div class="dl" id="dl">
           <div class="dlhd"><span class="ttl" id="dlTitle"></span><span class="ver" id="dlVer"></span><span class="dlpct" id="dlPct">0%</span></div>
@@ -366,6 +378,9 @@
       tReq: '{n} sana arkadaşlık isteği gönderdi', tAcc: '{n} arkadaşlık isteğini kabul etti', tInv: '{n} seni odasına davet etti', tMsg: '{n}',
       inviteSent: 'Davet gönderildi: {n}', inviteOffline: '{n} şu an çevrimdışı', inviteNoRoom: 'Önce oyunda bir oda kur ya da bir odaya katıl.',
       prMenu: 'Ana menüde', prLobby: 'Lobide', prRound: 'Tur {n}', prEnd: "Son Durak'a ulaştı 🏁",
+      tabLb: 'SIRALAMA', lbBy: { wins: 'Son Durak', best: 'En iyi süre', found: 'Anomali', streak: 'Seri', ach: 'Başarım', level: 'Seviye' }, lbYou: 'SEN', lbLevel: 'Sv.',
+      lbNoFriends: 'Arkadaş ekleyince arkadaşlarınla aranızdaki sıralama burada görünür.', lbWaiting: '{n} arkadaşının istatistikleri henüz gelmedi; ikiniz de launcher\'ı açınca gelir.',
+      lbNote: 'Sıralama, arkadaşlarının launcher\'larından gelen son bilgilere göre.',
     },
     en: {
       sub: 'T9 Night Line · Anomaly Hunt', tags: ['Horror', 'Puzzle', 'Co-op'],
@@ -406,6 +421,9 @@
       tReq: '{n} sent you a friend request', tAcc: '{n} accepted your friend request', tInv: '{n} invited you to their room', tMsg: '{n}',
       inviteSent: 'Invite sent to {n}', inviteOffline: '{n} is offline', inviteNoRoom: 'Host or join a room in the game first.',
       prMenu: 'In the main menu', prLobby: 'In the lobby', prRound: 'Round {n}', prEnd: 'Reached the Last Stop 🏁',
+      tabLb: 'LEADERBOARD', lbBy: { wins: 'Last Stop', best: 'Best time', found: 'Anomalies', streak: 'Streak', ach: 'Achievements', level: 'Level' }, lbYou: 'YOU', lbLevel: 'Lv.',
+      lbNoFriends: 'Add friends to see how you rank against them here.', lbWaiting: 'Stats for {n} friend(s) have not arrived yet; they come once you both have the launcher open.',
+      lbNote: "Based on the latest stats your friends' launchers sent.",
     },
   };
   let lang = (navigator.language || 'tr').toLowerCase().startsWith('tr') ? 'tr' : 'en', L = STR[lang], last = null, action = null, tab = 'news';
@@ -437,7 +455,7 @@
     document.documentElement.lang = lang;
     $('sub').textContent = L.sub;
     $('tags').innerHTML = L.tags.map((t) => `<span>${esc(t)}</span>`).join('');
-    for (const k of ['lVer', 'lTime', 'lLast', 'tabNews', 'tabProfile', 'tabAch', 'tabAbout', 'lCode', 'lSpeed', 'lPeak', 'lGot', 'lFiles', 'lEta']) $(k).textContent = L[k];
+    for (const k of ['lVer', 'lTime', 'lLast', 'tabNews', 'tabProfile', 'tabAch', 'tabLb', 'tabAbout', 'lCode', 'lSpeed', 'lPeak', 'lGot', 'lFiles', 'lEta']) $(k).textContent = L[k];
     tabBadges();
     $('recheck').title = L.recheck; $('folder').title = L.folder; $('copyCode').title = L.copy; $('editName').title = L.editName;
     $('addIn').placeholder = L.addPh; $('addBtn').textContent = L.add; $('msgIn').placeholder = L.msgPh; $('msgSend').textContent = L.send;
@@ -583,7 +601,7 @@
     $('tabCol').innerHTML = esc(L.tabCol) + (n && tab !== 'col' ? ` <span class="badge">+${n}</span>` : '');
   }
   // the panes built from local data (news / about come with the host's state)
-  function renderTab() { if (tab === 'profile') renderProfile(); else if (tab === 'col') renderCollection(); else if (tab === 'ach') renderAch(); }
+  function renderTab() { if (tab === 'profile') renderProfile(); else if (tab === 'col') renderCollection(); else if (tab === 'ach') renderAch(); else if (tab === 'lb') renderLb(); }
 
   // ============================================================== stats (from the game's "stat:" reports)
   // Kept in this page's storage: totals, the anomalies you spotted, achievements, recent rides.
@@ -666,7 +684,7 @@
     saveS();
     statsChanged();
   }
-  function statsChanged() { checkAch(); renderTab(); tabBadges(); }
+  function statsChanged() { checkAch(); renderTab(); tabBadges(); broadcastSum(); }
 
   // ---- achievements: [id, icon, () => [value, needed]]; checked whenever stats, play time or friends change
   const foundInGame = () => CAT.filter((a) => S.found[a.id]).length;
@@ -695,7 +713,7 @@
         toGame({ type: 'ach', icon, name, desc });
       }
     }
-    if (changed) { saveS(); renderTab(); }
+    if (changed) { saveS(); renderTab(); broadcastSum(); }
   }
   function renderAch() {
     const got = ACH.filter(([id]) => S.ach[id]).length;
@@ -744,6 +762,43 @@
       + `<div class="note">${L.statsNote}</div>`;
     avatar($('profAv'), F.me.code, F.me.name);
   }
+
+  // ---- friend leaderboard: launchers swap a small summary of their stats ({t:'sum'}) on every
+  // connection and when it changes; the last one each friend sent is kept, so offline friends rank too
+  const mySum = () => ({ wins: S.wins, best: S.bestTime, found: uniqueFound(), streak: S.bestStreak, ach: Object.keys(S.ach).length, level: levelOf(xpOf(S)).n });
+  function cleanSum(s) {
+    if (!s || typeof s !== 'object') return null;
+    const n = (x, hi) => Math.max(0, Math.min(hi, Math.floor(Number(x) || 0)));
+    return { wins: n(s.wins, 1e6), best: n(s.best, 1e9), found: n(s.found, 999), streak: n(s.streak, 1e6), ach: n(s.ach, 99), level: Math.max(1, n(s.level, 999)) };
+  }
+  function sendSum(code) { if (isOnline(code)) raw(code, { t: 'sum', s: mySum() }); }
+  let sumTimer = 0;
+  function broadcastSum() { clearTimeout(sumTimer); sumTimer = setTimeout(() => { for (const c of Object.keys(F.friends)) sendSum(c); }, 400); }
+  let lbBy = 'wins';
+  function renderLb() {
+    const pane = $('lbPane'), friends = Object.entries(F.friends);
+    if (!friends.length) { pane.innerHTML = `<div class="empty">${L.lbNoFriends}</div>`; return; }
+    const rows = [{ code: F.me.code, name: F.me.name, me: true, s: mySum() }];
+    let waiting = 0;
+    for (const [code, f] of friends) { if (f.sum) rows.push({ code, name: f.name, s: f.sum }); else waiting++; }
+    const asc = lbBy === 'best', val = (r) => r.s[lbBy], has = (r) => !(asc && !val(r)); // best time 0 = never finished
+    rows.sort((a, b) => (has(b) - has(a)) || (asc ? val(a) - val(b) : val(b) - val(a)) || (a.me ? -1 : b.me ? 1 : 0) || a.name.localeCompare(b.name));
+    const medal = ['🥇', '🥈', '🥉'];
+    let rank = 0, prev = null;
+    const html = rows.map((r, i) => {
+      const v = val(r), ok = has(r);
+      if (ok && v !== prev) { rank = i + 1; prev = v; }
+      const rk = !ok ? '<span class="rk">–</span>' : rank <= 3 && (asc || v > 0) ? `<span class="rk m">${medal[rank - 1]}</span>` : `<span class="rk">${rank}</span>`;
+      const st = r.me ? (gameOpen ? 'ingame' : 'online') : isOnline(r.code) ? (live[r.code] && live[r.code].st) || 'online' : 'offline';
+      return `<div class="lbr ${r.me ? 'me' : ''}">${rk}<div class="av sm" style="background:hsl(${hue(r.code)},45%,38%)"><span>${esc((clean(r.name, 2)[0] || '?').toUpperCase())}</span><i class="dot ${st}"></i></div>`
+        + `<div class="nmx">${esc(r.name)}${r.me ? `<small>${L.lbYou}</small>` : ''}<span class="lv">${L.lbLevel} ${r.s.level}</span></div>`
+        + `<div class="val ${ok ? '' : 'none'}">${!ok ? '—' : asc ? mmss(v) : v}</div></div>`;
+    }).join('');
+    pane.innerHTML = `<div class="chips">${Object.keys(L.lbBy).map((k) => `<button class="chip ${lbBy === k ? 'sel' : ''}" data-by="${k}">${L.lbBy[k]}</button>`).join('')}</div>`
+      + `<div class="lb">${html}</div>`
+      + (waiting ? `<div class="note">${esc(fmt(L.lbWaiting, waiting))}</div>` : '') + `<div class="note">${L.lbNote}</div>`;
+  }
+  $('lbPane').addEventListener('click', (e) => { const c = e.target.closest('[data-by]'); if (c) { lbBy = c.dataset.by; renderLb(); } });
 
   // ---- anomaly collection: every anomaly of the installed game; found ones show what they were
   let colFilter = 'all';
@@ -913,7 +968,7 @@
       case 'proof': {
         if (!fr || typeof d.p !== 'string' || authed[code]) return;
         for (const n of nonces[code] || []) if (d.p === await sha(fr.key + ':' + n + ':' + code)) { authed[code] = true; break; }
-        if (authed[code]) { status(code); flush(code); renderFriends(); if (chatWith === code) renderChat(); }
+        if (authed[code]) { status(code); sendSum(code); flush(code); renderFriends(); if (chatWith === code) renderChat(); }
         return;
       }
       case 'req':
@@ -954,6 +1009,7 @@
         break;
       }
       case 'ack': { const m = (F.chats[code] || []).find((x) => x.id === d.id && x.me); if (m && !m.ok) { m.ok = true; saveF(); if (chatWith === code) renderChat(); } break; }
+      case 'sum': { const s = cleanSum(d.s); if (s) { fr.sum = s; fr.sumAt = Date.now(); saveF(); if (tab === 'lb') renderLb(); } break; }
       case 'inv': {
         const room = clean(d.room, 8).toUpperCase();
         if (room) notify({ title: fmt(L.tInv, fr.name), sub: `${L.room}: ${room}`, kind: 'inv', code, room });
@@ -1097,6 +1153,7 @@
     if (outq.length) h += `<div class="sect">${L.reqOut}</div>` + outq.map((c) => row(c, fmtCode(c), 'offline', L.stWaiting, actBtn('cancel', c, '✕', 'ghost'))).join('');
     if (!inq.length && !list.length && !outq.length) h = `<div class="empty" style="padding:14px 8px">${L.noFriends}</div>`;
     $('flist').innerHTML = h;
+    if (tab === 'lb') renderLb(); // (names, online dots)
   }
   function openChat(code) {
     if (!F.friends[code]) return;

@@ -11,7 +11,7 @@ namespace SonDurakLauncher
         public const string Host = "launcher.sondurak";
         public static string Url => $"https://{Host}/launcher.html";
         public static string Folder => Path.Combine(Config.DataDir, "launcher-ui");
-        static readonly string[] Files = { "launcher.html", "bg.jpg", "peerjs.min.js", "LICENSE-peerjs.txt" };
+        static readonly string[] Files = { "launcher.html", "bg.jpg", "bg-metro.jpg", "peerjs.min.js", "LICENSE-peerjs.txt" };
 
         public static void Prepare()
         {

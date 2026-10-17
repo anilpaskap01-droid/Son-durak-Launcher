@@ -103,7 +103,7 @@
   .lvl .row b { color: #fff; font-size: 15px; }
   .lvl .bar { height: 7px; border-radius: 4px; background: rgba(255,255,255,.08); overflow: hidden; }
   .lvl .bar i { display: block; height: 100%; background: linear-gradient(90deg, #ffb020, #ffd36b); border-radius: 4px; }
-  .sgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .sgrid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
   .sbox { background: rgba(0,0,0,.2); border-radius: 4px; padding: 9px 11px; min-width: 0; }
   .sbox label { display: block; font-size: 10px; letter-spacing: .13em; color: var(--muted); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .sbox b { font-size: 18px; font-weight: 600; color: #fff; }
@@ -257,6 +257,50 @@
   .toast .ts { font-size: 12px; color: var(--soft); margin-top: 3px; word-wrap: break-word; }
   .toast .tb { display: flex; gap: 6px; margin-top: 9px; }
   @keyframes tin { from { transform: translateY(12px); opacity: 0; } }
+  /* line picker on the hero */
+  .hero.metro { background-image: url("bg-metro.jpg"); }
+  .linepick { position: absolute; right: 30px; bottom: 44px; z-index: 2; display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+  .linepick .lh { font-size: 10px; letter-spacing: .2em; color: var(--muted); text-shadow: 0 1px 3px #000; }
+  .linepick .row { display: flex; gap: 6px; }
+  .lp { display: flex; align-items: center; gap: 8px; padding: 6px 11px 6px 7px; border-radius: 5px; border: 1px solid rgba(255,255,255,.14); background: rgba(8,12,17,.72);
+    color: #c9d1d8; font: 600 13px "Segoe UI", sans-serif; cursor: pointer; backdrop-filter: blur(4px); transition: border-color .15s, background .15s; }
+  .lp:hover { border-color: rgba(255,255,255,.35); color: #fff; }
+  .lp b { font: 700 11px Consolas, monospace; color: #000; background: var(--lc); padding: 1px 6px; border-radius: 2px; }
+  .lp.sel { border-color: var(--lc); color: #fff; background: linear-gradient(90deg, color-mix(in srgb, var(--lc) 30%, rgba(8,12,17,.8)), rgba(8,12,17,.8)); box-shadow: 0 0 16px color-mix(in srgb, var(--lc) 35%, transparent); }
+  .lpill { font: 700 10px Consolas, monospace; color: #000; padding: 0 5px; border-radius: 2px; margin-right: 6px; }
+  /* settings window */
+  .modal { position: fixed; inset: 0; z-index: 30; display: none; place-items: center; background: rgba(4,7,10,.62); }
+  .modal.show { display: grid; animation: tin .2s ease-out; }
+  .mbox { width: 520px; max-width: calc(100% - 40px); background: var(--panel); border: 1px solid var(--line); border-top: 2px solid var(--blue); border-radius: 6px; padding: 18px 20px 16px; box-shadow: 0 24px 60px rgba(0,0,0,.6); }
+  .mbox h3 { margin: 0 0 12px; font-size: 13px; letter-spacing: .18em; color: #fff; }
+  .opt { display: flex; align-items: center; gap: 14px; padding: 11px 0; border-top: 1px solid var(--line); }
+  .opt .ot { flex: 1; min-width: 0; }
+  .opt .ot b { display: block; font-size: 14px; font-weight: 600; color: #e6eaee; }
+  .opt .ot span { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+  .sw { flex: none; width: 42px; height: 24px; border-radius: 12px; border: 0; background: #2c3a4a; position: relative; cursor: pointer; transition: background .15s; }
+  .sw::after { content: ''; position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: #c7d5e0; transition: transform .15s; }
+  .sw.on { background: #1a9fff; }
+  .sw.on::after { transform: translateX(18px); background: #fff; }
+  .mbox .mfoot { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+  .mbox .mfoot .lver { margin: 0; }
+  /* daily quests */
+  .qhd { display: flex; align-items: center; gap: 12px; }
+  .qhd .big { font: 700 26px Consolas, monospace; color: var(--amber); }
+  .qhd .big small { font-size: 15px; color: var(--muted); }
+  .qhd .grow { flex: 1; font-size: 13px; color: #fff; }
+  .qhd .grow small { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .quest { display: flex; align-items: center; gap: 13px; padding: 12px 14px; border-radius: 5px; background: rgba(0,0,0,.2); border-left: 3px solid rgba(255,255,255,.08); }
+  .quest .qi { flex: none; width: 40px; height: 40px; border-radius: 8px; display: grid; place-items: center; font-size: 19px; background: #232c37; }
+  .quest .qb { flex: 1; min-width: 0; }
+  .quest .qn { font-size: 14px; font-weight: 600; color: #e6eaee; }
+  .quest .qd { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .quest .qp { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 11px; color: var(--muted); }
+  .quest .qp .bar { flex: 1; height: 6px; border-radius: 3px; background: rgba(255,255,255,.08); overflow: hidden; }
+  .quest .qp .bar i { display: block; height: 100%; background: linear-gradient(90deg, #1a9fff, #67c1f5); }
+  .quest .qx { flex: none; font: 700 13px Consolas, monospace; color: var(--amber); }
+  .quest.done { border-left-color: var(--green); background: linear-gradient(90deg, rgba(139,211,75,.1), rgba(0,0,0,.2) 60%); }
+  .quest.done .qi { background: radial-gradient(circle at 35% 30%, #b8f07a, #4f9c19); }
+  .quest.done .qp .bar i { background: var(--green); }
   ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 4px; } ::-webkit-scrollbar-track { background: transparent; }
 </style>
 </head>
@@ -269,7 +313,8 @@
   </div>
   <div class="body">
     <div class="main">
-      <header class="hero"><div class="txt"><h1 class="logo">SON DURAK</h1><p class="sub" id="sub"></p><div class="tags" id="tags"></div></div></header>
+      <header class="hero" id="hero"><div class="txt"><h1 class="logo">SON DURAK</h1><p class="sub" id="sub"></p><div class="tags" id="tags"></div></div>
+        <div class="linepick"><span class="lh" id="lLine"></span><div class="row" id="linePick"></div></div></header>
       <div class="actionbar">
         <button class="main-btn play" id="main" disabled></button>
         <div class="astatus">
@@ -286,12 +331,14 @@
         <div class="tools">
           <button class="tool" id="recheck"><svg viewBox="0 0 24 24"><path d="M12 4a8 8 0 0 1 7.4 5H17v2h6V5h-2v2.3A10 10 0 1 0 22 12h-2a8 8 0 1 1-8-8z"/></svg></button>
           <button class="tool" id="folder"><svg viewBox="0 0 24 24"><path d="M3 5h7l2 2h9v12H3z"/></svg></button>
+          <button class="tool" id="opts"><svg viewBox="0 0 24 24"><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3h-4l-.4 2.9a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.4 7.4 0 0 0 1.7 1L11 21h4l.4-2.9a7.4 7.4 0 0 0 1.7-1l2.5 1 2-3.5zM13 15.5A3.5 3.5 0 1 1 13 8.5a3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg></button>
         </div>
       </div>
       <div class="content" id="content">
-        <div class="tabs" id="tabs"><button data-tab="news" id="tabNews" class="sel"></button><button data-tab="profile" id="tabProfile"></button><button data-tab="ach" id="tabAch"></button><button data-tab="col" id="tabCol"></button><button data-tab="lb" id="tabLb"></button><button data-tab="about" id="tabAbout"></button></div>
+        <div class="tabs" id="tabs"><button data-tab="news" id="tabNews" class="sel"></button><button data-tab="profile" id="tabProfile"></button><button data-tab="quests" id="tabQuests"></button><button data-tab="ach" id="tabAch"></button><button data-tab="col" id="tabCol"></button><button data-tab="lb" id="tabLb"></button><button data-tab="about" id="tabAbout"></button></div>
         <div class="list" data-pane="news" id="news"></div>
         <div class="list" data-pane="profile" id="profilePane" style="display:none"></div>
+        <div class="list" data-pane="quests" id="questPane" style="display:none"></div>
         <div class="list" data-pane="ach" id="achPane" style="display:none"></div>
         <div class="list" data-pane="col" id="colPane" style="display:none"></div>
         <div class="list" data-pane="lb" id="lbPane" style="display:none"></div>
@@ -336,6 +383,7 @@
   </div>
 </div>
 <div class="toasts" id="toasts"></div>
+<div class="modal" id="optsModal"><div class="mbox" id="optsBox"></div></div>
 <script src="peerjs.min.js"></script>
 <script>
   // ============================================================== launcher page
@@ -377,7 +425,27 @@
         packed: ['Tıklım Tıklım', 'En az 4 kişilik bir odada oyna.'], chatty: ['Sohbet Ustası', 'Yolcularla 25 kez konuş.'], paranoid: ['Paranoyak', 'Ortada anomali yokken 10 kez GERİ dön.'],
         so_close: ['Az Kalsın', '9. ya da 10. turda yanlış karar ver.'], night_owl: ['Gece Kuşu', 'Gece yarısından sonra (00:00–05:00) oyna.'], commuter: ['Daimi Yolcu', 'Toplam 5 saat oyna.'],
         social: ['Kalabalık Vagon', '3 arkadaş edin.'],
+        first_slap: ['İlk Tokat', 'Birine tokat at.'], slapper: ['Tokatçı', '50 tokat at.'], slapped: ['Şamar Oğlanı', 'Bir arkadaşından tokat ye.'],
+        underground: ['Yeraltı', "Gece Metrosu'nda Son Durak'a ulaş."], both_lines: ['İki Hat', "İki hatta da Son Durak'a ulaş."], dark_tunnel: ['Karanlık Tünel', "Metroda hiç hata yapmadan Son Durak'a ulaş."],
+        tunnel_rat: ['Tünel Faresi', 'Metroda 25 anomali bul.'], questor: ['Görev Adamı', '10 günlük görev tamamla.'], loyal: ['Sadık Yolcu', '7 farklı günde oyna.'], veteran: ['Kıdemli Yolcu', "Seviye 10'a ulaş."],
       },
+      // line picker, settings, daily quests
+      lLine: 'HAT', lines: { tram: 'Gece Tramvayı', metro: 'Gece Metrosu' }, subFor: { tram: 'T9 Gece Hattı · Anomali Avı', metro: 'M2 Gece Metrosu · Anomali Avı' },
+      opts: 'Ayarlar', optsTitle: 'LAUNCHER AYARLARI', close: 'Kapat', repairBtn: 'Onar', folderBtn: 'Klasörü aç',
+      oAuto: ['Otomatik güncelleme', 'Yeni sürüm çıkınca launcher kendisi indirir; OYNA her zaman en yeni sürümü açar.'],
+      oFull: ['Oyunu tam ekran başlat', 'Kapalıysa oyun büyütülmüş pencerede açılır (oyunda F11 ile değişir).'],
+      oFilter: ['Uygunsuz dil filtresi', 'Oyun içi sohbette ve arkadaş sohbetinde küfürler **** olarak görünür.'],
+      oRepair: ['Oyunu onar', 'Bütün oyun dosyalarını kontrol eder; bozuk ya da eksik olanları yeniden indirir.'],
+      oFolder: ['Oyun klasörü', 'İndirilen oyun dosyalarının olduğu klasörü açar.'],
+      repairing: 'Oyun dosyaları kontrol ediliyor…', dlRepair: 'OYUN ONARILIYOR', closeGameFirst: 'Onarmak için önce oyunu kapat.',
+      tabQuests: 'GÖREVLER', qTitle: 'Günlük görevler', qOf: '{n} / 3 tamamlandı', qReset: 'Yeni görevlere {n}', qXp: '+100 XP', qDone: 'Günlük görev tamamlandı', qAll: 'Bugünün bütün görevleri bitti. Yarın yenileri gelecek!',
+      qNote: 'Her gün 3 yeni görev gelir; her biri +100 XP. Görevler bu bilgisayarın saatine göre gece yarısı yenilenir.', qTotal: 'Toplam tamamlanan görev: {n}',
+      q: {
+        find: ['Anomali Avı', '{n} anomali bul.'], right: ['Doğru Yolda', '{n} doğru karar ver.'], talk: ['Muhabbet', 'Yolcularla {n} kez konuş.'], slap: ['Eli Hafif', '{n} tokat at.'],
+        metro5: ['Tünel Turu', "Gece Metrosu'nda {n}. tura ulaş."], tram5: ['Şehir Turu', "Gece Tramvayı'nda {n}. tura ulaş."], finish: ['Son Durak', "Son Durak'a ulaş."],
+        coop: ['Yol Arkadaşı', 'Bir arkadaşınla sefere çık.'], streak: ['Seri', 'Arka arkaya {n} doğru karar ver.'], metroFind: ['Yeraltı Gözü', 'Metroda {n} anomali bul.'],
+      },
+      sSlaps: 'TOKAT', sMetro: 'METRO ZAFER',
       errors: { 'repo-not-found': 'Güncelleme sunucusuna ulaşılamadı.', 'auth': 'Güncelleme sunucusuna bağlanılamadı. Launcher\'ın en yeni sürümünü kur.', 'rate-limit': 'Sunucu şu an meşgul, biraz sonra tekrar dene.', 'launcher-update': 'Launcher güncellenemedi, bu sürümle devam ediliyor.', other: 'Güncelleme alınamadı, biraz sonra tekrar dene.' },
       // friends
       lCode: 'KODUN', copy: 'Kodu kopyala', copied: 'Kod kopyalandı', addPh: 'Arkadaş kodu, ör. K7Q2-9XMB', add: 'Ekle', editName: 'Adını değiştir',
@@ -425,7 +493,26 @@
         packed: ['Packed Car', 'Play in a room of 4 or more.'], chatty: ['Chatterbox', 'Talk to passengers 25 times.'], paranoid: ['Paranoid', 'Go back 10 times when nothing was wrong.'],
         so_close: ['So Close', 'Make a wrong call in round 9 or 10.'], night_owl: ['Night Owl', 'Play after midnight (00:00–05:00).'], commuter: ['Commuter', 'Play for 5 hours in total.'],
         social: ['Busy Carriage', 'Make 3 friends.'],
+        first_slap: ['First Slap', 'Slap someone.'], slapper: ['Slapper', 'Hand out 50 slaps.'], slapped: ['Punching Bag', 'Get slapped by a friend.'],
+        underground: ['Underground', 'Reach the Last Stop on the Night Metro.'], both_lines: ['Two Lines', 'Reach the Last Stop on both lines.'], dark_tunnel: ['Dark Tunnel', 'Reach the Last Stop on the metro without a mistake.'],
+        tunnel_rat: ['Tunnel Rat', 'Find 25 anomalies on the metro.'], questor: ['Quest Taker', 'Complete 10 daily quests.'], loyal: ['Loyal Rider', 'Play on 7 different days.'], veteran: ['Veteran', 'Reach level 10.'],
       },
+      lLine: 'LINE', lines: { tram: 'Night Tram', metro: 'Night Metro' }, subFor: { tram: 'T9 Night Line · Anomaly Hunt', metro: 'M2 Night Metro · Anomaly Hunt' },
+      opts: 'Settings', optsTitle: 'LAUNCHER SETTINGS', close: 'Close', repairBtn: 'Repair', folderBtn: 'Open folder',
+      oAuto: ['Automatic updates', 'The launcher downloads new versions by itself; PLAY always starts the newest one.'],
+      oFull: ['Start the game fullscreen', 'When off, the game opens in a maximised window (F11 in the game switches).'],
+      oFilter: ['Inappropriate language filter', 'Swear words show as **** in the in-game chat and the friends chat.'],
+      oRepair: ['Repair the game', 'Checks every game file and downloads again whatever is damaged or missing.'],
+      oFolder: ['Game folder', 'Opens the folder with the downloaded game files.'],
+      repairing: 'Checking the game files…', dlRepair: 'REPAIRING THE GAME', closeGameFirst: 'Close the game first to repair it.',
+      tabQuests: 'QUESTS', qTitle: 'Daily quests', qOf: '{n} / 3 done', qReset: 'New quests in {n}', qXp: '+100 XP', qDone: 'Daily quest complete', qAll: "All of today's quests are done. New ones tomorrow!",
+      qNote: "3 new quests every day, +100 XP each. They change at midnight by this computer's clock.", qTotal: 'Quests completed in total: {n}',
+      q: {
+        find: ['Anomaly Hunt', 'Find {n} anomalies.'], right: ['On Track', 'Make {n} right calls.'], talk: ['Small Talk', 'Talk to passengers {n} times.'], slap: ['Light Hand', 'Hand out {n} slaps.'],
+        metro5: ['Tunnel Tour', 'Reach round {n} on the Night Metro.'], tram5: ['City Tour', 'Reach round {n} on the Night Tram.'], finish: ['Last Stop', 'Reach the Last Stop.'],
+        coop: ['Travel Buddy', 'Ride with a friend.'], streak: ['Streak', 'Make {n} right calls in a row.'], metroFind: ['Underground Eye', 'Find {n} anomalies on the metro.'],
+      },
+      sSlaps: 'SLAPS', sMetro: 'METRO WINS',
       errors: { 'repo-not-found': 'Could not reach the update server.', 'auth': 'Could not connect to the update server. Please install the latest launcher.', 'rate-limit': 'The server is busy, try again in a bit.', 'launcher-update': 'The launcher could not update itself; continuing with this version.', other: 'Could not get the update, try again in a bit.' },
       lCode: 'YOUR CODE', copy: 'Copy code', copied: 'Code copied', addPh: 'Friend code, e.g. K7Q2-9XMB', add: 'Add', editName: 'Change your name',
       reqIn: 'FRIEND REQUESTS', reqOut: 'SENT REQUESTS', secOnline: 'ONLINE', secOffline: 'OFFLINE',
@@ -474,9 +561,11 @@
 
   function applyStatic() {
     document.documentElement.lang = lang;
-    $('sub').textContent = L.sub;
+    $('sub').textContent = L.subFor[OPT.map] || L.sub;
     $('tags').innerHTML = L.tags.map((t) => `<span>${esc(t)}</span>`).join('');
-    for (const k of ['lVer', 'lTime', 'lLast', 'tabNews', 'tabProfile', 'tabAch', 'tabLb', 'tabAbout', 'lCode', 'lSpeed', 'lPeak', 'lGot', 'lFiles', 'lEta']) $(k).textContent = L[k];
+    for (const k of ['lVer', 'lTime', 'lLast', 'tabNews', 'tabProfile', 'tabQuests', 'tabAch', 'tabLb', 'tabAbout', 'lCode', 'lSpeed', 'lPeak', 'lGot', 'lFiles', 'lEta', 'lLine']) $(k).textContent = L[k];
+    $('opts').title = L.opts;
+    renderLines(); if ($('optsModal').classList.contains('show')) renderOpts();
     tabBadges();
     $('recheck').title = L.recheck; $('folder').title = L.folder; $('copyCode').title = L.copy; $('editName').title = L.editName;
     $('addIn').placeholder = L.addPh; $('addBtn').textContent = L.add; $('msgIn').placeholder = L.msgPh; $('msgSend').textContent = L.send;
@@ -493,17 +582,19 @@
 
   function render(s) {
     last = s;
+    if (s.settings && typeof s.settings === 'object') { Object.assign(OPT, s.settings); renderLines(); $('sub').textContent = L.subFor[OPT.map] || L.sub; if ($('optsModal').classList.contains('show')) renderOpts(); }
     if (s.anomalies && Array.isArray(s.anomalies.list)) CAT = s.anomalies.list.filter((a) => a && typeof a.id === 'string' && typeof a.tr === 'string');
     const v = (x) => x ? 'v' + x : '—';
     let status = '', small = '';
-    const downloading = s.status === 'busy' || s.status === 'selfUpdate';
+    const downloading = s.status === 'busy' || s.status === 'selfUpdate' || s.status === 'repair';
     $('progress').classList.toggle('show', downloading);
-    if (downloading && !dl.on) dlStart(s.status === 'selfUpdate' ? L.dlLauncher : s.installed ? L.dlUpdate : L.dlInstall, s.status === 'selfUpdate' ? '' : v(s.latestVersion));
+    if (downloading && !dl.on) dlStart(s.status === 'selfUpdate' ? L.dlLauncher : s.status === 'repair' ? L.dlRepair : s.installed ? L.dlUpdate : L.dlInstall, s.status === 'selfUpdate' ? '' : v(s.latestVersion));
     else if (!downloading && dl.on) dlFinish();
     switch (s.status) {
       case 'checking': status = `<span class="spin"></span>${L.checking}`; setButton('play', s.installed ? L.play : L.install, s.installed ? 'play' : null, !s.installed); break;
       case 'selfUpdate': status = `<span class="spin"></span>${L.selfUpdate}`; setButton('dl', L.selfBtn, null, true); break;
       case 'busy': status = `<span class="spin"></span>${L.downloading}`; setButton('dl', L.busy, null, true); break;
+      case 'repair': status = `<span class="spin"></span>${L.repairing}`; setButton('dl', L.busy, null, true); break;
       case 'notInstalled': status = `<b>${L.notInstalled}</b>`; small = s.plan ? `${v(s.latestVersion)} · ${mb(s.plan.bytes)}` : v(s.latestVersion); setButton('dl', L.install, 'install'); break;
       case 'offlineNoGame': status = L.offlineNoGame; setButton('dl', L.install, null, true); break;
       case 'update':
@@ -517,7 +608,7 @@
     if (action === 'play' && amLeader() && party.members.length > 1) setButton('play', L.partyPlay, 'partygo'); // the party leader's PLAY takes everyone along
     $('status').innerHTML = status;
     $('small').innerHTML = small;
-    const anyway = $('anyway'); if (anyway) anyway.onclick = () => send('play');
+    const anyway = $('anyway'); if (anyway) anyway.onclick = () => send('play', { anyway: true });
     $('err').textContent = s.error ? (L.errors[s.error] || L.errors.other) : '';
     $('sVer').textContent = v(s.installedVersion || (s.installed ? null : s.latestVersion));
     $('sTime').textContent = fmtTime(s.playSeconds);
@@ -621,9 +712,11 @@
   function tabBadges() {
     const n = newFinds();
     $('tabCol').innerHTML = esc(L.tabCol) + (n && tab !== 'col' ? ` <span class="badge">+${n}</span>` : '');
+    const q = typeof questsLeft === 'function' ? questsLeft() : 0; // (unfinished quests of today)
+    $('tabQuests').innerHTML = esc(L.tabQuests) + (q && tab !== 'quests' ? ` <span class="badge">${q}</span>` : '');
   }
   // the panes built from local data (news / about come with the host's state)
-  function renderTab() { if (tab === 'profile') renderProfile(); else if (tab === 'col') renderCollection(); else if (tab === 'ach') renderAch(); else if (tab === 'lb') renderLb(); }
+  function renderTab() { if (tab === 'profile') renderProfile(); else if (tab === 'quests') renderQuests(); else if (tab === 'col') renderCollection(); else if (tab === 'ach') renderAch(); else if (tab === 'lb') renderLb(); }
 
   // ============================================================== stats (from the game's "stat:" reports)
   // Kept in this page's storage: totals, the anomalies you spotted, achievements, recent rides.
@@ -632,8 +725,13 @@
     let s = null;
     try { s = JSON.parse(localStorage.getItem(ST_KEY) || 'null'); } catch { s = null; }
     s = s && typeof s === 'object' ? s : {};
-    for (const k of ['runs', 'wins', 'coopRuns', 'coopWins', 'bestTime', 'perfect', 'decisions', 'correct', 'wrong', 'falseAlarms', 'misses', 'streak', 'bestStreak', 'maxRound', 'talks', 'maxPlayers', 'nearMiss'])
+    // (tramWins: every win before the metro existed was on the tram)
+    if (!Number.isFinite(s.tramWins)) s.tramWins = Number.isFinite(s.wins) ? s.wins : 0;
+    for (const k of ['runs', 'wins', 'coopRuns', 'coopWins', 'bestTime', 'perfect', 'decisions', 'correct', 'wrong', 'falseAlarms', 'misses', 'streak', 'bestStreak', 'maxRound', 'talks', 'maxPlayers', 'nearMiss',
+      'slaps', 'slapped', 'metroWins', 'metroPerfect', 'metroFinds', 'questsDone', 'questXp'])
       s[k] = Number.isFinite(s[k]) ? s[k] : 0;
+    if (!s.days || typeof s.days !== 'object') s.days = {};
+    if (!s.q || typeof s.q !== 'object') s.q = {};
     for (const k of ['found', 'foundAt', 'ach']) if (!s[k] || typeof s[k] !== 'object') s[k] = {};
     if (!Array.isArray(s.recent)) s.recent = [];
     if (!Number.isFinite(s.colSeen)) s.colSeen = Date.now(); // when the collection tab was last left
@@ -647,7 +745,7 @@
   const uniqueFound = () => Object.keys(S.found).length;
   function endRide(win, extra) {
     if (!ride) return;
-    S.recent.unshift({ ts: Date.now(), win, top: ride.top, players: ride.players, ...extra });
+    S.recent.unshift({ ts: Date.now(), win, top: ride.top, players: ride.players, map: ride.map, ...extra });
     S.recent.length = Math.min(S.recent.length, 12);
     ride = null;
   }
@@ -665,7 +763,9 @@
         endRide(false, {});
         S.runs++; if (players > 1) S.coopRuns++;
         if (new Date().getHours() < 5) S.nightOwl = true;
-        ride = { ts: Date.now(), top: ev.round | 0 || 1, players, mistakes: 0 };
+        ride = { ts: Date.now(), top: ev.round | 0 || 1, players, mistakes: 0, map: ev.map === 'metro' ? 'metro' : 'tram' };
+        S.days[dayKey()] = 1;
+        if (players > 1) questAdd('coop', 1);
         break;
       case 'round':
         S.decisions++;
@@ -673,6 +773,8 @@
         if (ev.correct) {
           S.correct++; S.streak++; S.bestStreak = Math.max(S.bestStreak, S.streak);
           spotted(ev.anomaly);
+          questAdd('right', 1); questMax('streak', S.streak);
+          if (ev.anomaly) { questAdd('find', 1); if (ev.map === 'metro') { S.metroFinds++; questAdd('metroFind', 1); } }
         } else {
           S.wrong++; S.streak = 0;
           if (ev.anomaly) S.misses++; else S.falseAlarms++;
@@ -681,6 +783,7 @@
         }
         S.maxRound = Math.max(S.maxRound, ev.round | 0);
         if (ride) ride.top = Math.max(ride.top, ev.round | 0);
+        questMax(ev.map === 'metro' ? 'metro5' : 'tram5', ev.round | 0);
         break;
       case 'end': {
         S.decisions++; S.correct++; S.streak++; S.bestStreak = Math.max(S.bestStreak, S.streak);
@@ -690,11 +793,16 @@
         if (time && (!S.bestTime || time < S.bestTime)) S.bestTime = time;
         if (!mistakes) S.perfect++;
         if (players > 1) S.coopWins++;
+        if (ev.map === 'metro') { S.metroWins++; if (!mistakes) S.metroPerfect++; if (ev.anomaly) { S.metroFinds++; questAdd('metroFind', 1); } } else S.tramWins++;
         if (ride) ride.top = 10;
         endRide(true, { time, mistakes, players: Math.max(players, ride ? ride.players : 1) });
+        questAdd('right', 1); questMax('streak', S.streak); questAdd('finish', 1); if (ev.anomaly) questAdd('find', 1);
+        questMax(ev.map === 'metro' ? 'metro5' : 'tram5', 10);
         break;
       }
-      case 'talk': S.talks++; break;
+      case 'talk': S.talks++; questAdd('talk', 1); break;
+      case 'slap': S.slaps++; questAdd('slap', 1); break;
+      case 'slapped': S.slapped++; break;
       case 'where':
         where = { mode: String(ev.mode || ''), round: ev.round | 0, total: ev.total | 0 || 10, players, role: String(ev.role || '') };
         if (where.mode === 'menu' || where.mode === 'lobby') endRide(false, {});
@@ -718,6 +826,11 @@
     ['packed', '👥', () => [S.maxPlayers, 4]], ['chatty', '💬', () => [S.talks, 25]], ['paranoid', '😰', () => [S.falseAlarms, 10]],
     ['so_close', '😬', () => [S.nearMiss, 1]], ['night_owl', '🦉', () => [S.nightOwl ? 1 : 0, 1]],
     ['commuter', '⏱️', () => [Math.floor((last ? last.playSeconds || 0 : 0) / 360) / 10, 5]], ['social', '📇', () => [Object.keys(F.friends).length, 3]],
+    // 1.6: slapping, the metro, daily quests
+    ['first_slap', '👋', () => [S.slaps, 1]], ['slapper', '🖐️', () => [S.slaps, 50]], ['slapped', '😵', () => [S.slapped, 1]],
+    ['underground', '🚇', () => [S.metroWins, 1]], ['both_lines', '🗺️', () => [(S.metroWins > 0 ? 1 : 0) + (S.tramWins > 0 ? 1 : 0), 2]], ['dark_tunnel', '🌑', () => [S.metroPerfect, 1]],
+    ['tunnel_rat', '🐀', () => [S.metroFinds, 25]], ['questor', '📅', () => [S.questsDone, 10]], ['loyal', '🔥', () => [Object.keys(S.days).length, 7]],
+    ['veteran', '⭐', () => [levelOf(xpOf(S)).n, 10]],
   ];
   // before the host's first state (play time, the anomaly list) unlocks are silent: what was already
   // true before this launcher version should not pop up as a burst of notifications
@@ -756,8 +869,106 @@
       + `<div class="agrid">${tiles}</div>`;
   }
 
+  // ---- the line (map) the game starts on: picked on the hero, kept by the host with the other settings
+  const LINES = { tram: { code: 'T9', color: '#ffb020' }, metro: { code: 'M2', color: '#2fbf5a' } };
+  const OPT = { autoUpdate: true, fullscreen: true, chatFilter: true, map: 'tram' };
+  function setOpt(key, value) { OPT[key] = value; send('pref', { key, value }); }
+  function renderLines() {
+    $('linePick').innerHTML = Object.entries(LINES).map(([id, l]) => `<button class="lp ${OPT.map === id ? 'sel' : ''}" data-line="${id}" style="--lc:${l.color}"><b>${l.code}</b>${esc(L.lines[id])}</button>`).join('');
+    $('hero').classList.toggle('metro', OPT.map === 'metro');
+  }
+  $('linePick').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-line]'); if (!b || OPT.map === b.dataset.line) return;
+    setOpt('map', b.dataset.line);
+    renderLines(); $('sub').textContent = L.subFor[OPT.map] || L.sub;
+    toGame({ type: 'map', map: OPT.map }); // a game on its main menu switches too
+  });
+
+  // ---- launcher settings window (gear): automatic updates, fullscreen, chat filter, repair, game folder
+  function renderOpts() {
+    const sw = (key) => `<button class="sw ${OPT[key] ? 'on' : ''}" data-opt="${key}" aria-pressed="${OPT[key] ? 'true' : 'false'}"></button>`;
+    const row = ([title, desc], ctl) => `<div class="opt"><div class="ot"><b>${esc(title)}</b><span>${esc(desc)}</span></div>${ctl}</div>`;
+    $('optsBox').innerHTML = `<h3>${L.optsTitle}</h3>`
+      + row(L.oAuto, sw('autoUpdate')) + row(L.oFull, sw('fullscreen')) + row(L.oFilter, sw('chatFilter'))
+      + row(L.oRepair, `<button class="btn blue" data-oa="repair">${esc(L.repairBtn)}</button>`)
+      + row(L.oFolder, `<button class="btn ghost" data-oa="folder">${esc(L.folderBtn)}</button>`)
+      + `<div class="mfoot"><span class="lver">Launcher ${esc(last ? last.version || '' : '')}</span><button class="btn ghost" data-oa="close">${esc(L.close)}</button></div>`;
+  }
+  $('opts').onclick = () => { renderOpts(); $('optsModal').classList.add('show'); };
+  $('optsModal').addEventListener('click', (e) => {
+    if (e.target === $('optsModal')) { $('optsModal').classList.remove('show'); return; }
+    const t = e.target.closest('[data-opt]');
+    if (t) { setOpt(t.dataset.opt, !OPT[t.dataset.opt]); renderOpts(); if (chatWith) renderChat(); return; }
+    const a = e.target.closest('[data-oa]'); if (!a) return;
+    if (a.dataset.oa === 'close') $('optsModal').classList.remove('show');
+    else if (a.dataset.oa === 'folder') send('folder');
+    else if (a.dataset.oa === 'repair') {
+      if (gameOpen) { notify({ title: L.closeGameFirst, kind: 'info' }); return; }
+      $('optsModal').classList.remove('show'); showTab('news'); send('repair');
+    }
+  });
+  addEventListener('keydown', (e) => { if (e.key === 'Escape') $('optsModal').classList.remove('show'); });
+
+  // ---- inappropriate language filter for the friends chat (the same list as the game's js/profanity.js)
+  const BAD_WORDS = ['amk', 'amq', 'aq', 'mk', 'oç', 'göt', 'götü', 'götün', 'götüne', 'götünü', 'sik', 'sikim', 'sikem', 'sikmek', 'sikti', 'sikis',
+    'pust', 'piç', 'yarram', 'yarak', 'yarrak', 'dick', 'cock', 'fag', 'ass', 'pussy', 'tits'];
+  const BAD_PREFIXES = ['siktir', 'siker', 'sikey', 'sikik', 'sikiş', 'siktiğ', 'siktig', 'sikicem', 'sikecem', 'sikko',
+    'amına', 'amina', 'amını', 'amini', 'amcık', 'amcik', 'orospu', 'orosbu', 'orspu', 'piçler', 'piçlik',
+    'götveren', 'götlek', 'yarrağ', 'yarağ', 'yarraq', 'dalyarak', 'dalyarrak', 'ibne', 'pezevenk', 'kahpe', 'kaltak', 'gavat',
+    'yavşak', 'yavsak', 'şerefsiz', 'serefsiz', 'puşt', 'taşak', 'tasak', 'gerizekal', 'kancık', 'kancik',
+    'fuck', 'fuk', 'motherf', 'shit', 'bitch', 'cunt', 'asshole', 'bastard', 'nigg', 'fagg', 'whore', 'slut', 'dickhead', 'wank', 'twat', 'retard'];
+  const LEET = { 0: 'o', 1: 'i', 3: 'e', 4: 'a', 5: 's', 7: 't', '@': 'a', $: 's' };
+  const squeeze = (w) => [...w].map((c) => LEET[c] ?? c).join('').replace(/(.)\1{2,}/gu, '$1');
+  const wforms = (w) => [...new Set([squeeze(w.toLocaleLowerCase('tr')), squeeze(w.toLowerCase())])];
+  const BAD_EXACT = new Set(BAD_WORDS.flatMap(wforms)), BAD_PRE = BAD_PREFIXES.flatMap(wforms);
+  const cleanText = (t) => String(t).replace(/[\p{L}\p{N}@$]+/gu, (w) => (wforms(w).some((f) => BAD_EXACT.has(f) || BAD_PRE.some((p) => f.startsWith(p))) ? '*'.repeat([...w].length) : w));
+  const filt = (t) => (OPT.chatFilter ? cleanText(t) : String(t));
+
+  // ---- daily quests: 3 a day (picked from the date + your friend code), +100 XP each
+  const QUESTS = { find: [3, '🔍'], right: [10, '✅'], talk: [3, '💬'], slap: [5, '👋'], metro5: [5, '🚇'], tram5: [5, '🚋'], finish: [1, '🏁'], coop: [1, '🤝'], streak: [6, '🎯'], metroFind: [2, '🐀'] };
+  const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  function todayQuests() {
+    const day = dayKey();
+    if (S.q.day === day && Array.isArray(S.q.ids)) return S.q;
+    let h = 2166136261; for (const ch of day + F.me.code) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
+    const ids = Object.keys(QUESTS), pick = [];
+    while (pick.length < 3) { h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0; const id = ids[h % ids.length]; if (!pick.includes(id)) pick.push(id); }
+    S.q = { day, ids: pick, prog: {}, done: {} };
+    saveS();
+    return S.q;
+  }
+  const questsLeft = () => { const q = todayQuests(); return q.ids.filter((id) => !q.done[id]).length; };
+  function questProgress(id, value) {
+    const q = todayQuests();
+    if (!q.ids.includes(id) || q.done[id]) return;
+    const goal = QUESTS[id][0];
+    q.prog[id] = Math.min(goal, value);
+    if (q.prog[id] < goal) return;
+    q.done[id] = Date.now();
+    S.questsDone++; S.questXp += 100;
+    const [name] = L.q[id];
+    notify({ title: `${QUESTS[id][1]}  ${L.qDone}: ${name}`, sub: L.qXp, kind: 'ach' });
+    toGame({ type: 'ach', icon: QUESTS[id][1], name, desc: `${L.qDone} · ${L.qXp}` });
+  }
+  const questAdd = (id, n) => { const q = todayQuests(); questProgress(id, (q.prog[id] || 0) + n); };
+  const questMax = (id, v) => { const q = todayQuests(); questProgress(id, Math.max(q.prog[id] || 0, v)); };
+  function renderQuests() {
+    const q = todayQuests(), done = q.ids.filter((id) => q.done[id]).length;
+    const now = new Date(), mid = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1), left = Math.max(0, mid - now);
+    const hh = Math.floor(left / 3600000), mm = Math.floor(left / 60000) % 60;
+    const until = lang === 'tr' ? `${hh} sa ${mm} dk` : `${hh} h ${mm} min`;
+    const rows = q.ids.map((id) => {
+      const [goal, icon] = QUESTS[id], [name, desc] = L.q[id], v = q.prog[id] || 0, ok = !!q.done[id];
+      return `<div class="quest ${ok ? 'done' : ''}"><div class="qi">${ok ? '✔' : icon}</div><div class="qb"><div class="qn">${esc(name)}</div><div class="qd">${esc(fmt(desc, goal))}</div>`
+        + `<div class="qp"><div class="bar"><i style="width:${(v / goal * 100).toFixed(1)}%"></i></div><span>${v} / ${goal}</span></div></div><div class="qx">${L.qXp}</div></div>`;
+    }).join('');
+    $('questPane').innerHTML = `<div class="card"><div class="qhd"><div class="big">${done}<small> / 3</small></div><div class="grow">${esc(L.qTitle)}<small>${esc(fmt(L.qReset, until))}</small></div></div>`
+      + (done === 3 ? `<p style="margin-top:8px">${esc(L.qAll)}</p>` : '') + `</div>${rows}<div class="note">${esc(L.qNote)} · ${esc(fmt(L.qTotal, S.questsDone))}</div>`;
+  }
+  setInterval(() => { if (tab === 'quests') renderQuests(); tabBadges(); }, 60000);
+
   // level: XP from right calls, wins, spotted anomalies; level n needs 50·n·(n−1) XP in total
-  function xpOf(s) { return s.correct * 10 + s.wins * 150 + Object.keys(s.found).length * 30 + Object.keys(s.ach || {}).length * 50; }
+  function xpOf(s) { return s.correct * 10 + s.wins * 150 + Object.keys(s.found).length * 30 + Object.keys(s.ach || {}).length * 50 + (s.questXp || 0); }
   function levelOf(xp) { const n = Math.floor((1 + Math.sqrt(1 + 8 * xp / 100)) / 2); const at = 50 * n * (n - 1), next = 50 * (n + 1) * n; return { n, into: xp - at, need: next - at }; }
   const titleOf = (n) => L.titles[n >= 12 ? 4 : n >= 8 ? 3 : n >= 5 ? 2 : n >= 3 ? 1 : 0];
   const mmss = (ms) => { const s = Math.round(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
@@ -770,7 +981,8 @@
       const who = r.players > 1 ? fmt(L.nPlayers, r.players) : L.solo;
       const mist = !r.mistakes ? L.noMistakes : r.mistakes === 1 && L.oneMistake ? L.oneMistake : fmt(L.nMistakes, r.mistakes);
       const what = r.win ? `${L.rWin} · ${mmss(r.time || 0)} · ${mist}` : fmt(L.rLeft, r.top || 1);
-      return `<div class="run"><span class="ic ${r.win ? 'win' : ''}">${r.win ? '★' : '·'}</span><span class="what">${esc(what)}</span><span class="when">${esc(who)} · ${esc(when(r.ts))}</span></div>`;
+      const ln = LINES[r.map === 'metro' ? 'metro' : 'tram'];
+      return `<div class="run"><span class="ic ${r.win ? 'win' : ''}">${r.win ? '★' : '·'}</span><span class="what"><span class="lpill" style="background:${ln.color}">${ln.code}</span>${esc(what)}</span><span class="when">${esc(who)} · ${esc(when(r.ts))}</span></div>`;
     }).join('');
     $('profilePane').innerHTML =
       `<div class="card"><div class="prof"><div class="av big" id="profAv"><span></span></div>`
@@ -779,6 +991,7 @@
       + `<div class="sgrid">`
       + box(L.sRuns, S.runs) + box(L.sWins, S.wins) + box(L.sBest, S.bestTime ? mmss(S.bestTime) : '—') + box(L.sPerfect, S.perfect) + box(L.sStreak, S.bestStreak)
       + box(L.sAcc, acc) + box(L.sFound, uniqueFound(), total ? '/ ' + total : '') + box(L.sTime, fmtTime(last ? last.playSeconds : 0)) + box(L.sTalks, S.talks) + box(L.sCoop, S.coopWins)
+      + box(L.sSlaps, S.slaps) + box(L.sMetro, S.metroWins)
       + `</div>`
       + `<div class="card"><h4>${L.recent}</h4><div class="runs">${runs || `<div class="empty">${L.noRuns}</div>`}</div></div>`
       + `<div class="note">${L.statsNote}</div>`;
@@ -1025,7 +1238,7 @@
           if (list.length > 300) list.splice(0, list.length - 300);
           if (chatWith !== code || !document.hasFocus()) F.unread[code] = (F.unread[code] || 0) + 1;
           saveF(); renderFriends(); if (chatWith === code) renderChat();
-          if (chatWith !== code || !document.hasFocus()) notify({ title: fr.name, sub: clean(d.text, 120), kind: 'msg', code });
+          if (chatWith !== code || !document.hasFocus()) notify({ title: fr.name, sub: filt(clean(d.text, 120)), kind: 'msg', code });
         }
         raw(code, { t: 'ack', id });
         break;
@@ -1231,6 +1444,8 @@
       broadcastStatus(); renderFriends();
     }
     else if (m.startsWith('stat:')) { try { onStat(JSON.parse(m.slice(5))); } catch { /* bad message */ } }
+    else if (m.startsWith('map:')) { const id = m.slice(4); if (LINES[id]) { OPT.map = id; renderLines(); $('sub').textContent = L.subFor[OPT.map] || L.sub; } }
+    else if (m.startsWith('filter:')) { OPT.chatFilter = m.slice(7) === '1'; if (chatWith) renderChat(); }
   }
 
   // ---- notifications (toast here, a toast / popup in the game, taskbar flash)
@@ -1313,7 +1528,7 @@
     $('chActs').innerHTML = (st === 'ingame' && room && room !== myRoom ? actBtn('join', code, L.join, 'green') : '') + (st !== 'offline' && myRoom && room !== myRoom ? actBtn('inv', code, L.invite, 'blue') : '');
     const msgs = F.chats[code] || [];
     const time = (t) => new Date(t).toLocaleTimeString(loc(), { hour: '2-digit', minute: '2-digit' });
-    $('msgs').innerHTML = (msgs.length ? msgs.map((m) => `<div class="bub ${m.me ? 'mine' : 'them'} ${m.me && !m.ok ? 'pending' : ''}">${esc(m.text)}<small>${time(m.ts)}${m.me && !m.ok ? ' · ' + L.sending : ''}</small></div>`).join('') : `<div class="chatnote">${L.chatEmpty}</div>`)
+    $('msgs').innerHTML = (msgs.length ? msgs.map((m) => `<div class="bub ${m.me ? 'mine' : 'them'} ${m.me && !m.ok ? 'pending' : ''}">${esc(filt(m.text))}<small>${time(m.ts)}${m.me && !m.ok ? ' · ' + L.sending : ''}</small></div>`).join('') : `<div class="chatnote">${L.chatEmpty}</div>`)
       + (st === 'offline' ? `<div class="chatnote">${esc(fmt(L.chatOffline, fr.name))}</div>` : '');
     $('msgs').scrollTop = $('msgs').scrollHeight;
   }

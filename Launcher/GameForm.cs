@@ -42,6 +42,8 @@ namespace SonDurakLauncher
                 cw.Settings.IsZoomControlEnabled = false;
                 cw.Settings.IsStatusBarEnabled = false;
                 cw.Settings.AreDevToolsEnabled = Environment.GetEnvironmentVariable("SONDURAK_DEVTOOLS") == "1";
+                // no browser shortcuts in the game (Ctrl is crouch: Ctrl+R / Ctrl+P / Ctrl+F must not reload, print or search)
+                cw.Settings.AreBrowserAcceleratorKeysEnabled = false;
                 cw.SetVirtualHostNameToFolderMapping("sondurak.game", Config.GameDir, CoreWebView2HostResourceAccessKind.Allow);
                 cw.WebMessageReceived += (s2, a) =>
                 {

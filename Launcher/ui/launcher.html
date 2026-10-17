@@ -365,6 +365,7 @@
       msgPh: 'Mesaj yaz…', send: 'Gönder', sending: 'gönderiliyor', chatEmpty: 'Henüz mesaj yok. Bir merhaba de!', chatOffline: '{n} şu an çevrimdışı; mesajların çevrimiçi olunca iletilir.',
       tReq: '{n} sana arkadaşlık isteği gönderdi', tAcc: '{n} arkadaşlık isteğini kabul etti', tInv: '{n} seni odasına davet etti', tMsg: '{n}',
       inviteSent: 'Davet gönderildi: {n}', inviteOffline: '{n} şu an çevrimdışı', inviteNoRoom: 'Önce oyunda bir oda kur ya da bir odaya katıl.',
+      prMenu: 'Ana menüde', prLobby: 'Lobide', prRound: 'Tur {n}', prEnd: "Son Durak'a ulaştı 🏁",
     },
     en: {
       sub: 'T9 Night Line · Anomaly Hunt', tags: ['Horror', 'Puzzle', 'Co-op'],
@@ -404,6 +405,7 @@
       msgPh: 'Type a message…', send: 'Send', sending: 'sending', chatEmpty: 'No messages yet. Say hi!', chatOffline: '{n} is offline; your messages are delivered when they come online.',
       tReq: '{n} sent you a friend request', tAcc: '{n} accepted your friend request', tInv: '{n} invited you to their room', tMsg: '{n}',
       inviteSent: 'Invite sent to {n}', inviteOffline: '{n} is offline', inviteNoRoom: 'Host or join a room in the game first.',
+      prMenu: 'In the main menu', prLobby: 'In the lobby', prRound: 'Round {n}', prEnd: 'Reached the Last Stop 🏁',
     },
   };
   let lang = (navigator.language || 'tr').toLowerCase().startsWith('tr') ? 'tr' : 'en', L = STR[lang], last = null, action = null, tab = 'news';
@@ -657,6 +659,7 @@
         where = { mode: String(ev.mode || ''), round: ev.round | 0, total: ev.total | 0 || 10, players, role: String(ev.role || '') };
         if (where.mode === 'menu' || where.mode === 'lobby') endRide(false, {});
         S.maxPlayers = Math.max(S.maxPlayers, where.mode === 'menu' ? 1 : players);
+        broadcastStatus(); // friends see "Round 4/10"
         break;
       default: return;
     }
@@ -876,7 +879,14 @@
   setInterval(poll, 20000);
 
   function raw(code, obj) { const c = conns[code]; if (c && c.open) { try { c.send(obj); return true; } catch { /* closing */ } } return false; }
-  function status(code) { if (isOnline(code)) raw(code, { t: 'st', name: F.me.name, st: myStatus(), room: myRoom }); }
+  // pr: where in the game (menu / lobby / round n of 10 / end, players) - older launchers ignore it
+  const myPresence = () => (gameOpen && where ? { mode: where.mode, round: where.round, total: where.total, players: where.players } : null);
+  function cleanPr(p) {
+    if (!p || typeof p !== 'object' || !['menu', 'lobby', 'play', 'end'].includes(p.mode)) return null;
+    const n = (x, lo, hi) => Math.max(lo, Math.min(hi, x | 0));
+    return { mode: p.mode, round: n(p.round, 0, 99), total: n(p.total, 1, 99), players: n(p.players, 1, 6) };
+  }
+  function status(code) { if (isOnline(code)) raw(code, { t: 'st', name: F.me.name, st: myStatus(), room: myRoom, pr: myPresence() }); }
   function broadcastStatus() { for (const c of Object.keys(F.friends)) status(c); renderMe(); }
 
   // first thing on every new connection: a pending acceptance (before the challenge, so the other
@@ -926,7 +936,7 @@
     if (!fr || !authed[code]) return; // everything below only from a verified friend
     switch (d.t) {
       case 'st':
-        live[code] = { st: d.st === 'ingame' ? 'ingame' : 'online', room: typeof d.room === 'string' ? clean(d.room, 8) : null };
+        live[code] = { st: d.st === 'ingame' ? 'ingame' : 'online', room: typeof d.room === 'string' ? clean(d.room, 8) : null, pr: d.st === 'ingame' ? cleanPr(d.pr) : null };
         if (d.name && clean(d.name) !== fr.name) { fr.name = clean(d.name); saveF(); }
         renderFriends(); if (chatWith === code) renderChat();
         break;
@@ -1015,7 +1025,7 @@
   // ---- game bridge (the game runs in another window of this launcher)
   const toGame = (payload) => { if (gameOpen) send('to-game', { payload }); };
   function friendList() {
-    return Object.entries(F.friends).map(([code, f]) => ({ code, name: f.name, st: isOnline(code) ? (live[code] && live[code].st) || 'online' : 'offline', room: (live[code] && live[code].room) || null }))
+    return Object.entries(F.friends).map(([code, f]) => ({ code, name: f.name, st: isOnline(code) ? (live[code] && live[code].st) || 'online' : 'offline', room: (live[code] && live[code].room) || null, pr: isOnline(code) && live[code] ? live[code].pr : null }))
       .sort((a, b) => (a.st === 'offline') - (b.st === 'offline') || a.name.localeCompare(b.name));
   }
   function fromGame(m) {
@@ -1047,13 +1057,22 @@
   }
 
   // ---- rendering
-  function stText(st, room) { return st === 'ingame' ? L.stIngame + (room ? ` · ${L.room} ${room}` : '') : st === 'online' ? L.stOnline : L.stOffline; }
+  // "Oyunda · Tur 4/10 · 3 kişi", "Lobide · Oda X", "Oyunda · Ana menüde", "Son Durak'a ulaştı"
+  function stText(st, room, pr) {
+    if (st !== 'ingame') return st === 'online' ? L.stOnline : L.stOffline;
+    const ppl = pr && pr.players > 1 ? ' · ' + fmt(L.nPlayers, pr.players) : '';
+    if (pr && pr.mode === 'play') return `${L.stIngame} · ${fmt(L.prRound, `${pr.round}/${pr.total}`)}${ppl}`;
+    if (pr && pr.mode === 'lobby') return L.prLobby + (room ? ` · ${L.room} ${room}` : '') + ppl;
+    if (pr && pr.mode === 'end') return L.prEnd;
+    if (pr && pr.mode === 'menu') return `${L.stIngame} · ${L.prMenu}`;
+    return L.stIngame + (room ? ` · ${L.room} ${room}` : '');
+  }
   function renderMe() {
     const st = net === 'online' ? myStatus() : net;
     avatar($('meAv'), F.me.code, F.me.name, st);
     if (!$('meNameRow').querySelector('input')) $('meName').textContent = F.me.name;
     $('meCode').textContent = fmtCode(F.me.code);
-    $('meSub').textContent = net === 'online' ? stText(myStatus(), myRoom) : { connecting: L.netConnecting, offline: L.netOffline, taken: L.netTaken }[net] || '';
+    $('meSub').textContent = net === 'online' ? stText(myStatus(), myRoom, myPresence()) :{ connecting: L.netConnecting, offline: L.netOffline, taken: L.netTaken }[net] || '';
   }
   function row(code, name, st, sub, acts, unread = 0) {
     return `<div class="fr ${st === 'offline' ? 'off' : ''}" data-code="${code}">`
@@ -1072,7 +1091,7 @@
     const on = list.filter((f) => f.st !== 'offline'), off = list.filter((f) => f.st === 'offline');
     const actsFor = (f) => (f.st === 'ingame' && f.room && f.room !== myRoom ? actBtn('join', f.code, L.join, 'green') : '')
       + (f.st !== 'offline' && myRoom && f.room !== myRoom ? actBtn('inv', f.code, L.invite, 'blue') : '');
-    if (on.length) h += `<div class="sect">${L.secOnline} (${on.length})</div>` + on.map((f) => row(f.code, f.name, f.st, stText(f.st, f.room), actsFor(f), F.unread[f.code] || 0)).join('');
+    if (on.length) h += `<div class="sect">${L.secOnline} (${on.length})</div>` + on.map((f) => row(f.code, f.name, f.st, stText(f.st, f.room, f.pr), actsFor(f), F.unread[f.code] || 0)).join('');
     if (off.length) h += `<div class="sect">${L.secOffline} (${off.length})</div>` + off.map((f) => row(f.code, f.name, 'offline', L.stOffline, '', F.unread[f.code] || 0)).join('');
     const outq = Object.keys(F.outReq);
     if (outq.length) h += `<div class="sect">${L.reqOut}</div>` + outq.map((c) => row(c, fmtCode(c), 'offline', L.stWaiting, actBtn('cancel', c, '✕', 'ghost'))).join('');
@@ -1091,7 +1110,7 @@
     const st = isOnline(code) ? (live[code] && live[code].st) || 'online' : 'offline', room = live[code] && live[code].room;
     avatar($('chAv'), code, fr.name, st);
     $('chName').textContent = fr.name;
-    $('chSt').textContent = stText(st, room); $('chSt').className = 'fs ' + st;
+    $('chSt').textContent = stText(st, room, st === 'ingame' && live[code] ? live[code].pr : null); $('chSt').className = 'fs ' + st;
     $('chActs').innerHTML = (st === 'ingame' && room && room !== myRoom ? actBtn('join', code, L.join, 'green') : '') + (st !== 'offline' && myRoom && room !== myRoom ? actBtn('inv', code, L.invite, 'blue') : '');
     const msgs = F.chats[code] || [];
     const time = (t) => new Date(t).toLocaleTimeString(loc(), { hour: '2-digit', minute: '2-digit' });

@@ -1,0 +1,56 @@
+# Builds the launcher (release/) and the installer (dist/SonDurak-Setup.exe) from this repository.
+# The read-only GitHub token the installer needs comes from the SONDURAK_READ_TOKEN secret
+# (build.mjs checks it can read the game repos and cannot write to them, and keeps it out of the exe).
+name: Build
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['release/**', '**.md']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Build launcher and setup
+        env:
+          SONDURAK_READ_TOKEN: ${{ secrets.SONDURAK_READ_TOKEN }}
+        run: node build.mjs
+
+      - name: Upload unsigned build
+        id: upload-unsigned
+        uses: actions/upload-artifact@v4
+        with:
+          name: SonDurak-unsigned
+          path: |
+            release/
+            dist/SonDurak-Setup.exe
+          if-no-files-found: error
+
+      # Code signing through SignPath Foundation - enabled once the SignPath project exists
+      # (organization id, project and policy slugs come from SignPath; SIGNPATH_API_TOKEN is a repo secret):
+      #
+      # - name: Sign with SignPath
+      #   uses: signpath/github-action-submit-signing-request@v1
+      #   with:
+      #     api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+      #     organization-id: <SignPath organization id>
+      #     project-slug: son-durak
+      #     signing-policy-slug: release-signing
+      #     github-artifact-id: ${{ steps.upload-unsigned.outputs.artifact-id }}
+      #     wait-for-completion: true
+      #     output-artifact-directory: signed

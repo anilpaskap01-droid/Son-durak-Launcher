@@ -55,7 +55,7 @@
   .astatus .st { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .astatus .st b { color: #fff; }
   .astatus .sm { margin-top: 3px; font-size: 12px; color: var(--muted); min-height: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .astatus .sm .link { margin-left: 10px; }
+  .astatus .sm .link { display: block; margin-top: 3px; } /* (its own line: the version / size text is long) */
   .progress { height: 6px; margin-top: 8px; border-radius: 3px; background: rgba(255,255,255,.08); overflow: hidden; display: none; }
   .progress.show { display: block; }
   .fill { height: 100%; width: 0; background: linear-gradient(90deg, #1a9fff, #67c1f5); transition: width .2s; }
@@ -164,9 +164,10 @@
   .toast.achtoast { border-color: rgba(255,176,32,.55); background: linear-gradient(100deg, #2b2312, #1e2d3e); }
 
   /* download screen (replaces the tabs while the game or the launcher downloads) */
-  .dl { display: none; flex: 1; min-height: 0; flex-direction: column; gap: 12px; background: var(--card); border-radius: 6px; padding: 16px 18px 14px; }
+  /* (not ".dl": that is the blue download / update button's class) */
+  .dlpanel { display: none; flex: 1; min-height: 0; flex-direction: column; gap: 12px; background: var(--card); border-radius: 6px; padding: 16px 18px 14px; }
   .content.downloading .tabs, .content.downloading .list { display: none !important; }
-  .content.downloading .dl { display: flex; }
+  .content.downloading .dlpanel { display: flex; }
   .dlhd { display: flex; align-items: baseline; gap: 12px; }
   .dlhd .ttl { font-size: 13px; letter-spacing: .16em; color: var(--muted); font-weight: 600; }
   .dlhd .ver { margin-left: 2px; }
@@ -174,7 +175,7 @@
   .dlbar { position: relative; height: 12px; border-radius: 6px; background: rgba(255,255,255,.07); overflow: hidden; }
   .dlbar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 6px; transition: width .25s linear;
     background: repeating-linear-gradient(115deg, #1a9fff 0 14px, #3fb0ff 14px 28px); background-size: 200% 100%; animation: stripes 1.2s linear infinite; box-shadow: 0 0 14px rgba(26,159,255,.45); }
-  .dl.finished .dlbar i { animation: none; background: linear-gradient(90deg, #6fb522, #8bd34b); box-shadow: 0 0 14px rgba(139,211,75,.4); }
+  .dlpanel.finished .dlbar i { animation: none; background: linear-gradient(90deg, #6fb522, #8bd34b); box-shadow: 0 0 14px rgba(139,211,75,.4); }
   @keyframes stripes { to { background-position: -56px 0; } }
   .dlrow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
   .dlrow .stat b { font-size: 16px; font-family: Consolas, monospace; font-weight: 600; color: #fff; }
@@ -295,7 +296,7 @@
         <div class="list" data-pane="col" id="colPane" style="display:none"></div>
         <div class="list" data-pane="lb" id="lbPane" style="display:none"></div>
         <div class="list" data-pane="about" id="aboutPane" style="display:none"></div>
-        <div class="dl" id="dl">
+        <div class="dlpanel" id="dlPanel">
           <div class="dlhd"><span class="ttl" id="dlTitle"></span><span class="ver" id="dlVer"></span><span class="dlpct" id="dlPct">0%</span></div>
           <div class="dlbar"><i id="dlFill"></i></div>
           <div class="dlrow">
@@ -545,7 +546,7 @@
   }
   function dlStart(title, ver) {
     Object.assign(dl, { on: true, samples: [], hist: [], peak: 0, speed: 0, p: null });
-    $('dl').classList.remove('finished');
+    $('dlPanel').classList.remove('finished');
     $('dlTitle').textContent = title; $('dlVer').textContent = ver; $('dlVer').style.display = ver ? '' : 'none';
     $('dlPct').textContent = '0%'; $('dlFill').style.width = '0';
     for (const k of ['dlSpeed', 'dlPeak', 'dlGot', 'dlFiles']) $(k).textContent = '—';
@@ -557,7 +558,7 @@
   function dlFinish() {
     clearInterval(dl.timer);
     dl.on = false;
-    $('dl').classList.add('finished');
+    $('dlPanel').classList.add('finished');
     $('dlTitle').textContent = L.dlDone; $('dlPct').textContent = '100%'; $('dlFill').style.width = '100%';
     $('dlEta').textContent = '—'; $('dlSpeed').textContent = '—'; $('dlFile').textContent = '';
     setTimeout(() => { if (!dl.on) $('content').classList.remove('downloading'); }, 2500);

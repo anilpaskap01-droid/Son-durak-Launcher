@@ -107,6 +107,8 @@ namespace SonDurakLauncher
         public Dictionary<string, string> files = new Dictionary<string, string>();
     }
 
+    // Done counts bytes as they arrive (also of files still downloading), so the page can show
+    // a live speed and time left; Files counts finished files.
     class Progress
     {
         public long Done;
@@ -114,6 +116,20 @@ namespace SonDurakLauncher
         public int Files;
         public int FilesTotal;
         public string Current;
+        long lastTick;
+
+        // at most ~8 reports a second while bytes stream in (each one is a message to the page)
+        public void Tick(IProgress<Progress> progress, bool force = false)
+        {
+            if (progress == null) return;
+            var now = Environment.TickCount;
+            lock (this)
+            {
+                if (!force && now - lastTick < 120) return;
+                lastTick = now;
+            }
+            progress.Report(this);
+        }
     }
 
     static class Updater
@@ -288,11 +304,14 @@ namespace SonDurakLauncher
             progress?.Report(p);
             foreach (var f in files)
             {
-                var data = await DownloadAsync(commitSha, Config.ReleaseFolder + f.Name, f.Sha, ct, Config.LauncherRepo).ConfigureAwait(false);
+                long got = 0;
+                p.Current = f.Name;
+                var data = await DownloadAsync(commitSha, Config.ReleaseFolder + f.Name, f.Sha, ct, Config.LauncherRepo,
+                    n => { lock (p) { p.Done += n; got += n; } p.Tick(progress); }).ConfigureAwait(false);
                 if (GitBlobSha(data) != f.Sha) throw new Exception("checksum " + f.Name);
                 File.WriteAllBytes(Path.Combine(stage, f.Name), data);
-                p.Done += f.Size; p.Files++; p.Current = f.Name;
-                progress?.Report(p);
+                lock (p) { p.Done += f.Size - got; p.Files++; }
+                p.Tick(progress, true);
             }
 
             var swapped = new List<(string target, string old)>();
@@ -389,7 +408,10 @@ namespace SonDurakLauncher
                 try
                 {
                     var (sha, size) = wanted[rel];
-                    var data = await DownloadAsync(info.Sha, rel, sha, ct).ConfigureAwait(false);
+                    long got = 0;
+                    lock (p) p.Current = rel;
+                    var data = await DownloadAsync(info.Sha, rel, sha, ct, null,
+                        n => { lock (p) { p.Done += n; got += n; } p.Tick(progress); }).ConfigureAwait(false);
                     if (GitBlobSha(data) != sha) throw new Exception("checksum " + rel);
                     var local = LocalPath(rel);
                     Directory.CreateDirectory(Path.GetDirectoryName(local));
@@ -397,8 +419,9 @@ namespace SonDurakLauncher
                     File.WriteAllBytes(tmp, data);
                     if (File.Exists(local)) File.Delete(local);
                     File.Move(tmp, local);
-                    lock (p) { p.Done += size; p.Files++; p.Current = rel; }
-                    progress?.Report(p);
+                    // the byte count is exact once the file is done (whatever the transfer encoding was)
+                    lock (p) { p.Done += size - got; p.Files++; }
+                    p.Tick(progress, true);
                 }
                 finally { gate.Release(); }
             });
@@ -420,7 +443,8 @@ namespace SonDurakLauncher
 
         // repo = null: the game repository (paths are relative to its "Son Durak" folder);
         // otherwise paths are relative to that repository's root.
-        static async Task<byte[]> DownloadAsync(string commitSha, string rel, string blobSha, CancellationToken ct, string repo = null)
+        // onBytes: called with each chunk's size as it arrives (negative to take back a failed attempt).
+        static async Task<byte[]> DownloadAsync(string commitSha, string rel, string blobSha, CancellationToken ct, string repo = null, Action<long> onBytes = null)
         {
             string url;
             var req = new HttpRequestMessage(HttpMethod.Get, "https://x");
@@ -438,20 +462,34 @@ namespace SonDurakLauncher
             req.RequestUri = new Uri(url);
             for (var attempt = 1; ; attempt++)
             {
+                long got = 0;
                 try
                 {
                     using (var clone = new HttpRequestMessage(HttpMethod.Get, req.RequestUri))
                     {
                         foreach (var h in req.Headers) clone.Headers.TryAddWithoutValidation(h.Key, h.Value);
-                        using (var res = await http.SendAsync(clone, ct).ConfigureAwait(false))
+                        using (var res = await http.SendAsync(clone, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false))
                         {
                             res.EnsureSuccessStatusCode();
-                            return await res.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+                            using (var s = await res.Content.ReadAsStreamAsync().ConfigureAwait(false))
+                            using (var mem = new MemoryStream())
+                            {
+                                var buf = new byte[65536];
+                                int n;
+                                while ((n = await s.ReadAsync(buf, 0, buf.Length, ct).ConfigureAwait(false)) > 0)
+                                {
+                                    mem.Write(buf, 0, n);
+                                    got += n;
+                                    onBytes?.Invoke(n);
+                                }
+                                return mem.ToArray();
+                            }
                         }
                     }
                 }
                 catch when (attempt < 3 && !ct.IsCancellationRequested)
                 {
+                    if (got > 0) onBytes?.Invoke(-got);
                     await Task.Delay(800 * attempt, ct).ConfigureAwait(false);
                 }
             }

@@ -31,14 +31,22 @@ namespace SonDurakLauncher
                 var plan = Updater.PlanAsync(remote, CancellationToken.None).GetAwaiter().GetResult();
                 report["planFiles"] = plan.Files;
                 report["planBytes"] = plan.Bytes;
-                long bytes = 0; int files = 0;
-                Updater.InstallAsync(remote, new SyncProgress(p => { bytes = p.Done; files = p.Files; }), CancellationToken.None).GetAwaiter().GetResult();
+                long bytes = 0; int files = 0, reports = 0, partial = 0;
+                Updater.InstallAsync(remote, new SyncProgress(p =>
+                {
+                    reports++;
+                    // a report between whole files = bytes streamed live (the download screen's speed)
+                    if (p.Done != bytes && p.Files == files) partial++;
+                    bytes = p.Done; files = p.Files;
+                }), CancellationToken.None).GetAwaiter().GetResult();
                 var after = Updater.LoadState();
                 report["after"] = after.sha;
                 report["downloadedFiles"] = files;
                 report["downloadedBytes"] = bytes;
+                report["progressReports"] = reports;
+                report["liveByteReports"] = partial;
                 report["installedFiles"] = after.files.Count;
-                report["ok"] = after.sha == remote.Sha && Updater.IsInstalled(after);
+                report["ok"] = after.sha == remote.Sha && Updater.IsInstalled(after) && bytes == plan.Bytes && files == plan.Files;
             }
             catch (Exception ex) { report["ok"] = false; report["error"] = ex.ToString(); }
             File.WriteAllText(log, new JavaScriptSerializer().Serialize(report));

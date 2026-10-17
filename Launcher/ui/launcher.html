@@ -91,6 +91,26 @@
   .facts { list-style: none; padding: 0 !important; }
   .facts li::before { content: '▸'; color: var(--blue); margin-right: 8px; }
   .empty { color: var(--muted); font-size: 13px; line-height: 1.5; }
+
+  /* download screen (replaces the tabs while the game or the launcher downloads) */
+  .dl { display: none; flex: 1; min-height: 0; flex-direction: column; gap: 12px; background: var(--card); border-radius: 6px; padding: 16px 18px 14px; }
+  .content.downloading .tabs, .content.downloading .list { display: none !important; }
+  .content.downloading .dl { display: flex; }
+  .dlhd { display: flex; align-items: baseline; gap: 12px; }
+  .dlhd .ttl { font-size: 13px; letter-spacing: .16em; color: var(--muted); font-weight: 600; }
+  .dlhd .ver { margin-left: 2px; }
+  .dlpct { margin-left: auto; font: 700 30px Consolas, monospace; color: #fff; letter-spacing: .02em; }
+  .dlbar { position: relative; height: 12px; border-radius: 6px; background: rgba(255,255,255,.07); overflow: hidden; }
+  .dlbar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 6px; transition: width .25s linear;
+    background: repeating-linear-gradient(115deg, #1a9fff 0 14px, #3fb0ff 14px 28px); background-size: 200% 100%; animation: stripes 1.2s linear infinite; box-shadow: 0 0 14px rgba(26,159,255,.45); }
+  .dl.finished .dlbar i { animation: none; background: linear-gradient(90deg, #6fb522, #8bd34b); box-shadow: 0 0 14px rgba(139,211,75,.4); }
+  @keyframes stripes { to { background-position: -56px 0; } }
+  .dlrow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+  .dlrow .stat b { font-size: 16px; font-family: Consolas, monospace; font-weight: 600; color: #fff; }
+  .dlrow .stat b.blue { color: var(--blue); }
+  .graph { flex: 1; min-height: 60px; position: relative; border-radius: 4px; background: linear-gradient(180deg, rgba(103,193,245,.04), rgba(0,0,0,.18)); border: 1px solid var(--line); }
+  .graph canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .dlfile { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: Consolas, monospace; }
   .lver { font-size: 11px; color: #56616c; margin-top: 8px; }
   .lver .badge { margin-left: 6px; }
 
@@ -185,10 +205,23 @@
           <button class="tool" id="folder"><svg viewBox="0 0 24 24"><path d="M3 5h7l2 2h9v12H3z"/></svg></button>
         </div>
       </div>
-      <div class="content">
+      <div class="content" id="content">
         <div class="tabs"><button id="tabNews" class="sel"></button><button id="tabAbout"></button></div>
         <div class="list" id="news"></div>
         <div class="list" id="aboutPane" style="display:none"></div>
+        <div class="dl" id="dl">
+          <div class="dlhd"><span class="ttl" id="dlTitle"></span><span class="ver" id="dlVer"></span><span class="dlpct" id="dlPct">0%</span></div>
+          <div class="dlbar"><i id="dlFill"></i></div>
+          <div class="dlrow">
+            <div class="stat"><label id="lSpeed"></label><b class="blue" id="dlSpeed">—</b></div>
+            <div class="stat"><label id="lPeak"></label><b id="dlPeak">—</b></div>
+            <div class="stat"><label id="lGot"></label><b id="dlGot">—</b></div>
+            <div class="stat"><label id="lFiles"></label><b id="dlFiles">—</b></div>
+            <div class="stat"><label id="lEta"></label><b id="dlEta">—</b></div>
+          </div>
+          <div class="graph"><canvas id="dlGraph"></canvas></div>
+          <div class="dlfile" id="dlFile"></div>
+        </div>
       </div>
     </div>
 
@@ -220,7 +253,12 @@
   // ============================================================== launcher page
   // The C# host sends {type:'state'|'progress'|'from-game'|'game-state'}; the page sends {cmd}.
   // (In a plain browser - tests - the host is a stub.)
-  const HOST = (window.chrome && window.chrome.webview) || { postMessage() {}, addEventListener() {} };
+  // (in a plain browser, tests feed host messages with __recv(msg) and read what the page sent in __sent)
+  const HOST = (window.chrome && window.chrome.webview) || (() => {
+    const fns = []; window.__sent = [];
+    window.__recv = (data) => fns.forEach((f) => f({ data }));
+    return { postMessage(m) { window.__sent.push(m); }, addEventListener(t, f) { if (t === 'message') fns.push(f); } };
+  })();
   const STR = {
     tr: {
       sub: 'T9 Gece Hattı · Anomali Avı', tags: ['Korku', 'Bulmaca', 'Co-op'],
@@ -231,6 +269,8 @@
       lVer: 'SÜRÜM', lTime: 'OYNAMA SÜRESİ', lLast: 'SON OYNAMA', never: 'Hiç', today: 'Bugün', yesterday: 'Dün', hours: 'saat', minutes: 'dk',
       tabNews: 'YENİLİKLER', tabAbout: 'OYUN HAKKINDA', fresh: 'YENİ', noNews: 'Yenilikler internete bağlanınca görünecek.', mpTitle: 'ARKADAŞLARINLA OYNA',
       recheck: 'Güncellemeleri denetle', folder: 'Oyun klasörü', launcherUpdated: 'güncellendi',
+      dlInstall: 'SON DURAK İNDİRİLİYOR', dlUpdate: 'GÜNCELLEME İNDİRİLİYOR', dlLauncher: 'LAUNCHER GÜNCELLENİYOR', dlDone: 'TAMAMLANDI',
+      lSpeed: 'HIZ', lPeak: 'EN YÜKSEK', lGot: 'İNDİRİLEN', lFiles: 'DOSYALAR', lEta: 'KALAN SÜRE', etaCalc: 'hesaplanıyor', sec: 'sn', left: 'kaldı',
       errors: { 'repo-not-found': 'Güncelleme sunucusuna ulaşılamadı.', 'auth': 'Güncelleme sunucusuna bağlanılamadı. Launcher\'ın en yeni sürümünü kur.', 'rate-limit': 'Sunucu şu an meşgul, biraz sonra tekrar dene.', 'launcher-update': 'Launcher güncellenemedi, bu sürümle devam ediliyor.', other: 'Güncelleme alınamadı, biraz sonra tekrar dene.' },
       // friends
       lCode: 'KODUN', copy: 'Kodu kopyala', copied: 'Kod kopyalandı', addPh: 'Arkadaş kodu, ör. K7Q2-9XMB', add: 'Ekle', editName: 'Adını değiştir',
@@ -253,6 +293,8 @@
       lVer: 'VERSION', lTime: 'PLAY TIME', lLast: 'LAST PLAYED', never: 'Never', today: 'Today', yesterday: 'Yesterday', hours: 'hrs', minutes: 'min',
       tabNews: "WHAT'S NEW", tabAbout: 'ABOUT', fresh: 'NEW', noNews: 'News will appear once you are online.', mpTitle: 'PLAY WITH FRIENDS',
       recheck: 'Check for updates', folder: 'Game folder', launcherUpdated: 'updated',
+      dlInstall: 'DOWNLOADING SON DURAK', dlUpdate: 'DOWNLOADING UPDATE', dlLauncher: 'UPDATING THE LAUNCHER', dlDone: 'DONE',
+      lSpeed: 'SPEED', lPeak: 'PEAK', lGot: 'DOWNLOADED', lFiles: 'FILES', lEta: 'TIME LEFT', etaCalc: 'calculating', sec: 's', left: 'left',
       errors: { 'repo-not-found': 'Could not reach the update server.', 'auth': 'Could not connect to the update server. Please install the latest launcher.', 'rate-limit': 'The server is busy, try again in a bit.', 'launcher-update': 'The launcher could not update itself; continuing with this version.', other: 'Could not get the update, try again in a bit.' },
       lCode: 'YOUR CODE', copy: 'Copy code', copied: 'Code copied', addPh: 'Friend code, e.g. K7Q2-9XMB', add: 'Add', editName: 'Change your name',
       reqIn: 'FRIEND REQUESTS', reqOut: 'SENT REQUESTS', secOnline: 'ONLINE', secOffline: 'OFFLINE',
@@ -295,7 +337,7 @@
     document.documentElement.lang = lang;
     $('sub').textContent = L.sub;
     $('tags').innerHTML = L.tags.map((t) => `<span>${esc(t)}</span>`).join('');
-    for (const k of ['lVer', 'lTime', 'lLast', 'tabNews', 'tabAbout', 'lCode']) $(k).textContent = L[k];
+    for (const k of ['lVer', 'lTime', 'lLast', 'tabNews', 'tabAbout', 'lCode', 'lSpeed', 'lPeak', 'lGot', 'lFiles', 'lEta']) $(k).textContent = L[k];
     $('recheck').title = L.recheck; $('folder').title = L.folder; $('copyCode').title = L.copy; $('editName').title = L.editName;
     $('addIn').placeholder = L.addPh; $('addBtn').textContent = L.add; $('msgIn').placeholder = L.msgPh; $('msgSend').textContent = L.send;
     for (const b of $('langs').children) b.classList.toggle('sel', b.dataset.l === lang);
@@ -313,7 +355,10 @@
     last = s;
     const v = (x) => x ? 'v' + x : '—';
     let status = '', small = '';
-    $('progress').classList.toggle('show', s.status === 'busy' || s.status === 'selfUpdate');
+    const downloading = s.status === 'busy' || s.status === 'selfUpdate';
+    $('progress').classList.toggle('show', downloading);
+    if (downloading && !dl.on) dlStart(s.status === 'selfUpdate' ? L.dlLauncher : s.installed ? L.dlUpdate : L.dlInstall, s.status === 'selfUpdate' ? '' : v(s.latestVersion));
+    else if (!downloading && dl.on) dlFinish();
     switch (s.status) {
       case 'checking': status = `<span class="spin"></span>${L.checking}`; setButton('play', s.installed ? L.play : L.install, s.installed ? 'play' : null, !s.installed); break;
       case 'selfUpdate': status = `<span class="spin"></span>${L.selfUpdate}`; setButton('dl', L.selfBtn, null, true); break;
@@ -346,10 +391,79 @@
       + (game.multiplayer ? `<div class="card"><h4>${L.mpTitle}</h4><p>${esc(game.multiplayer)}</p></div>` : '')
       + `<div class="lver">Launcher ${esc(s.version || '')}${s.launcherUpdated ? `<span class="badge">${L.launcherUpdated}</span>` : ''}</div>`;
   }
+  // ---- download screen: live speed (from the byte counts the host streams), peak, time left
+  // and a Steam-like graph of the speed over time
+  const dl = { on: false, samples: [], hist: [], peak: 0, speed: 0, p: null, timer: 0 };
+  const rate = (bps) => (bps >= 1048576 ? (bps / 1048576).toFixed(1) + ' MB/s' : Math.round(bps / 1024) + ' KB/s').replace('.', lang === 'tr' ? ',' : '.');
+  function fmtEta(sec) {
+    if (!isFinite(sec) || sec <= 0) return L.etaCalc;
+    sec = Math.ceil(sec);
+    return sec < 60 ? `${sec} ${L.sec}` : `${Math.floor(sec / 60)} ${L.minutes} ${String(sec % 60).padStart(2, '0')} ${L.sec}`;
+  }
+  function dlStart(title, ver) {
+    Object.assign(dl, { on: true, samples: [], hist: [], peak: 0, speed: 0, p: null });
+    $('dl').classList.remove('finished');
+    $('dlTitle').textContent = title; $('dlVer').textContent = ver; $('dlVer').style.display = ver ? '' : 'none';
+    $('dlPct').textContent = '0%'; $('dlFill').style.width = '0';
+    for (const k of ['dlSpeed', 'dlPeak', 'dlGot', 'dlFiles']) $(k).textContent = '—';
+    $('dlEta').textContent = L.etaCalc; $('dlFile').textContent = '';
+    $('content').classList.add('downloading');
+    clearInterval(dl.timer);
+    dl.timer = setInterval(dlSample, 250);
+  }
+  function dlFinish() {
+    clearInterval(dl.timer);
+    dl.on = false;
+    $('dl').classList.add('finished');
+    $('dlTitle').textContent = L.dlDone; $('dlPct').textContent = '100%'; $('dlFill').style.width = '100%';
+    $('dlEta').textContent = '—'; $('dlSpeed').textContent = '—'; $('dlFile').textContent = '';
+    setTimeout(() => { if (!dl.on) $('content').classList.remove('downloading'); }, 2500);
+  }
+  // every 250 ms: speed over the last ~2 s of byte counts, smoothed; one point on the graph
+  function dlSample() {
+    const p = dl.p; if (!p) return;
+    const now = performance.now();
+    dl.samples.push([now, p.done]);
+    while (dl.samples.length > 2 && now - dl.samples[0][0] > 2000) dl.samples.shift();
+    const [t0, b0] = dl.samples[0];
+    const inst = now - t0 > 300 ? Math.max(0, (p.done - b0) / ((now - t0) / 1000)) : 0;
+    dl.speed = dl.speed ? dl.speed * 0.6 + inst * 0.4 : inst;
+    dl.peak = Math.max(dl.peak, dl.speed);
+    dl.hist.push(dl.speed); if (dl.hist.length > 240) dl.hist.shift();
+    $('dlSpeed').textContent = dl.speed > 0 ? rate(dl.speed) : '—';
+    $('dlPeak').textContent = dl.peak > 0 ? rate(dl.peak) : '—';
+    const left = (p.total - p.done) / dl.speed;
+    $('dlEta').textContent = p.total && p.done >= p.total ? '—' : fmtEta(dl.samples.length > 3 ? left : NaN);
+    drawGraph();
+  }
+  function drawGraph() {
+    const cv = $('dlGraph'), r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    if (!r.width) return;
+    if (cv.width !== Math.round(r.width * dpr)) { cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr); }
+    const g = cv.getContext('2d'), w = cv.width, h = cv.height, top = Math.max(dl.peak * 1.15, 1);
+    g.clearRect(0, 0, w, h);
+    g.strokeStyle = 'rgba(255,255,255,.05)'; g.lineWidth = 1;
+    for (let i = 1; i < 4; i++) { const y = Math.round(h * i / 4) + 0.5; g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); }
+    const pts = dl.hist, n = 120, step = w / (n - 1), x0 = w - (pts.length - 1) * step;
+    if (pts.length < 2) return;
+    g.beginPath();
+    pts.forEach((s, i) => { const x = x0 + i * step, y = h - (s / top) * (h - 6) - 2; i ? g.lineTo(x, y) : g.moveTo(x, y); });
+    g.strokeStyle = '#67c1f5'; g.lineWidth = 2 * dpr; g.stroke();
+    g.lineTo(w, h); g.lineTo(Math.max(0, x0), h); g.closePath();
+    const grad = g.createLinearGradient(0, 0, 0, h); grad.addColorStop(0, 'rgba(26,159,255,.35)'); grad.addColorStop(1, 'rgba(26,159,255,0)');
+    g.fillStyle = grad; g.fill();
+  }
   function progress(p) {
     const k = p.total ? p.done / p.total : (p.filesTotal ? p.files / p.filesTotal : 1);
     $('fill').style.width = (k * 100).toFixed(1) + '%';
-    $('small').textContent = `${mb(p.done)} / ${mb(p.total)} · ${p.files}/${p.filesTotal} ${L.files}`;
+    if (!dl.on) dlStart(last && last.status === 'selfUpdate' ? L.dlLauncher : L.dlUpdate, '');
+    dl.p = p;
+    const pct = Math.min(100, Math.floor(k * 100));
+    $('dlPct').textContent = pct + '%'; $('dlFill').style.width = (k * 100).toFixed(1) + '%';
+    $('dlGot').textContent = `${mb(p.done)} / ${mb(p.total)}`;
+    $('dlFiles').textContent = `${p.files} / ${p.filesTotal}`;
+    if (p.current) $('dlFile').textContent = p.current;
+    $('small').textContent = `${pct}% · ${mb(p.done)} / ${mb(p.total)}` + (dl.speed > 0 ? ` · ${rate(dl.speed)}` : '');
   }
   function showTab(t) { tab = t; $('tabNews').classList.toggle('sel', t === 'news'); $('tabAbout').classList.toggle('sel', t === 'about'); $('news').style.display = t === 'news' ? '' : 'none'; $('aboutPane').style.display = t === 'about' ? '' : 'none'; }
 

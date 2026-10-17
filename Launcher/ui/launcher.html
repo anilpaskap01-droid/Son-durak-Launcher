@@ -137,6 +137,21 @@
   .an.new { box-shadow: inset 0 0 0 1px rgba(255,176,32,.5); }
   .an.hid .tx { color: #56616c; letter-spacing: .3em; }
 
+  /* achievements */
+  .agrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .ach { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 5px; background: rgba(0,0,0,.2); }
+  .ach .ai { flex: none; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; font-size: 20px; background: #232c37; filter: grayscale(1); opacity: .45; }
+  .ach.on .ai { background: radial-gradient(circle at 35% 30%, #ffd36b, #c27b00); filter: none; opacity: 1; box-shadow: 0 0 14px rgba(255,176,32,.35); }
+  .ach .ab { flex: 1; min-width: 0; }
+  .ach .an2 { font-size: 14px; font-weight: 600; color: #8f98a0; }
+  .ach.on .an2 { color: #fff; }
+  .ach .ad { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .ach .ap { display: flex; align-items: center; gap: 8px; margin-top: 5px; font-size: 11px; color: var(--muted); }
+  .ach .ap .bar { flex: 1; height: 5px; border-radius: 3px; background: rgba(255,255,255,.08); overflow: hidden; }
+  .ach .ap .bar i { display: block; height: 100%; background: var(--blue); }
+  .ach .dt { font-size: 11px; color: var(--amber); margin-top: 4px; }
+  .toast.achtoast { border-color: rgba(255,176,32,.55); background: linear-gradient(100deg, #2b2312, #1e2d3e); }
+
   /* download screen (replaces the tabs while the game or the launcher downloads) */
   .dl { display: none; flex: 1; min-height: 0; flex-direction: column; gap: 12px; background: var(--card); border-radius: 6px; padding: 16px 18px 14px; }
   .content.downloading .tabs, .content.downloading .list { display: none !important; }
@@ -251,9 +266,10 @@
         </div>
       </div>
       <div class="content" id="content">
-        <div class="tabs" id="tabs"><button data-tab="news" id="tabNews" class="sel"></button><button data-tab="profile" id="tabProfile"></button><button data-tab="col" id="tabCol"></button><button data-tab="about" id="tabAbout"></button></div>
+        <div class="tabs" id="tabs"><button data-tab="news" id="tabNews" class="sel"></button><button data-tab="profile" id="tabProfile"></button><button data-tab="ach" id="tabAch"></button><button data-tab="col" id="tabCol"></button><button data-tab="about" id="tabAbout"></button></div>
         <div class="list" data-pane="news" id="news"></div>
         <div class="list" data-pane="profile" id="profilePane" style="display:none"></div>
+        <div class="list" data-pane="ach" id="achPane" style="display:none"></div>
         <div class="list" data-pane="col" id="colPane" style="display:none"></div>
         <div class="list" data-pane="about" id="aboutPane" style="display:none"></div>
         <div class="dl" id="dl">
@@ -326,6 +342,17 @@
       // anomaly collection
       tabCol: 'KOLEKSİYON', colOf: '{n} anomali bulundu', colAll: 'Tümü', colGot: 'Bulunan', colMissing: 'Bulunmayan', colTimes: '{n}× bulundu', colFirst: 'ilk', colLast: 'SON BULUNAN',
       colHint: 'Bir anomaliyi fark edip GERİ döndüğünde koleksiyonuna eklenir. Bulmadıkların gizli kalır.', colNone: 'Koleksiyon, oyun yüklenince burada görünecek.', colEmptyGot: 'Henüz bir anomali bulmadın.',
+      // achievements
+      tabAch: 'BAŞARIMLAR', achOf: '{n} başarım açıldı', achUnlocked: 'Başarım açıldı', achAt: 'Açıldı:',
+      ach: {
+        first_ride: ['İlk Sefer', 'İlk yolculuğuna çık.'], first_find: ['Bir Şey Farklı', 'İlk anomalini fark et.'], halfway: ['Yarı Yol', '5. tura ulaş.'],
+        last_stop: ['Son Durak', "Son Durak'a ulaş."], flawless: ['Kusursuz Yolculuk', "Hiç hata yapmadan Son Durak'a ulaş."], express: ['Ekspres Sefer', "Son Durak'a 5 dakikadan kısa sürede ulaş."],
+        sharp_eye: ['Keskin Göz', 'Arka arkaya 25 doğru karar ver.'], collector: ['Koleksiyoncu', '10 farklı anomali bul.'], hunter: ['Anomali Avcısı', '30 farklı anomali bul.'],
+        seen_it_all: ['Hepsini Gördüm', 'Bütün anomalileri bul.'], regular: ['Müdavim', "Son Durak'a 5 kez ulaş."], travel_buddy: ['Yol Arkadaşı', "Arkadaşlarınla birlikte Son Durak'a ulaş."],
+        packed: ['Tıklım Tıklım', 'En az 4 kişilik bir odada oyna.'], chatty: ['Sohbet Ustası', 'Yolcularla 25 kez konuş.'], paranoid: ['Paranoyak', 'Ortada anomali yokken 10 kez GERİ dön.'],
+        so_close: ['Az Kalsın', '9. ya da 10. turda yanlış karar ver.'], night_owl: ['Gece Kuşu', 'Gece yarısından sonra (00:00–05:00) oyna.'], commuter: ['Daimi Yolcu', 'Toplam 5 saat oyna.'],
+        social: ['Kalabalık Vagon', '3 arkadaş edin.'],
+      },
       errors: { 'repo-not-found': 'Güncelleme sunucusuna ulaşılamadı.', 'auth': 'Güncelleme sunucusuna bağlanılamadı. Launcher\'ın en yeni sürümünü kur.', 'rate-limit': 'Sunucu şu an meşgul, biraz sonra tekrar dene.', 'launcher-update': 'Launcher güncellenemedi, bu sürümle devam ediliyor.', other: 'Güncelleme alınamadı, biraz sonra tekrar dene.' },
       // friends
       lCode: 'KODUN', copy: 'Kodu kopyala', copied: 'Kod kopyalandı', addPh: 'Arkadaş kodu, ör. K7Q2-9XMB', add: 'Ekle', editName: 'Adını değiştir',
@@ -356,6 +383,16 @@
       noRuns: 'No rides yet. Press Play; your stats, rides and level build up here.', statsNote: 'Stats are kept on this computer, in the launcher.',
       tabCol: 'COLLECTION', colOf: '{n} anomalies found', colAll: 'All', colGot: 'Found', colMissing: 'Missing', colTimes: 'spotted {n}×', colFirst: 'first', colLast: 'LATEST FIND',
       colHint: 'An anomaly joins your collection when you spot it and go back. The ones you have not found stay hidden.', colNone: 'The collection appears here once the game is installed.', colEmptyGot: 'You have not found an anomaly yet.',
+      tabAch: 'ACHIEVEMENTS', achOf: '{n} achievements unlocked', achUnlocked: 'Achievement unlocked', achAt: 'Unlocked:',
+      ach: {
+        first_ride: ['First Ride', 'Take your first ride.'], first_find: ['Something Is Off', 'Spot your first anomaly.'], halfway: ['Halfway There', 'Reach round 5.'],
+        last_stop: ['Last Stop', 'Reach the Last Stop.'], flawless: ['Flawless Journey', 'Reach the Last Stop without a single mistake.'], express: ['Express Service', 'Reach the Last Stop in under 5 minutes.'],
+        sharp_eye: ['Sharp Eye', 'Make 25 right calls in a row.'], collector: ['Collector', 'Find 10 different anomalies.'], hunter: ['Anomaly Hunter', 'Find 30 different anomalies.'],
+        seen_it_all: ['Seen It All', 'Find every anomaly.'], regular: ['Regular', 'Reach the Last Stop 5 times.'], travel_buddy: ['Travel Buddy', 'Reach the Last Stop together with friends.'],
+        packed: ['Packed Car', 'Play in a room of 4 or more.'], chatty: ['Chatterbox', 'Talk to passengers 25 times.'], paranoid: ['Paranoid', 'Go back 10 times when nothing was wrong.'],
+        so_close: ['So Close', 'Make a wrong call in round 9 or 10.'], night_owl: ['Night Owl', 'Play after midnight (00:00–05:00).'], commuter: ['Commuter', 'Play for 5 hours in total.'],
+        social: ['Busy Carriage', 'Make 3 friends.'],
+      },
       errors: { 'repo-not-found': 'Could not reach the update server.', 'auth': 'Could not connect to the update server. Please install the latest launcher.', 'rate-limit': 'The server is busy, try again in a bit.', 'launcher-update': 'The launcher could not update itself; continuing with this version.', other: 'Could not get the update, try again in a bit.' },
       lCode: 'YOUR CODE', copy: 'Copy code', copied: 'Code copied', addPh: 'Friend code, e.g. K7Q2-9XMB', add: 'Add', editName: 'Change your name',
       reqIn: 'FRIEND REQUESTS', reqOut: 'SENT REQUESTS', secOnline: 'ONLINE', secOffline: 'OFFLINE',
@@ -398,7 +435,7 @@
     document.documentElement.lang = lang;
     $('sub').textContent = L.sub;
     $('tags').innerHTML = L.tags.map((t) => `<span>${esc(t)}</span>`).join('');
-    for (const k of ['lVer', 'lTime', 'lLast', 'tabNews', 'tabProfile', 'tabAbout', 'lCode', 'lSpeed', 'lPeak', 'lGot', 'lFiles', 'lEta']) $(k).textContent = L[k];
+    for (const k of ['lVer', 'lTime', 'lLast', 'tabNews', 'tabProfile', 'tabAch', 'tabAbout', 'lCode', 'lSpeed', 'lPeak', 'lGot', 'lFiles', 'lEta']) $(k).textContent = L[k];
     tabBadges();
     $('recheck').title = L.recheck; $('folder').title = L.folder; $('copyCode').title = L.copy; $('editName').title = L.editName;
     $('addIn').placeholder = L.addPh; $('addBtn').textContent = L.add; $('msgIn').placeholder = L.msgPh; $('msgSend').textContent = L.send;
@@ -453,6 +490,7 @@
     $('aboutPane').innerHTML = `<div class="card"><p>${esc(game.about || '')}</p><ul class="facts">${(game.facts || []).map((f) => `<li>${esc(f)}</li>`).join('')}</ul></div>`
       + (game.multiplayer ? `<div class="card"><h4>${L.mpTitle}</h4><p>${esc(game.multiplayer)}</p></div>` : '')
       + `<div class="lver">Launcher ${esc(s.version || '')}${s.launcherUpdated ? `<span class="badge">${L.launcherUpdated}</span>` : ''}</div>`;
+    checkAch(); achLive = true; // (play time / the anomaly list may complete one)
     renderTab();
   }
   // ---- download screen: live speed (from the byte counts the host streams), peak, time left
@@ -543,7 +581,7 @@
     $('tabCol').innerHTML = esc(L.tabCol) + (n && tab !== 'col' ? ` <span class="badge">+${n}</span>` : '');
   }
   // the panes built from local data (news / about come with the host's state)
-  function renderTab() { if (tab === 'profile') renderProfile(); else if (tab === 'col') renderCollection(); }
+  function renderTab() { if (tab === 'profile') renderProfile(); else if (tab === 'col') renderCollection(); else if (tab === 'ach') renderAch(); }
 
   // ============================================================== stats (from the game's "stat:" reports)
   // Kept in this page's storage: totals, the anomalies you spotted, achievements, recent rides.
@@ -579,10 +617,12 @@
   function onStat(ev) {
     if (!ev || typeof ev !== 'object') return;
     const players = Math.max(1, Math.min(6, ev.players | 0));
+    if (ev.e === 'start' || ev.e === 'round' || ev.e === 'end') S.maxPlayers = Math.max(S.maxPlayers, players);
     switch (ev.e) {
       case 'start':
         endRide(false, {});
         S.runs++; if (players > 1) S.coopRuns++;
+        if (new Date().getHours() < 5) S.nightOwl = true;
         ride = { ts: Date.now(), top: ev.round | 0 || 1, players, mistakes: 0 };
         break;
       case 'round':
@@ -623,7 +663,55 @@
     saveS();
     statsChanged();
   }
-  function statsChanged() { renderTab(); tabBadges(); }
+  function statsChanged() { checkAch(); renderTab(); tabBadges(); }
+
+  // ---- achievements: [id, icon, () => [value, needed]]; checked whenever stats, play time or friends change
+  const foundInGame = () => CAT.filter((a) => S.found[a.id]).length;
+  const ACH = [
+    ['first_ride', '🚋', () => [S.runs, 1]], ['first_find', '👁️', () => [uniqueFound(), 1]], ['halfway', '🚏', () => [S.maxRound, 5]],
+    ['last_stop', '🏁', () => [S.wins, 1]], ['flawless', '✨', () => [S.perfect, 1]], ['express', '⚡', () => [S.bestTime && S.bestTime <= 300000 ? 1 : 0, 1]],
+    ['sharp_eye', '🎯', () => [S.bestStreak, 25]], ['collector', '📔', () => [uniqueFound(), 10]], ['hunter', '🔍', () => [uniqueFound(), 30]],
+    ['seen_it_all', '🏆', () => [foundInGame(), CAT.length || Infinity]], ['regular', '🎫', () => [S.wins, 5]], ['travel_buddy', '🤝', () => [S.coopWins, 1]],
+    ['packed', '👥', () => [S.maxPlayers, 4]], ['chatty', '💬', () => [S.talks, 25]], ['paranoid', '😰', () => [S.falseAlarms, 10]],
+    ['so_close', '😬', () => [S.nearMiss, 1]], ['night_owl', '🦉', () => [S.nightOwl ? 1 : 0, 1]],
+    ['commuter', '⏱️', () => [Math.floor((last ? last.playSeconds || 0 : 0) / 360) / 10, 5]], ['social', '📇', () => [Object.keys(F.friends).length, 3]],
+  ];
+  // before the host's first state (play time, the anomaly list) unlocks are silent: what was already
+  // true before this launcher version should not pop up as a burst of notifications
+  let achLive = false;
+  function checkAch() {
+    let changed = false;
+    for (const [id, icon, f] of ACH) {
+      if (S.ach[id]) continue;
+      const [v, need] = f();
+      if (v < need) continue;
+      S.ach[id] = Date.now(); changed = true;
+      if (achLive) {
+        const [name, desc] = L.ach[id];
+        notify({ title: `${icon}  ${L.achUnlocked}: ${name}`, sub: desc, kind: 'ach' });
+        toGame({ type: 'ach', icon, name, desc });
+      }
+    }
+    if (changed) { saveS(); renderTab(); }
+  }
+  function renderAch() {
+    const got = ACH.filter(([id]) => S.ach[id]).length;
+    const num = (x) => String(x).replace('.', lang === 'tr' ? ',' : '.');
+    const tiles = ACH.map(([id, icon, f]) => {
+      const [name, desc] = L.ach[id], at = S.ach[id];
+      let extra = '';
+      if (at) extra = `<div class="dt">${L.achAt} ${esc(fmtDate(new Date(at).toISOString()))}</div>`;
+      else {
+        const [v, need] = f();
+        if (need > 1 && isFinite(need)) extra = `<div class="ap"><div class="bar"><i style="width:${Math.min(100, v / need * 100).toFixed(1)}%"></i></div><span>${num(Math.min(v, need))} / ${need}</span></div>`;
+      }
+      return `<div class="ach ${at ? 'on' : ''}"><div class="ai">${icon}</div><div class="ab"><div class="an2">${esc(name)}</div><div class="ad">${esc(desc)}</div>${extra}</div></div>`;
+    }).join('');
+    $('achPane').innerHTML =
+      `<div class="card"><div class="colhd"><div class="big">${got}<small> / ${ACH.length}</small></div>`
+      + `<div class="grow"><div style="font-size:13px;color:#fff">${esc(fmt(L.achOf, got))}</div><div class="bar"><i style="width:${(got / ACH.length * 100).toFixed(1)}%"></i></div></div></div></div>`
+      + `<div class="agrid">${tiles}</div>`;
+  }
 
   // level: XP from right calls, wins, spotted anomalies; level n needs 50·n·(n−1) XP in total
   function xpOf(s) { return s.correct * 10 + s.wins * 150 + Object.keys(s.found).length * 30 + Object.keys(s.ach || {}).length * 50; }
@@ -942,7 +1030,7 @@
   // ---- notifications (toast here, a toast / popup in the game, taskbar flash)
   function notify({ title, sub = '', kind, code, room }) {
     const box = document.createElement('div');
-    box.className = 'toast';
+    box.className = 'toast' + (kind === 'ach' ? ' achtoast' : '');
     box.innerHTML = `<div class="tt">${esc(title)}</div>${sub ? `<div class="ts">${esc(sub)}</div>` : ''}<div class="tb"></div>`;
     const btns = box.querySelector('.tb');
     const add = (label, cls, fn) => { const b = document.createElement('button'); b.className = 'btn ' + cls; b.textContent = label; b.onclick = (e) => { e.stopPropagation(); fn(); box.remove(); }; btns.appendChild(b); };
@@ -954,8 +1042,8 @@
     while ($('toasts').children.length > 4) $('toasts').firstChild.remove();
     setTimeout(() => box.remove(), kind === 'inv' || kind === 'req' ? 30000 : 7000);
     if (kind === 'inv') toGame({ type: 'invite', from: F.friends[code] ? F.friends[code].name : '?', room });
-    else if (kind && kind !== 'info') toGame({ type: 'toast', text: sub ? `${title}: ${sub}` : title });
-    if (!document.hasFocus() && kind !== 'info') send('flash');
+    else if (kind && kind !== 'info' && kind !== 'ach') toGame({ type: 'toast', text: sub ? `${title}: ${sub}` : title }); // (achievements get their own banner in the game)
+    if (!document.hasFocus() && kind !== 'info' && kind !== 'ach') send('flash');
   }
 
   // ---- rendering
@@ -976,6 +1064,7 @@
   const actBtn = (act, code, label, cls) => `<button class="btn ${cls}" data-act="${act}" data-code="${code}">${esc(label)}</button>`;
   function renderFriends() {
     renderMe();
+    checkAch(); // ("make 3 friends")
     let h = '';
     const inq = Object.entries(F.inReq);
     if (inq.length) h += `<div class="sect">${L.reqIn}</div>` + inq.map(([c, r]) => row(c, r.name, 'online', fmtCode(c), actBtn('acc', c, '✓', 'green') + actBtn('dec', c, '✕', 'ghost'))).join('');

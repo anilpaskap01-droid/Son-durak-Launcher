@@ -29,6 +29,11 @@ namespace SonDurakLauncher
         string error;
         GameForm game;
         DateTime playStart;
+        DateTime lastCheck = DateTime.MinValue;
+        bool repairing;
+        // while the launcher sits open it looks for updates every few minutes (and installs them when
+        // automatic updates are on), so PLAY never starts an old version
+        readonly System.Windows.Forms.Timer autoTimer = new System.Windows.Forms.Timer { Interval = 4 * 60 * 1000 };
         static string NewsCache => Path.Combine(Config.DataDir, "news.json");
 
         [DllImport("user32.dll")] static extern bool ReleaseCapture();
@@ -48,6 +53,8 @@ namespace SonDurakLauncher
             web = new WebView2 { Dock = DockStyle.Fill, DefaultBackgroundColor = Color.FromArgb(7, 9, 13) };
             Controls.Add(web);
             Load += async (o, e) => await InitAsync();
+            autoTimer.Tick += async (o, e) => { if (!busy && !selfUpdating && game == null) { await CheckAsync(); await AutoInstallAsync(); } };
+            autoTimer.Start();
             // automated tests run the launcher off-screen
             if (Environment.GetEnvironmentVariable("SONDURAK_TEST_OFFSCREEN") == "1") { StartPosition = FormStartPosition.Manual; Location = new Point(-5000, -5000); ShowInTaskbar = false; }
             // while the game runs the launcher stays open (friends, chat, invites): closing it only minimises it
@@ -94,7 +101,7 @@ namespace SonDurakLauncher
             var installed = Updater.IsInstalled(local);
             string status;
             if (selfUpdating) status = "selfUpdate";
-            else if (busy) status = "busy";
+            else if (busy) status = repairing ? "repair" : "busy";
             else if (remote == null && !offline && error == null) status = "checking";
             else if (!installed) status = remote == null ? "offlineNoGame" : "notInstalled";
             else if (remote != null && remote.Sha != local.sha) status = "update";
@@ -120,6 +127,7 @@ namespace SonDurakLauncher
                 lastPlayed = PlayStats.LastPlayed,
                 // every anomaly of the installed game, for the collection tab
                 anomalies = installed ? ReadJson(Path.Combine(Config.GameDir, "assets", "anomalies.json")) : null,
+                settings = new { autoUpdate = Options.AutoUpdate, fullscreen = Options.Fullscreen, chatFilter = Options.ChatFilter, map = Options.Map },
             });
         }
 
@@ -142,6 +150,7 @@ namespace SonDurakLauncher
 
         async Task CheckAsync()
         {
+            lastCheck = DateTime.UtcNow;
             error = null;
             offline = false;
             remote = null;
@@ -198,17 +207,53 @@ namespace SonDurakLauncher
             return false;
         }
 
-        async Task InstallAsync()
+        async Task InstallAsync(bool verify = false)
         {
             if (busy || remote == null) return;
-            busy = true;
+            busy = true; repairing = verify;
             error = null;
             SendState();
             var progress = new Progress<Progress>(p => Send(new { type = "progress", done = p.Done, total = p.Total, files = p.Files, filesTotal = p.FilesTotal, current = p.Current }));
-            try { await Task.Run(() => Updater.InstallAsync(remote, progress, CancellationToken.None)); }
+            try { await Task.Run(() => Updater.InstallAsync(remote, progress, CancellationToken.None, verify)); }
             catch (Exception ex) { error = ex.Message; }
-            busy = false;
+            busy = false; repairing = false;
+            plan = null;
             SendState();
+        }
+
+        bool UpdateWaiting => remote != null && Updater.IsInstalled(Updater.LoadState()) && remote.Sha != Updater.LoadState().sha;
+
+        // automatic updates: an update that turned up is installed right away (never while the game runs)
+        async Task AutoInstallAsync()
+        {
+            if (Options.AutoUpdate && game == null && !busy && UpdateWaiting) await InstallAsync();
+        }
+
+        // "Repair": check every game file on disk against the current version, fetch what is wrong
+        async Task RepairAsync()
+        {
+            if (busy || game != null) return;
+            if (remote == null) await CheckAsync();
+            if (remote != null) await InstallAsync(true);
+        }
+
+        // PLAY: look for an update first unless that was just done (the launcher may have been open for
+        // hours); with automatic updates it is installed before the game starts. "anyway" = the
+        // player chose to play the installed version.
+        async Task PlayAsync(string join, bool host, bool anyway)
+        {
+            if (busy) return;
+            if (game == null && !anyway && !offline && (DateTime.UtcNow - lastCheck).TotalSeconds > 45)
+            {
+                await CheckAsync();
+                if (UpdateWaiting)
+                {
+                    if (!Options.AutoUpdate) return; // the page now shows UPDATE (and "play without updating")
+                    await InstallAsync();
+                    if (UpdateWaiting) return; // the download failed: the page shows why
+                }
+            }
+            Play(join, host);
         }
 
         // join: a room code from an accepted invite or the party leader; host: the party leader's game
@@ -227,7 +272,7 @@ namespace SonDurakLauncher
             playStart = DateTime.UtcNow;
             game.HostMessage += (m) =>
             {
-                if (m.StartsWith("lang:")) SendState();
+                if (m.StartsWith("lang:") || m.StartsWith("map:") || m.StartsWith("filter:")) SendState();
                 Send(new { type = "from-game", msg = m });
             };
             game.FormClosed += (o, e) =>
@@ -258,11 +303,18 @@ namespace SonDurakLauncher
             switch (cmd)
             {
                 case "lang": Lang.Set(msg.TryGetValue("lang", out var l) ? l as string : null); SendState(); break;
-                case "ready": await CheckAsync(); break;
-                case "check": if (!busy) await CheckAsync(); break;
+                case "ready": await CheckAsync(); await AutoInstallAsync(); break;
+                case "check": if (!busy) { await CheckAsync(); await AutoInstallAsync(); } break;
                 case "install":
                 case "update": await InstallAsync(); break;
-                case "play": Play(msg.TryGetValue("join", out var j) ? j as string : null, msg.TryGetValue("host", out var h) && h is bool hb && hb); break;
+                case "repair": await RepairAsync(); break;
+                case "pref":
+                    if (msg.TryGetValue("key", out var pk) && pk is string pks && msg.TryGetValue("value", out var pv)) { Options.Set(pks, pv); SendState(); }
+                    break;
+                case "play":
+                    await PlayAsync(msg.TryGetValue("join", out var j) ? j as string : null, msg.TryGetValue("host", out var h) && h is bool hb && hb,
+                        msg.TryGetValue("anyway", out var an) && an is bool ab && ab);
+                    break;
                 case "to-game": if (game != null && !game.IsDisposed && msg.TryGetValue("payload", out var pl)) game.PostJson(json.Serialize(pl)); break;
                 case "profile": if (msg.TryGetValue("name", out var n) && n is string ns) Prefs.Set("name", ns); break;
                 case "flash": Flash(); break;

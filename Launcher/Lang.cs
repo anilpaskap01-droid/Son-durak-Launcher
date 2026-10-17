@@ -60,6 +60,25 @@ namespace SonDurakLauncher
         public static void Set(string lang) { if (lang == "tr" || lang == "en") Prefs.Set("lang", lang); }
     }
 
+    // Launcher settings the page changes (cmd "pref"); the game gets the line and the chat filter in its URL.
+    static class Options
+    {
+        static bool Flag(string key, bool def) => Prefs.Get(key) is bool b ? b : def;
+        public static bool AutoUpdate => Flag("autoUpdate", true);
+        public static bool Fullscreen => Flag("fullscreen", true);
+        public static bool ChatFilter => Flag("chatFilter", true);
+        public static string Map => Prefs.Get("map") as string == "metro" ? "metro" : "tram";
+
+        public static void Set(string key, object value)
+        {
+            switch (key)
+            {
+                case "autoUpdate": case "fullscreen": case "chatFilter": if (value is bool) Prefs.Set(key, value); break;
+                case "map": if (value as string == "metro" || value as string == "tram") Prefs.Set(key, value); break;
+            }
+        }
+    }
+
     static class PlayStats
     {
         public static double Seconds { get { try { return Convert.ToDouble(Prefs.Get("playSeconds") ?? 0, CultureInfo.InvariantCulture); } catch { return 0; } } }

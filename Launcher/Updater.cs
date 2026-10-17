@@ -392,12 +392,14 @@ namespace SonDurakLauncher
             SaveState(s);
         }
 
-        public static async Task InstallAsync(RemoteInfo info, IProgress<Progress> progress, CancellationToken ct)
+        // verify: hash every installed file instead of trusting the recorded ones ("repair the game":
+        // re-downloads anything changed or damaged on disk, removes files that do not belong)
+        public static async Task InstallAsync(RemoteInfo info, IProgress<Progress> progress, CancellationToken ct, bool verify = false)
         {
             var wanted = await GetWantedAsync(info.Sha, ct).ConfigureAwait(false);
             var state = LoadState();
             Directory.CreateDirectory(Config.GameDir);
-            var todo = ComputeTodo(wanted, state);
+            var todo = ComputeTodo(wanted, verify ? new LocalState() : state);
 
             var p = new Progress { Total = todo.Sum(k => wanted[k].size), FilesTotal = todo.Count };
             progress?.Report(p);

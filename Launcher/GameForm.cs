@@ -35,7 +35,7 @@ namespace SonDurakLauncher
             // (automated tests keep it off-screen like the launcher window)
             var offscreen = Environment.GetEnvironmentVariable("SONDURAK_TEST_OFFSCREEN") == "1";
             if (offscreen) { WindowState = FormWindowState.Normal; StartPosition = FormStartPosition.Manual; Location = new Point(-5000, -5000); ShowInTaskbar = false; }
-            else Shown += (o, e) => SetFull(true);
+            else if (Options.Fullscreen) Shown += (o, e) => SetFull(true);
             Load += async (o, e) =>
             {
                 var env = await Program.GetEnv();
@@ -59,6 +59,8 @@ namespace SonDurakLauncher
                     {
                         if (m.StartsWith("lang:")) Lang.Set(m.Substring(5));
                         if (m.StartsWith("name:")) Prefs.Set("name", m.Substring(5));
+                        if (m.StartsWith("map:")) Options.Set("map", m.Substring(4));
+                        if (m.StartsWith("filter:")) Options.Set("chatFilter", m.Substring(7) == "1");
                         HostMessage?.Invoke(m);
                     }
                 };
@@ -68,7 +70,7 @@ namespace SonDurakLauncher
                     a.Handled = true;
                     if (a.Uri.StartsWith("https://") || a.Uri.StartsWith("http://")) Process.Start(new ProcessStartInfo(a.Uri) { UseShellExecute = true });
                 };
-                var url = "https://sondurak.game/index.html?lang=" + Lang.Current;
+                var url = "https://sondurak.game/index.html?lang=" + Lang.Current + "&map=" + Options.Map + "&filter=" + (Options.ChatFilter ? "1" : "0");
                 if (Prefs.Get("name") is string name && name.Length > 0) url += "&name=" + Uri.EscapeDataString(name);
                 if (!string.IsNullOrEmpty(join)) url += "&join=" + Uri.EscapeDataString(join);
                 else if (host) url += "&host=1";

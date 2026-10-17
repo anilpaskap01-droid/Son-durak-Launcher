@@ -1,6 +1,22 @@
 # Son Durak Launcher
 
-[Son Durak](https://github.com/anilpaskap01-droid/Gokhan-Abi/tree/main/Son%20Durak) oyununun launcher'ı ve kurulumu (Türkçe / English).
+**English:** the open-source Windows launcher and installer of [Son Durak](https://son-durak.pages.dev), a free co-op
+anomaly-spotting game set in a night tram. The launcher installs and updates the game, keeps your stats,
+achievements and anomaly collection, and has a peer-to-peer friends list (requests, chat, invites, parties).
+It is a C# (.NET Framework 4.8) WinForms app hosting its UI in Microsoft Edge WebView2.
+
+- **License:** [MIT](LICENSE) for everything in this repository. Third-party parts: PeerJS (`Launcher/ui/peerjs.min.js`,
+  MIT, see `Launcher/ui/LICENSE-peerjs.txt`) and the Microsoft WebView2 SDK (NuGet `Microsoft.Web.WebView2`,
+  redistributable DLLs in `release/`).
+- **Builds:** every release is built from this repository by [GitHub Actions](.github/workflows/build.yml) (`node build.mjs`).
+- **Code signing:** Windows releases are signed through SignPath — free code signing provided by
+  [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org).
+  Signing policy: <https://son-durak.pages.dev/kod-imzalama.html>
+- **Privacy:** <https://son-durak.pages.dev/gizlilik.html> — no accounts, no analytics; stats stay on your PC.
+
+---
+
+[Son Durak](https://son-durak.pages.dev) oyununun launcher'ı ve kurulumu (Türkçe / English).
 
 - **Oyun:** launcher, oyunu `Gokhan-Abi` reposunun `Son Durak` klasöründen indirir ve yeni commit'lerde "Güncelleme var" der; sadece değişen dosyaları indirir (git SHA-1 ile doğrulanır).
 - **Launcher'ın kendisi:** bu reponun `release/` klasöründeki derlenmiş launcher'dır. Launcher her açılışta bu dosyaları kendi dosyalarıyla karşılaştırır; fark varsa indirir, doğrular, kendini değiştirir ve yeniden başlar. Launcher'ı güncellemek = `node build.mjs` + `release/`'i bu repoya göndermek.
@@ -25,6 +41,8 @@ node build.mjs
 ```
 
 Gerekenler: .NET SDK, `SONDURAK_READ_TOKEN` ortam değişkeninde **sadece okuma izinli** (Contents: Read-only) bir GitHub anahtarı; `Gokhan-Abi` ve `Son-durak-Launcher` repolarına erişebilmeli. Derleme anahtarın iki repoyu da okuyabildiğini ve hiçbirine yazamadığını dener, sonra onu kurulum paketine ayrı bir `token.bin` olarak koyar (exe'nin içinde değildir; derleme bunu kontrol eder). `token.bin` ve `dist/` asla repoya gönderilmez. Anahtarın süresi dolarsa yeni anahtarla setup'ı yeniden derleyip kurmak gerekir.
+
+GitHub Actions da aynısını yapar (`.github/workflows/build.yml`): anahtar reponun **Settings → Secrets and variables → Actions** kısmında `SONDURAK_READ_TOKEN` adlı gizli değişken olarak durur. İmzalanmamış çıktı "SonDurak-unsigned" adlı artifact olarak yüklenir; SignPath projesi açılınca aynı iş akışı onu SignPath'e imzalatır.
 
 ## Test bayrakları
 

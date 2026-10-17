@@ -32,7 +32,10 @@ namespace SonDurakLauncher
             Controls.Add(web);
             KeyPreview = true;
             // the game starts fullscreen; F11 in the game switches to a (maximised) window and back
-            Shown += (o, e) => SetFull(true);
+            // (automated tests keep it off-screen like the launcher window)
+            var offscreen = Environment.GetEnvironmentVariable("SONDURAK_TEST_OFFSCREEN") == "1";
+            if (offscreen) { WindowState = FormWindowState.Normal; StartPosition = FormStartPosition.Manual; Location = new Point(-5000, -5000); ShowInTaskbar = false; }
+            else Shown += (o, e) => SetFull(true);
             Load += async (o, e) =>
             {
                 var env = await Program.GetEnv();

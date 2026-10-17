@@ -211,6 +211,17 @@
   .btn.blue { background: #1a73c9; } .btn.green { background: #4f9c19; } .btn.ghost { background: rgba(255,255,255,.07); color: var(--soft); }
   .addnote { margin: 6px 14px 0; font-size: 12px; color: var(--muted); min-height: 16px; }
   .addnote.bad { color: #ff8a80; }
+  /* party */
+  .party { display: none; margin: 6px 14px 0; padding: 10px 10px 11px; border-radius: 5px; background: linear-gradient(180deg, rgba(139,211,75,.11), rgba(139,211,75,.03)); border: 1px solid rgba(139,211,75,.3); }
+  .party.show { display: block; animation: tin .25s ease-out; }
+  .party .ph { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; letter-spacing: .14em; color: var(--green); margin-bottom: 8px; }
+  .party .ph .ico { margin-left: auto; font-size: 12px; letter-spacing: 0; }
+  .pm { display: flex; flex-wrap: wrap; gap: 5px; }
+  .pm .p { display: flex; align-items: center; gap: 6px; padding: 3px 6px 3px 3px; border-radius: 14px; background: rgba(0,0,0,.28); font-size: 12px; color: #e6eaee; max-width: 100%; }
+  .pm .p .av { width: 22px; height: 22px; font-size: 11px; border-radius: 50%; }
+  .pm .p .ico { padding: 0 3px; font-size: 11px; }
+  .party .pgo { width: 100%; margin-top: 9px; padding: 9px 12px; font-size: 13px; letter-spacing: .06em; }
+  .party .pw { margin-top: 8px; font-size: 12px; color: var(--muted); line-height: 1.4; }
   .flist { flex: 1; min-height: 0; overflow: auto; padding: 6px 6px 12px; margin-top: 4px; }
   .sect { font-size: 11px; letter-spacing: .14em; color: var(--muted); padding: 12px 8px 6px; }
   .fr { display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 4px; cursor: pointer; }
@@ -311,6 +322,7 @@
       <div class="codebox"><label id="lCode"></label><b id="meCode"></b><button class="ico" id="copyCode">⧉</button></div>
       <div class="add"><input id="addIn" maxlength="12" autocomplete="off" spellcheck="false"><button class="btn blue" id="addBtn"></button></div>
       <div class="addnote" id="addNote"></div>
+      <div class="party" id="party"></div>
       <div class="flist" id="flist"></div>
       <div class="chat" id="chat">
         <div class="ch"><button class="ico" id="back">←</button><div class="av sm" id="chAv"><span></span><i class="dot"></i></div>
@@ -378,6 +390,10 @@
       tReq: '{n} sana arkadaşlık isteği gönderdi', tAcc: '{n} arkadaşlık isteğini kabul etti', tInv: '{n} seni odasına davet etti', tMsg: '{n}',
       inviteSent: 'Davet gönderildi: {n}', inviteOffline: '{n} şu an çevrimdışı', inviteNoRoom: 'Önce oyunda bir oda kur ya da bir odaya katıl.',
       prMenu: 'Ana menüde', prLobby: 'Lobide', prRound: 'Tur {n}', prEnd: "Son Durak'a ulaştı 🏁",
+      party: 'PARTİ', partyInv: 'Partiye çağır', tPartyInv: '{n} seni partisine çağırıyor', partyJoined: '{n} partiye katıldı', partyLeft: '{n} partiden ayrıldı',
+      partyDeclined: '{n} parti davetini reddetti', partyInvSent: 'Parti daveti gönderildi: {n}', partyLeave: 'Ayrıl', partyGo: 'PARTİYLE OYNA', partyPlay: 'PARTİYLE OYNA',
+      partyWait: 'Lider oyunu başlatınca odasına otomatik katılacaksın.', partyFull: 'Parti dolu (en fazla 6 kişi).', partyEnded: 'Parti dağıldı.',
+      partyStarting: 'Oda kuruluyor, parti çağrılıyor…', partyGoing: '{n} partiyi odasına çağırdı', partyKick: 'Partiden çıkar',
       tabLb: 'SIRALAMA', lbBy: { wins: 'Son Durak', best: 'En iyi süre', found: 'Anomali', streak: 'Seri', ach: 'Başarım', level: 'Seviye' }, lbYou: 'SEN', lbLevel: 'Sv.',
       lbNoFriends: 'Arkadaş ekleyince arkadaşlarınla aranızdaki sıralama burada görünür.', lbWaiting: '{n} arkadaşının istatistikleri henüz gelmedi; ikiniz de launcher\'ı açınca gelir.',
       lbNote: 'Sıralama, arkadaşlarının launcher\'larından gelen son bilgilere göre.',
@@ -421,6 +437,10 @@
       tReq: '{n} sent you a friend request', tAcc: '{n} accepted your friend request', tInv: '{n} invited you to their room', tMsg: '{n}',
       inviteSent: 'Invite sent to {n}', inviteOffline: '{n} is offline', inviteNoRoom: 'Host or join a room in the game first.',
       prMenu: 'In the main menu', prLobby: 'In the lobby', prRound: 'Round {n}', prEnd: 'Reached the Last Stop 🏁',
+      party: 'PARTY', partyInv: 'Invite to party', tPartyInv: '{n} invites you to their party', partyJoined: '{n} joined the party', partyLeft: '{n} left the party',
+      partyDeclined: '{n} declined the party invite', partyInvSent: 'Party invite sent to {n}', partyLeave: 'Leave', partyGo: 'PLAY AS A PARTY', partyPlay: 'PARTY PLAY',
+      partyWait: 'When the leader starts, you join their room automatically.', partyFull: 'The party is full (6 players at most).', partyEnded: 'The party has ended.',
+      partyStarting: 'Hosting a room and calling the party…', partyGoing: '{n} called the party to their room', partyKick: 'Remove from party',
       tabLb: 'LEADERBOARD', lbBy: { wins: 'Last Stop', best: 'Best time', found: 'Anomalies', streak: 'Streak', ach: 'Achievements', level: 'Level' }, lbYou: 'YOU', lbLevel: 'Lv.',
       lbNoFriends: 'Add friends to see how you rank against them here.', lbWaiting: 'Stats for {n} friend(s) have not arrived yet; they come once you both have the launcher open.',
       lbNote: "Based on the latest stats your friends' launchers sent.",
@@ -493,6 +513,7 @@
       default: status = s.offline ? L.offline : `<b>${L.ready}</b>`; small = v(s.installedVersion); setButton('play', L.play, 'play');
     }
     if (gameOpen && (s.status === 'ready' || s.status === 'update' || s.status === 'checking')) { status = `<b>${L.gameOpen}</b>`; setButton('play', L.running, 'play'); }
+    if (action === 'play' && amLeader() && party.members.length > 1) setButton('play', L.partyPlay, 'partygo'); // the party leader's PLAY takes everyone along
     $('status').innerHTML = status;
     $('small').innerHTML = small;
     const anyway = $('anyway'); if (anyway) anyway.onclick = () => send('play');
@@ -1010,12 +1031,13 @@
       }
       case 'ack': { const m = (F.chats[code] || []).find((x) => x.id === d.id && x.me); if (m && !m.ok) { m.ok = true; saveF(); if (chatWith === code) renderChat(); } break; }
       case 'sum': { const s = cleanSum(d.s); if (s) { fr.sum = s; fr.sumAt = Date.now(); saveF(); if (tab === 'lb') renderLb(); } break; }
+      case 'pinv': case 'pacc': case 'pdec': case 'pleave': case 'party': case 'pend': case 'pgo': onPartyData(code, d, fr); break;
       case 'inv': {
         const room = clean(d.room, 8).toUpperCase();
         if (room) notify({ title: fmt(L.tInv, fr.name), sub: `${L.room}: ${room}`, kind: 'inv', code, room });
         break;
       }
-      case 'rm': delete F.friends[code]; delete F.chats[code]; delete F.unread[code]; delete live[code]; delete authed[code]; saveF(); if (chatWith === code) closeChat(); renderFriends(); break;
+      case 'rm': if (amLeader() && inParty(code)) partyRemove(code, false); delete F.friends[code]; delete F.chats[code]; delete F.unread[code]; delete live[code]; delete authed[code]; saveF(); if (chatWith === code) closeChat(); renderFriends(); break;
     }
   }
 
@@ -1069,6 +1091,119 @@
     notify({ title: text, kind: 'info' });
   }
   const joinRoom = (room) => send('play', { join: room });
+
+  // ---- party: a leader gathers up to 6 online friends; "play as a party" hosts a room in the
+  // leader's game and every member's launcher joins it. Members only talk to the leader (who is
+  // friends with each of them). Kept in memory: closing the launcher leaves the party.
+  const PARTY_MAX = 6;
+  let party = null, partyGoPending = false;
+  const offSince = {};
+  const amLeader = () => !!party && party.leader === F.me.code;
+  const inParty = (code) => !!party && party.members.some((m) => m.code === code);
+  function partyChanged() { renderParty(); renderFriends(); if (last) render(last); }
+  function partyBroadcast() {
+    if (!amLeader()) return;
+    const members = party.members.map((m) => ({ code: m.code, name: m.code === F.me.code ? F.me.name : (F.friends[m.code] || m).name }));
+    for (const m of party.members) if (m.code !== F.me.code) raw(m.code, { t: 'party', pid: party.pid, leader: party.leader, members });
+  }
+  function partyInvite(code) {
+    const fr = F.friends[code];
+    if (!fr || !isOnline(code) || (party && !amLeader()) || inParty(code)) return;
+    if (!party) party = { pid: hex(16), leader: F.me.code, members: [{ code: F.me.code, name: F.me.name }] };
+    if (party.members.length >= PARTY_MAX) { notify({ title: L.partyFull, kind: 'info' }); return; }
+    raw(code, { t: 'pinv', pid: party.pid, name: F.me.name });
+    notify({ title: fmt(L.partyInvSent, fr.name), kind: 'info' });
+    partyChanged();
+  }
+  function partyAccept(code, pid) {
+    if (!F.friends[code] || !isOnline(code)) return;
+    if (party && party.pid !== pid) partyLeave(true);
+    raw(code, { t: 'pacc', pid }); // the leader answers with the member list ({t:'party'})
+  }
+  function partyRemove(code, kicked) {
+    if (!amLeader()) return;
+    if (kicked) raw(code, { t: 'pend', pid: party.pid });
+    party.members = party.members.filter((m) => m.code !== code);
+    if (party.members.length <= 1) party = null; else partyBroadcast();
+    partyChanged();
+  }
+  function partyLeave() {
+    if (!party) return;
+    if (amLeader()) { for (const m of party.members) if (m.code !== F.me.code) raw(m.code, { t: 'pend', pid: party.pid }); }
+    else raw(party.leader, { t: 'pleave', pid: party.pid });
+    party = null; partyGoPending = false;
+    partyChanged();
+  }
+  // leader: host a room (or use the one you are in) and send everyone there
+  function partyGo() {
+    if (!amLeader()) return;
+    if (myRoom) { partySendGo(myRoom); return; }
+    partyGoPending = true;
+    notify({ title: L.partyStarting, kind: 'info' });
+    if (gameOpen) toGame({ type: 'host' }); else send('play', { host: true });
+  }
+  function partySendGo(room) {
+    partyGoPending = false;
+    if (!amLeader()) return;
+    for (const m of party.members) if (m.code !== F.me.code) raw(m.code, { t: 'pgo', pid: party.pid, room });
+  }
+  // members who stay offline for a minute drop out; a leader who does so ends the party
+  setInterval(() => {
+    if (!party) return;
+    const now = Date.now();
+    const lost = (code) => { if (isOnline(code)) { delete offSince[code]; return false; } offSince[code] = offSince[code] || now; return now - offSince[code] > 60000; };
+    if (amLeader()) { for (const m of [...party.members]) if (m.code !== F.me.code && lost(m.code)) partyRemove(m.code, false); }
+    else if (lost(party.leader)) { party = null; notify({ title: L.partyEnded, kind: 'info' }); partyChanged(); }
+  }, 10000);
+  function onPartyData(code, d, fr) {
+    const pid = clean(d.pid, 32);
+    switch (d.t) {
+      case 'pinv': if (!party || party.pid !== pid) notify({ title: fmt(L.tPartyInv, fr.name), kind: 'pinv', code, pid }); break;
+      case 'pacc':
+        if (!amLeader() || pid !== party.pid) break;
+        if (party.members.length >= PARTY_MAX) { raw(code, { t: 'pend', pid }); break; }
+        if (!inParty(code)) { party.members.push({ code, name: fr.name }); notify({ title: fmt(L.partyJoined, fr.name), kind: 'info' }); }
+        partyBroadcast(); partyChanged();
+        break;
+      case 'pdec': if (amLeader() && pid === party.pid) notify({ title: fmt(L.partyDeclined, fr.name), kind: 'info' }); break;
+      case 'pleave': if (amLeader() && pid === party.pid && inParty(code)) { partyRemove(code, false); notify({ title: fmt(L.partyLeft, fr.name), kind: 'info' }); } break;
+      case 'party': {
+        // the member list, from the leader (only the leader itself may send it)
+        if (d.leader !== code || !Array.isArray(d.members)) break;
+        const members = d.members.slice(0, PARTY_MAX).map((m) => ({ code: normCode(m && m.code), name: clean(m && m.name) || '?' })).filter((m) => m.code.length === 8);
+        if (!members.some((m) => m.code === F.me.code)) break;
+        if (party && party.pid !== pid && amLeader()) break; // we lead another party
+        party = { pid, leader: code, members };
+        partyChanged();
+        break;
+      }
+      case 'pend': if (party && party.pid === pid && party.leader === code) { party = null; notify({ title: L.partyEnded, kind: 'info' }); partyChanged(); } break;
+      case 'pgo': {
+        if (!party || party.pid !== pid || party.leader !== code) break;
+        const room = clean(d.room, 8).toUpperCase();
+        if (room && room !== myRoom) { notify({ title: fmt(L.partyGoing, fr.name), sub: `${L.room}: ${room}`, kind: 'info' }); joinRoom(room); }
+        break;
+      }
+    }
+  }
+  function renderParty() {
+    const el = $('party');
+    if (!party) { el.classList.remove('show'); el.innerHTML = ''; return; }
+    const lead = amLeader();
+    const chips = party.members.map((m) => {
+      const name = m.code === F.me.code ? F.me.name : (F.friends[m.code] || m).name;
+      return `<span class="p"><span class="av" style="background:hsl(${hue(m.code)},45%,38%)"><span>${esc((clean(name, 2)[0] || '?').toUpperCase())}</span></span>${esc(name)}${m.code === party.leader ? ' 👑' : ''}`
+        + (lead && m.code !== F.me.code ? `<button class="ico" data-pk="${m.code}" title="${esc(L.partyKick)}">✕</button>` : '') + '</span>';
+    }).join('');
+    el.innerHTML = `<div class="ph">👥 ${L.party} (${party.members.length}/${PARTY_MAX})<button class="ico" data-pa="leave">${L.partyLeave}</button></div><div class="pm">${chips}</div>`
+      + (lead ? (party.members.length > 1 ? `<button class="btn green pgo" data-pa="go">▶ ${L.partyGo}</button>` : '') : `<div class="pw">${L.partyWait}</div>`);
+    el.classList.add('show');
+  }
+  $('party').addEventListener('click', (e) => {
+    const k = e.target.closest('[data-pk]'); if (k) { partyRemove(k.dataset.pk, true); return; }
+    const a = e.target.closest('[data-pa]'); if (!a) return;
+    if (a.dataset.pa === 'leave') partyLeave(); else partyGo();
+  });
   function setMyName(name, fromUser) {
     name = clean(name); if (!name || name === F.me.name) { renderMe(); return; }
     F.me.name = name; saveF();
@@ -1089,12 +1224,16 @@
     if (m === 'friends') toGame({ type: 'friends', list: friendList() });
     else if (m.startsWith('invite:')) { try { const o = JSON.parse(m.slice(7)); inviteFriend(normCode(o.code), clean(o.room, 8).toUpperCase(), true); } catch { /* bad message */ } }
     else if (m.startsWith('name:')) setMyName(m.slice(5), false);
-    else if (m.startsWith('room:')) { myRoom = clean(m.slice(5), 8).toUpperCase() || null; broadcastStatus(); renderFriends(); }
+    else if (m.startsWith('room:')) {
+      myRoom = clean(m.slice(5), 8).toUpperCase() || null;
+      if (myRoom && partyGoPending) partySendGo(myRoom); // the room the leader hosted for the party
+      broadcastStatus(); renderFriends();
+    }
     else if (m.startsWith('stat:')) { try { onStat(JSON.parse(m.slice(5))); } catch { /* bad message */ } }
   }
 
   // ---- notifications (toast here, a toast / popup in the game, taskbar flash)
-  function notify({ title, sub = '', kind, code, room }) {
+  function notify({ title, sub = '', kind, code, room, pid }) {
     const box = document.createElement('div');
     box.className = 'toast' + (kind === 'ach' ? ' achtoast' : '');
     box.innerHTML = `<div class="tt">${esc(title)}</div>${sub ? `<div class="ts">${esc(sub)}</div>` : ''}<div class="tb"></div>`;
@@ -1102,11 +1241,12 @@
     const add = (label, cls, fn) => { const b = document.createElement('button'); b.className = 'btn ' + cls; b.textContent = label; b.onclick = (e) => { e.stopPropagation(); fn(); box.remove(); }; btns.appendChild(b); };
     if (kind === 'req') { add(L.accept, 'green', () => acceptFriend(code, F.inReq[code] && F.inReq[code].name)); add(L.decline, 'ghost', () => declineFriend(code)); }
     if (kind === 'inv') { add(L.join, 'green', () => joinRoom(room)); add(L.cancel, 'ghost', () => {}); }
+    if (kind === 'pinv') { add(L.join, 'green', () => partyAccept(code, pid)); add(L.decline, 'ghost', () => raw(code, { t: 'pdec', pid })); }
     if (kind === 'msg') { box.style.cursor = 'pointer'; box.onclick = () => { openChat(code); box.remove(); }; }
     if (!btns.children.length) btns.remove();
     $('toasts').appendChild(box);
     while ($('toasts').children.length > 4) $('toasts').firstChild.remove();
-    setTimeout(() => box.remove(), kind === 'inv' || kind === 'req' ? 30000 : 7000);
+    setTimeout(() => box.remove(), kind === 'inv' || kind === 'req' || kind === 'pinv' ? 30000 : 7000);
     if (kind === 'inv') toGame({ type: 'invite', from: F.friends[code] ? F.friends[code].name : '?', room });
     else if (kind && kind !== 'info' && kind !== 'ach') toGame({ type: 'toast', text: sub ? `${title}: ${sub}` : title }); // (achievements get their own banner in the game)
     if (!document.hasFocus() && kind !== 'info' && kind !== 'ach') send('flash');
@@ -1136,7 +1276,7 @@
       + `<div class="fi"><div class="fn">${esc(name)}</div><div class="fs ${st}">${esc(sub)}</div></div>`
       + `<div class="fa">${acts}${unread ? `<span class="unread">${unread}</span>` : ''}</div></div>`;
   }
-  const actBtn = (act, code, label, cls) => `<button class="btn ${cls}" data-act="${act}" data-code="${code}">${esc(label)}</button>`;
+  const actBtn = (act, code, label, cls, title = '') => `<button class="btn ${cls}" data-act="${act}" data-code="${code}"${title ? ` title="${esc(title)}"` : ''}>${esc(label)}</button>`;
   function renderFriends() {
     renderMe();
     checkAch(); // ("make 3 friends")
@@ -1146,7 +1286,8 @@
     const list = friendList();
     const on = list.filter((f) => f.st !== 'offline'), off = list.filter((f) => f.st === 'offline');
     const actsFor = (f) => (f.st === 'ingame' && f.room && f.room !== myRoom ? actBtn('join', f.code, L.join, 'green') : '')
-      + (f.st !== 'offline' && myRoom && f.room !== myRoom ? actBtn('inv', f.code, L.invite, 'blue') : '');
+      + (f.st !== 'offline' && myRoom && f.room !== myRoom ? actBtn('inv', f.code, L.invite, 'blue') : '')
+      + (f.st !== 'offline' && (!party || amLeader()) && !inParty(f.code) ? actBtn('pinv', f.code, '👥+', 'ghost', L.partyInv) : '');
     if (on.length) h += `<div class="sect">${L.secOnline} (${on.length})</div>` + on.map((f) => row(f.code, f.name, f.st, stText(f.st, f.room, f.pr), actsFor(f), F.unread[f.code] || 0)).join('');
     if (off.length) h += `<div class="sect">${L.secOffline} (${off.length})</div>` + off.map((f) => row(f.code, f.name, 'offline', L.stOffline, '', F.unread[f.code] || 0)).join('');
     const outq = Object.keys(F.outReq);
@@ -1179,7 +1320,7 @@
   // ---- wiring
   $('flist').addEventListener('click', (e) => {
     const b = e.target.closest('[data-act]');
-    if (b) { const c = b.dataset.code; ({ acc: () => acceptFriend(c, F.inReq[c] && F.inReq[c].name), dec: () => declineFriend(c), cancel: () => cancelRequest(c), join: () => joinRoom(live[c] && live[c].room), inv: () => inviteFriend(c) })[b.dataset.act](); return; }
+    if (b) { const c = b.dataset.code; ({ acc: () => acceptFriend(c, F.inReq[c] && F.inReq[c].name), dec: () => declineFriend(c), cancel: () => cancelRequest(c), join: () => joinRoom(live[c] && live[c].room), inv: () => inviteFriend(c), pinv: () => partyInvite(c) })[b.dataset.act](); return; }
     const r = e.target.closest('.fr'); if (r && F.friends[r.dataset.code]) openChat(r.dataset.code);
   });
   $('chActs').addEventListener('click', (e) => { const b = e.target.closest('[data-act]'); if (!b) return; if (b.dataset.act === 'join') joinRoom(live[chatWith] && live[chatWith].room); else inviteFriend(chatWith); });
@@ -1208,7 +1349,7 @@
   $('bar').addEventListener('mousedown', (e) => { if (e.target.id === 'bar' || e.target.closest('.brand')) send('drag'); });
   $('min').onclick = () => send('min'); $('close').onclick = () => send('close');
   $('recheck').onclick = () => send('check'); $('folder').onclick = () => send('folder');
-  $('main').onclick = () => action && send(action);
+  $('main').onclick = () => { if (action === 'partygo') partyGo(); else if (action) send(action); };
   HOST.addEventListener('message', (e) => {
     const m = e.data;
     if (m.type === 'state') { if (m.lang && m.lang !== lang && STR[m.lang]) { lang = m.lang; L = STR[lang]; applyStatic(); renderFriends(); } render(m); }
@@ -1225,7 +1366,7 @@
   startPeer();
   send('ready');
   // test hooks (the automated two-launcher test drives these)
-  window.__fr = { F, addFriendCode: (c) => { $('addIn').value = c; addFriend(); }, acceptFriend, sendTo: (c, t) => { openChat(c); $('msgIn').value = t; sendChat(); }, inviteFriend, fromGame, isOnline, get net() { return net; }, live };
+  window.__fr = { F, addFriendCode: (c) => { $('addIn').value = c; addFriend(); }, acceptFriend, sendTo: (c, t) => { openChat(c); $('msgIn').value = t; sendChat(); }, inviteFriend, fromGame, isOnline, get net() { return net; }, live, get party() { return party; }, partyInvite, partyGo, partyLeave };
 </script>
 </body>
 </html>

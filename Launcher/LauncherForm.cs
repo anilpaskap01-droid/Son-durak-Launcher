@@ -211,17 +211,19 @@ namespace SonDurakLauncher
             SendState();
         }
 
-        // join: a room code from an accepted invite. The launcher stays open next to the game.
-        void Play(string join = null)
+        // join: a room code from an accepted invite or the party leader; host: the party leader's game
+        // hosts a room right away. The launcher stays open next to the game.
+        void Play(string join = null, bool host = false)
         {
             if (busy || !Updater.IsInstalled(Updater.LoadState())) return;
             if (game != null && !game.IsDisposed)
             {
                 if (!string.IsNullOrEmpty(join)) game.PostJson(json.Serialize(new { type = "join", room = join }));
+                else if (host) game.PostJson(json.Serialize(new { type = "host" }));
                 game.Activate();
                 return;
             }
-            game = new GameForm(join);
+            game = new GameForm(join, host);
             playStart = DateTime.UtcNow;
             game.HostMessage += (m) =>
             {
@@ -260,7 +262,7 @@ namespace SonDurakLauncher
                 case "check": if (!busy) await CheckAsync(); break;
                 case "install":
                 case "update": await InstallAsync(); break;
-                case "play": Play(msg.TryGetValue("join", out var j) ? j as string : null); break;
+                case "play": Play(msg.TryGetValue("join", out var j) ? j as string : null, msg.TryGetValue("host", out var h) && h is bool hb && hb); break;
                 case "to-game": if (game != null && !game.IsDisposed && msg.TryGetValue("payload", out var pl)) game.PostJson(json.Serialize(pl)); break;
                 case "profile": if (msg.TryGetValue("name", out var n) && n is string ns) Prefs.Set("name", ns); break;
                 case "flash": Flash(); break;

@@ -18,8 +18,8 @@ namespace SonDurakLauncher
         FormWindowState prevState;
         Rectangle prevBounds;
 
-        // join: a room code to join right away (an accepted invite)
-        public GameForm(string join = null)
+        // join: a room code to join right away (an accepted invite); host: host a room right away (party leader)
+        public GameForm(string join = null, bool host = false)
         {
             Text = "Son Durak";
             BackColor = Color.Black;
@@ -66,6 +66,7 @@ namespace SonDurakLauncher
                 var url = "https://sondurak.game/index.html?lang=" + Lang.Current;
                 if (Prefs.Get("name") is string name && name.Length > 0) url += "&name=" + Uri.EscapeDataString(name);
                 if (!string.IsNullOrEmpty(join)) url += "&join=" + Uri.EscapeDataString(join);
+                else if (host) url += "&host=1";
                 cw.Navigate(url);
             };
         }

@@ -441,11 +441,11 @@
       tabQuests: 'GÖREVLER', qTitle: 'Günlük görevler', qOf: '{n} / 3 tamamlandı', qReset: 'Yeni görevlere {n}', qXp: '+100 XP', qDone: 'Günlük görev tamamlandı', qAll: 'Bugünün bütün görevleri bitti. Yarın yenileri gelecek!',
       qNote: 'Her gün 3 yeni görev gelir; her biri +100 XP. Görevler bu bilgisayarın saatine göre gece yarısı yenilenir.', qTotal: 'Toplam tamamlanan görev: {n}',
       q: {
-        find: ['Anomali Avı', '{n} anomali bul.'], right: ['Doğru Yolda', '{n} doğru karar ver.'], talk: ['Muhabbet', 'Yolcularla {n} kez konuş.'], slap: ['Eli Hafif', '{n} tokat at.'],
+        find: ['Anomali Avı', '{n} anomali bul.'], right: ['Doğru Yolda', '{n} doğru karar ver.'], talk: ['Muhabbet', 'Yolcularla {n} kez konuş.'],
         metro5: ['Tünel Turu', "Gece Metrosu'nda {n}. tura ulaş."], tram5: ['Şehir Turu', "Gece Tramvayı'nda {n}. tura ulaş."], finish: ['Son Durak', "Son Durak'a ulaş."],
         coop: ['Yol Arkadaşı', 'Bir arkadaşınla sefere çık.'], streak: ['Seri', 'Arka arkaya {n} doğru karar ver.'], metroFind: ['Yeraltı Gözü', 'Metroda {n} anomali bul.'],
       },
-      sSlaps: 'TOKAT', sMetro: 'METRO ZAFER',
+      sQuests: 'GÖREV', sMetro: 'METRO ZAFER',
       errors: { 'repo-not-found': 'Güncelleme sunucusuna ulaşılamadı.', 'auth': 'Güncelleme sunucusuna bağlanılamadı. Launcher\'ın en yeni sürümünü kur.', 'rate-limit': 'Sunucu şu an meşgul, biraz sonra tekrar dene.', 'launcher-update': 'Launcher güncellenemedi, bu sürümle devam ediliyor.', other: 'Güncelleme alınamadı, biraz sonra tekrar dene.' },
       // friends
       lCode: 'KODUN', copy: 'Kodu kopyala', copied: 'Kod kopyalandı', addPh: 'Arkadaş kodu, ör. K7Q2-9XMB', add: 'Ekle', editName: 'Adını değiştir',
@@ -508,11 +508,11 @@
       tabQuests: 'QUESTS', qTitle: 'Daily quests', qOf: '{n} / 3 done', qReset: 'New quests in {n}', qXp: '+100 XP', qDone: 'Daily quest complete', qAll: "All of today's quests are done. New ones tomorrow!",
       qNote: "3 new quests every day, +100 XP each. They change at midnight by this computer's clock.", qTotal: 'Quests completed in total: {n}',
       q: {
-        find: ['Anomaly Hunt', 'Find {n} anomalies.'], right: ['On Track', 'Make {n} right calls.'], talk: ['Small Talk', 'Talk to passengers {n} times.'], slap: ['Light Hand', 'Hand out {n} slaps.'],
+        find: ['Anomaly Hunt', 'Find {n} anomalies.'], right: ['On Track', 'Make {n} right calls.'], talk: ['Small Talk', 'Talk to passengers {n} times.'],
         metro5: ['Tunnel Tour', 'Reach round {n} on the Night Metro.'], tram5: ['City Tour', 'Reach round {n} on the Night Tram.'], finish: ['Last Stop', 'Reach the Last Stop.'],
         coop: ['Travel Buddy', 'Ride with a friend.'], streak: ['Streak', 'Make {n} right calls in a row.'], metroFind: ['Underground Eye', 'Find {n} anomalies on the metro.'],
       },
-      sSlaps: 'SLAPS', sMetro: 'METRO WINS',
+      sQuests: 'QUESTS', sMetro: 'METRO WINS',
       errors: { 'repo-not-found': 'Could not reach the update server.', 'auth': 'Could not connect to the update server. Please install the latest launcher.', 'rate-limit': 'The server is busy, try again in a bit.', 'launcher-update': 'The launcher could not update itself; continuing with this version.', other: 'Could not get the update, try again in a bit.' },
       lCode: 'YOUR CODE', copy: 'Copy code', copied: 'Code copied', addPh: 'Friend code, e.g. K7Q2-9XMB', add: 'Add', editName: 'Change your name',
       reqIn: 'FRIEND REQUESTS', reqOut: 'SENT REQUESTS', secOnline: 'ONLINE', secOffline: 'OFFLINE',
@@ -801,7 +801,7 @@
         break;
       }
       case 'talk': S.talks++; questAdd('talk', 1); break;
-      case 'slap': S.slaps++; questAdd('slap', 1); break;
+      case 'slap': S.slaps++; break; // (games before 1.9.0)
       case 'slapped': S.slapped++; break;
       case 'where':
         where = { mode: String(ev.mode || ''), round: ev.round | 0, total: ev.total | 0 || 10, players, role: String(ev.role || '') };
@@ -826,19 +826,22 @@
     ['packed', '👥', () => [S.maxPlayers, 4]], ['chatty', '💬', () => [S.talks, 25]], ['paranoid', '😰', () => [S.falseAlarms, 10]],
     ['so_close', '😬', () => [S.nearMiss, 1]], ['night_owl', '🦉', () => [S.nightOwl ? 1 : 0, 1]],
     ['commuter', '⏱️', () => [Math.floor((last ? last.playSeconds || 0 : 0) / 360) / 10, 5]], ['social', '📇', () => [Object.keys(F.friends).length, 3]],
-    // 1.6: slapping, the metro, daily quests
+    // 1.6: slapping (retired, see RETIRED), the metro, daily quests
     ['first_slap', '👋', () => [S.slaps, 1]], ['slapper', '🖐️', () => [S.slaps, 50]], ['slapped', '😵', () => [S.slapped, 1]],
     ['underground', '🚇', () => [S.metroWins, 1]], ['both_lines', '🗺️', () => [(S.metroWins > 0 ? 1 : 0) + (S.tramWins > 0 ? 1 : 0), 2]], ['dark_tunnel', '🌑', () => [S.metroPerfect, 1]],
     ['tunnel_rat', '🐀', () => [S.metroFinds, 25]], ['questor', '📅', () => [S.questsDone, 10]], ['loyal', '🔥', () => [Object.keys(S.days).length, 7]],
     ['veteran', '⭐', () => [levelOf(xpOf(S)).n, 10]],
   ];
+  // achievements that can no longer be earned (game 1.9.0 removed slapping): shown only to those who have them
+  const RETIRED = new Set(['first_slap', 'slapper', 'slapped']);
+  const shownAch = () => ACH.filter(([id]) => !RETIRED.has(id) || S.ach[id]);
   // before the host's first state (play time, the anomaly list) unlocks are silent: what was already
   // true before this launcher version should not pop up as a burst of notifications
   let achLive = false;
   function checkAch() {
     let changed = false;
     for (const [id, icon, f] of ACH) {
-      if (S.ach[id]) continue;
+      if (S.ach[id] || RETIRED.has(id)) continue;
       const [v, need] = f();
       if (v < need) continue;
       S.ach[id] = Date.now(); changed = true;
@@ -851,9 +854,9 @@
     if (changed) { saveS(); renderTab(); broadcastSum(); }
   }
   function renderAch() {
-    const got = ACH.filter(([id]) => S.ach[id]).length;
+    const list = shownAch(), got = list.filter(([id]) => S.ach[id]).length;
     const num = (x) => String(x).replace('.', lang === 'tr' ? ',' : '.');
-    const tiles = ACH.map(([id, icon, f]) => {
+    const tiles = list.map(([id, icon, f]) => {
       const [name, desc] = L.ach[id], at = S.ach[id];
       let extra = '';
       if (at) extra = `<div class="dt">${L.achAt} ${esc(fmtDate(new Date(at).toISOString()))}</div>`;
@@ -864,8 +867,8 @@
       return `<div class="ach ${at ? 'on' : ''}"><div class="ai">${icon}</div><div class="ab"><div class="an2">${esc(name)}</div><div class="ad">${esc(desc)}</div>${extra}</div></div>`;
     }).join('');
     $('achPane').innerHTML =
-      `<div class="card"><div class="colhd"><div class="big">${got}<small> / ${ACH.length}</small></div>`
-      + `<div class="grow"><div style="font-size:13px;color:#fff">${esc(fmt(L.achOf, got))}</div><div class="bar"><i style="width:${(got / ACH.length * 100).toFixed(1)}%"></i></div></div></div></div>`
+      `<div class="card"><div class="colhd"><div class="big">${got}<small> / ${list.length}</small></div>`
+      + `<div class="grow"><div style="font-size:13px;color:#fff">${esc(fmt(L.achOf, got))}</div><div class="bar"><i style="width:${(got / list.length * 100).toFixed(1)}%"></i></div></div></div></div>`
       + `<div class="agrid">${tiles}</div>`;
   }
 
@@ -925,15 +928,28 @@
   const filt = (t) => (OPT.chatFilter ? cleanText(t) : String(t));
 
   // ---- daily quests: 3 a day (picked from the date + your friend code), +100 XP each
-  const QUESTS = { find: [3, '🔍'], right: [10, '✅'], talk: [3, '💬'], slap: [5, '👋'], metro5: [5, '🚇'], tram5: [5, '🚋'], finish: [1, '🏁'], coop: [1, '🤝'], streak: [6, '🎯'], metroFind: [2, '🐀'] };
+  // (game 1.9.0 removed slapping: its quest is gone)
+  const QUESTS = { find: [3, '🔍'], right: [10, '✅'], talk: [3, '💬'], metro5: [5, '🚇'], tram5: [5, '🚋'], finish: [1, '🏁'], coop: [1, '🤝'], streak: [6, '🎯'], metroFind: [2, '🐀'] };
   const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  function todayQuests() {
-    const day = dayKey();
-    if (S.q.day === day && Array.isArray(S.q.ids)) return S.q;
+  // every quest in the order the date + your friend code shuffle them
+  function questOrder(day) {
     let h = 2166136261; for (const ch of day + F.me.code) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
     const ids = Object.keys(QUESTS), pick = [];
-    while (pick.length < 3) { h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0; const id = ids[h % ids.length]; if (!pick.includes(id)) pick.push(id); }
-    S.q = { day, ids: pick, prog: {}, done: {} };
+    while (pick.length < ids.length) { h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0; const id = ids[h % ids.length]; if (!pick.includes(id)) pick.push(id); }
+    return pick;
+  }
+  function todayQuests() {
+    const day = dayKey();
+    if (S.q.day === day && Array.isArray(S.q.ids)) {
+      if (S.q.ids.every((id) => QUESTS[id])) return S.q;
+      // today's list has a quest that no longer exists: another one takes its place, the rest keep their progress
+      const ids = S.q.ids.filter((id) => QUESTS[id]);
+      for (const id of questOrder(day)) if (ids.length < 3 && !ids.includes(id)) ids.push(id);
+      S.q.ids = ids;
+      saveS();
+      return S.q;
+    }
+    S.q = { day, ids: questOrder(day).slice(0, 3), prog: {}, done: {} };
     saveS();
     return S.q;
   }
@@ -991,7 +1007,7 @@
       + `<div class="sgrid">`
       + box(L.sRuns, S.runs) + box(L.sWins, S.wins) + box(L.sBest, S.bestTime ? mmss(S.bestTime) : '—') + box(L.sPerfect, S.perfect) + box(L.sStreak, S.bestStreak)
       + box(L.sAcc, acc) + box(L.sFound, uniqueFound(), total ? '/ ' + total : '') + box(L.sTime, fmtTime(last ? last.playSeconds : 0)) + box(L.sTalks, S.talks) + box(L.sCoop, S.coopWins)
-      + box(L.sSlaps, S.slaps) + box(L.sMetro, S.metroWins)
+      + box(L.sQuests, S.questsDone) + box(L.sMetro, S.metroWins)
       + `</div>`
       + `<div class="card"><h4>${L.recent}</h4><div class="runs">${runs || `<div class="empty">${L.noRuns}</div>`}</div></div>`
       + `<div class="note">${L.statsNote}</div>`;

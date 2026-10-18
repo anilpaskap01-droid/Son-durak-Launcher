@@ -434,6 +434,7 @@
       opts: 'Ayarlar', optsTitle: 'LAUNCHER AYARLARI', close: 'Kapat', repairBtn: 'Onar', folderBtn: 'Klasörü aç',
       oAuto: ['Otomatik güncelleme', 'Yeni sürüm çıkınca launcher kendisi indirir; OYNA her zaman en yeni sürümü açar.'],
       oFull: ['Oyunu tam ekran başlat', 'Kapalıysa oyun büyütülmüş pencerede açılır (oyunda F11 ile değişir).'],
+      oDiscord: ['Discord durumu', 'Oynarken Discord profilinde "Son Durak oynuyor", hattın, turun ve kaç kişi olduğunuz görünür (Discord açıksa).'],
       oFilter: ['Uygunsuz dil filtresi', 'Oyun içi sohbette ve arkadaş sohbetinde küfürler **** olarak görünür.'],
       oRepair: ['Oyunu onar', 'Bütün oyun dosyalarını kontrol eder; bozuk ya da eksik olanları yeniden indirir.'],
       oFolder: ['Oyun klasörü', 'İndirilen oyun dosyalarının olduğu klasörü açar.'],
@@ -501,6 +502,7 @@
       opts: 'Settings', optsTitle: 'LAUNCHER SETTINGS', close: 'Close', repairBtn: 'Repair', folderBtn: 'Open folder',
       oAuto: ['Automatic updates', 'The launcher downloads new versions by itself; PLAY always starts the newest one.'],
       oFull: ['Start the game fullscreen', 'When off, the game opens in a maximised window (F11 in the game switches).'],
+      oDiscord: ['Discord status', 'While you play, your Discord profile shows "Playing Son Durak" with your line, round and party size (when Discord is running).'],
       oFilter: ['Inappropriate language filter', 'Swear words show as **** in the in-game chat and the friends chat.'],
       oRepair: ['Repair the game', 'Checks every game file and downloads again whatever is damaged or missing.'],
       oFolder: ['Game folder', 'Opens the folder with the downloaded game files.'],
@@ -874,7 +876,7 @@
 
   // ---- the line (map) the game starts on: picked on the hero, kept by the host with the other settings
   const LINES = { tram: { code: 'T9', color: '#ffb020' }, metro: { code: 'M2', color: '#2fbf5a' } };
-  const OPT = { autoUpdate: true, fullscreen: true, chatFilter: true, map: 'tram' };
+  const OPT = { autoUpdate: true, fullscreen: true, chatFilter: true, map: 'tram', discord: true };
   function setOpt(key, value) { OPT[key] = value; send('pref', { key, value }); }
   function renderLines() {
     $('linePick').innerHTML = Object.entries(LINES).map(([id, l]) => `<button class="lp ${OPT.map === id ? 'sel' : ''}" data-line="${id}" style="--lc:${l.color}"><b>${l.code}</b>${esc(L.lines[id])}</button>`).join('');
@@ -892,7 +894,7 @@
     const sw = (key) => `<button class="sw ${OPT[key] ? 'on' : ''}" data-opt="${key}" aria-pressed="${OPT[key] ? 'true' : 'false'}"></button>`;
     const row = ([title, desc], ctl) => `<div class="opt"><div class="ot"><b>${esc(title)}</b><span>${esc(desc)}</span></div>${ctl}</div>`;
     $('optsBox').innerHTML = `<h3>${L.optsTitle}</h3>`
-      + row(L.oAuto, sw('autoUpdate')) + row(L.oFull, sw('fullscreen')) + row(L.oFilter, sw('chatFilter'))
+      + row(L.oAuto, sw('autoUpdate')) + row(L.oFull, sw('fullscreen')) + row(L.oFilter, sw('chatFilter')) + row(L.oDiscord, sw('discord'))
       + row(L.oRepair, `<button class="btn blue" data-oa="repair">${esc(L.repairBtn)}</button>`)
       + row(L.oFolder, `<button class="btn ghost" data-oa="folder">${esc(L.folderBtn)}</button>`)
       + `<div class="mfoot"><span class="lver">Launcher ${esc(last ? last.version || '' : '')}</span><button class="btn ghost" data-oa="close">${esc(L.close)}</button></div>`;

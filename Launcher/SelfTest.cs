@@ -3,6 +3,7 @@
 //   --selftest-selfupdate <log> check the launcher itself against the repo and replace it (no restart)
 //   --shot-launcher <png>      render the launcher UI off-screen and save a PNG
 //   --shot-game <png>          start the installed game off-screen, begin a round, save a PNG
+//   --selftest-discord <json> [s] show a sample Discord status for s seconds (Discord.cs)
 using System;
 using System.Drawing;
 using System.IO;

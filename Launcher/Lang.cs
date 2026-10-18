@@ -67,13 +67,14 @@ namespace SonDurakLauncher
         public static bool AutoUpdate => Flag("autoUpdate", true);
         public static bool Fullscreen => Flag("fullscreen", true);
         public static bool ChatFilter => Flag("chatFilter", true);
+        public static bool Discord => Flag("discord", true); // Discord status while playing (Discord.cs)
         public static string Map => Prefs.Get("map") as string == "metro" ? "metro" : "tram";
 
         public static void Set(string key, object value)
         {
             switch (key)
             {
-                case "autoUpdate": case "fullscreen": case "chatFilter": if (value is bool) Prefs.Set(key, value); break;
+                case "autoUpdate": case "fullscreen": case "chatFilter": case "discord": if (value is bool) Prefs.Set(key, value); break;
                 case "map": if (value as string == "metro" || value as string == "tram") Prefs.Set(key, value); break;
             }
         }

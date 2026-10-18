@@ -41,6 +41,14 @@ namespace SonDurakLauncher
             if ((a = Array.IndexOf(args, "--shot-game")) >= 0) { SelfTest.Shot(args[a + 1], true); return; }
 
             if ((a = Array.IndexOf(args, "--selftest-selfupdate")) >= 0) { Environment.Exit(SelfTest.SelfUpdate(args[a + 1])); return; }
+            if ((a = Array.IndexOf(args, "--selftest-discord")) >= 0)
+            {
+                // show a sample Discord status for N seconds (default 8) and report: --selftest-discord <json> [seconds]
+                var r = DiscordPresence.Test(args.Length > a + 2 && int.TryParse(args[a + 2], out var sec) ? sec : 8);
+                System.IO.File.WriteAllText(args[a + 1], new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(r));
+                Environment.Exit(r.TryGetValue("set", out var ok) && ok is bool b && b ? 0 : 1);
+                return;
+            }
 
             // "--updated": started by the previous launcher version right after it replaced itself;
             // wait until that process has exited and released the single-instance mutex.

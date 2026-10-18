@@ -53,6 +53,7 @@ namespace SonDurakLauncher
             web = new WebView2 { Dock = DockStyle.Fill, DefaultBackgroundColor = Color.FromArgb(7, 9, 13) };
             Controls.Add(web);
             Load += async (o, e) => await InitAsync();
+            Shown += (o, e) => DiscordPresence.LauncherOpened(); // Discord: "Playing Son Durak · In the launcher"
             autoTimer.Tick += async (o, e) => { if (!busy && !selfUpdating && game == null) { await CheckAsync(); await AutoInstallAsync(); } };
             autoTimer.Start();
             // automated tests run the launcher off-screen
@@ -127,7 +128,7 @@ namespace SonDurakLauncher
                 lastPlayed = PlayStats.LastPlayed,
                 // every anomaly of the installed game, for the collection tab
                 anomalies = installed ? ReadJson(Path.Combine(Config.GameDir, "assets", "anomalies.json")) : null,
-                settings = new { autoUpdate = Options.AutoUpdate, fullscreen = Options.Fullscreen, chatFilter = Options.ChatFilter, map = Options.Map },
+                settings = new { autoUpdate = Options.AutoUpdate, fullscreen = Options.Fullscreen, chatFilter = Options.ChatFilter, map = Options.Map, discord = Options.Discord },
             });
         }
 
@@ -270,14 +271,20 @@ namespace SonDurakLauncher
             }
             game = new GameForm(join, host);
             playStart = DateTime.UtcNow;
+            DiscordPresence.GameOpened();
             game.HostMessage += (m) =>
             {
                 if (m.StartsWith("lang:") || m.StartsWith("map:") || m.StartsWith("filter:")) SendState();
+                // Discord status: where the player is, the line, the language
+                if (m.StartsWith("stat:")) DiscordPresence.FromGame(m.Substring(5));
+                else if (m.StartsWith("map:")) DiscordPresence.SetMap(m.Substring(4));
+                else if (m.StartsWith("lang:")) DiscordPresence.Kick();
                 Send(new { type = "from-game", msg = m });
             };
             game.FormClosed += (o, e) =>
             {
                 game = null;
+                DiscordPresence.GameClosed();
                 PlayStats.Add(DateTime.UtcNow - playStart);
                 Send(new { type = "game-state", open = false });
                 SendState(); // the language may have been changed in the game
@@ -302,14 +309,14 @@ namespace SonDurakLauncher
             catch { return; }
             switch (cmd)
             {
-                case "lang": Lang.Set(msg.TryGetValue("lang", out var l) ? l as string : null); SendState(); break;
+                case "lang": Lang.Set(msg.TryGetValue("lang", out var l) ? l as string : null); SendState(); DiscordPresence.Kick(); break;
                 case "ready": await CheckAsync(); await AutoInstallAsync(); break;
                 case "check": if (!busy) { await CheckAsync(); await AutoInstallAsync(); } break;
                 case "install":
                 case "update": await InstallAsync(); break;
                 case "repair": await RepairAsync(); break;
                 case "pref":
-                    if (msg.TryGetValue("key", out var pk) && pk is string pks && msg.TryGetValue("value", out var pv)) { Options.Set(pks, pv); SendState(); }
+                    if (msg.TryGetValue("key", out var pk) && pk is string pks && msg.TryGetValue("value", out var pv)) { Options.Set(pks, pv); SendState(); DiscordPresence.Kick(); }
                     break;
                 case "play":
                     await PlayAsync(msg.TryGetValue("join", out var j) ? j as string : null, msg.TryGetValue("host", out var h) && h is bool hb && hb,

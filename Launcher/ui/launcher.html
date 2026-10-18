@@ -1101,7 +1101,10 @@
 
   function setNet(n) { net = n; renderMe(); }
   const myStatus = () => (gameOpen ? 'ingame' : 'online');
-  const isOnline = (c) => !!(authed[c] && conns[c] && conns[c].open);
+  // a verified direct connection; or (when the two networks can't connect directly) a friend who
+  // reached us through the broker in the last 50 s (see post())
+  const isDirect = (c) => !!(authed[c] && conns[c] && conns[c].open);
+  const isOnline = (c) => isDirect(c) || viaPost(c);
 
   function startPeer() {
     if (!window.Peer) { setNet('offline'); return; }
@@ -1109,9 +1112,19 @@
     for (const c of Object.keys(conns)) delete conns[c];
     for (const c of Object.keys(authed)) delete authed[c];
     setNet('connecting');
-    const p = peer = new window.Peer(peerId(F.me.code), { debug: 0, config: { iceServers: ICE } });
+    const p = peer = new window.Peer(peerId(F.me.code), { debug: 0, config: NO_P2P ? { iceServers: [], iceTransportPolicy: 'relay' } : { iceServers: ICE } });
     p.on('open', () => { if (p === peer) { setNet('online'); poll(); } });
-    p.on('connection', (c) => { if (p === peer) wire(c); });
+    p.on('connection', (c) => {
+      if (p !== peer) return;
+      const md = c.metadata;
+      if (md && typeof md === 'object' && md.sdp1) { // a message through the broker, not a connection
+        setTimeout(() => { try { c.close(); } catch { /* gone */ } }, 1500);
+        const code = codeOf(c.peer);
+        if (code && code !== F.me.code) onPost(code, md).catch(() => {});
+        return;
+      }
+      wire(c);
+    });
     p.on('disconnected', () => {
       if (p !== peer || p.destroyed) return;
       setNet('connecting');
@@ -1152,7 +1165,10 @@
     if (c.peerConnection) watch(); else c.on('open', watch);
   }
   // heartbeat: every 10 s a ping to each verified friend; silence for 35 s = gone
+  let shownOnline = '';
   setInterval(() => {
+    const now = Object.keys(F.friends).filter(isOnline).join();
+    if (now !== shownOnline) { shownOnline = now; renderFriends(); if (chatWith) renderChat(); }
     for (const code of Object.keys(conns)) {
       if (!authed[code]) continue;
       if (Date.now() - (heard[code] || 0) > 35000) { const c = conns[code]; try { c.close(); } catch { /* ignore */ } delete conns[code]; delete authed[code]; delete live[code]; renderFriends(); if (chatWith === code) renderChat(); continue; }
@@ -1165,10 +1181,94 @@
     dialing[code] = Date.now();
     wire(peer.connect(peerId(code), { reliable: true, serialization: 'json' }));
   }
-  function poll() { for (const c of new Set([...Object.keys(F.friends), ...Object.keys(F.outReq), ...Object.keys(F.accOut)])) dial(c); }
+  function poll() {
+    for (const c of new Set([...Object.keys(F.friends), ...Object.keys(F.outReq), ...Object.keys(F.accOut)])) dial(c);
+    for (const [c, r] of Object.entries(F.outReq)) if (!r.sent && r.pk) post(c, { p: { t: 'req', name: F.me.name, pk: r.pk } });
+    for (const [c, a] of Object.entries(F.accOut)) if (a.pk && !isDirect(c)) post(c, { p: { t: 'acc', name: F.me.name, pk: a.pk } });
+    for (const c of Object.keys(F.friends)) if (!isDirect(c)) postSigned(c, { t: 'st', name: F.me.name, st: myStatus(), room: myRoom, pr: myPresence() });
+  }
   setInterval(poll, 20000);
 
-  function raw(code, obj) { const c = conns[code]; if (c && c.open) { try { c.send(obj); return true; } catch { /* closing */ } } return false; }
+  function raw(code, obj) {
+    const c = conns[code];
+    if (c && c.open) { try { c.send(obj); return true; } catch { /* closing */ } }
+    if (F.friends[code] && RELAY.has(obj && obj.t) && viaPost(code)) { postSigned(code, obj).catch(() => {}); return true; }
+    return false;
+  }
+
+  // ---- when two networks can't connect directly, messages still get through: they ride in the
+  // metadata of a connection offer, which the PeerJS broker hands to the other launcher even if the
+  // connection itself never opens (the free TURN relays that used to bridge such networks are gone).
+  // Between friends they are signed with the friendship key and carry a time and an id (no forging,
+  // no replays). A new friendship's key comes from an ECDH exchange, so it never passes the broker.
+  const NO_P2P = new URLSearchParams(location.search).get('nop2p') === '1'; // tests: no direct connections at all
+  const RELAY = new Set(['st', 'msg', 'ack', 'sum', 'inv', 'rm', 'pinv', 'pacc', 'pdec', 'pleave', 'party', 'pend', 'pgo']);
+  const postSeen = {}, seenPosts = new Set();
+  function viaPost(c) { return !!postSeen[c] && Date.now() - postSeen[c] < 50000 && net === 'online'; }
+  function post(code, m) {
+    if (!peer || peer.destroyed || peer.disconnected || net !== 'online') return false;
+    let c;
+    try { c = peer.connect(peerId(code), { reliable: true, serialization: 'json', metadata: { sdp1: 1, ...m } }); } catch { return false; }
+    setTimeout(() => { try { c.close(); } catch { /* gone */ } }, 15000); // the offer is out; the channel is not needed
+    return true;
+  }
+  async function postSigned(code, obj) {
+    const fr = F.friends[code]; if (!fr) return;
+    const b = JSON.stringify({ ...obj, ts: Date.now(), pid: hex(12) });
+    post(code, { b, s: await sha(fr.key + '|' + F.me.code + '|' + code + '|' + b) });
+  }
+  const pubJwk = (k) => (k && typeof k === 'object' && k.kty === 'EC' && typeof k.x === 'string' && typeof k.y === 'string' ? { kty: 'EC', crv: 'P-256', x: k.x.slice(0, 64), y: k.y.slice(0, 64) } : null);
+  async function ecdhPair() {
+    const k = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
+    return { sk: await crypto.subtle.exportKey('jwk', k.privateKey), pk: pubJwk(await crypto.subtle.exportKey('jwk', k.publicKey)) };
+  }
+  async function ecdhKey(sk, pk) {
+    const priv = await crypto.subtle.importKey('jwk', sk, { name: 'ECDH', namedCurve: 'P-256' }, false, ['deriveBits']);
+    const pub = await crypto.subtle.importKey('jwk', pk, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+    const bits = new Uint8Array(await crypto.subtle.deriveBits({ name: 'ECDH', public: pub }, priv, 256));
+    return (await sha([...bits].map((x) => x.toString(16).padStart(2, '0')).join(''))).slice(0, 48);
+  }
+  async function onPost(code, md) {
+    const fr = F.friends[code];
+    if (typeof md.b === 'string' && typeof md.s === 'string') {
+      // from a friend: check the signature, the time and that we have not seen it yet
+      if (!fr || md.b.length > 4000 || md.s !== await sha(fr.key + '|' + code + '|' + F.me.code + '|' + md.b)) return;
+      let d; try { d = JSON.parse(md.b); } catch { return; }
+      if (!d || typeof d !== 'object' || !(Math.abs(Date.now() - d.ts) < 600000) || seenPosts.has(d.pid)) return;
+      seenPosts.add(d.pid);
+      const was = isOnline(code);
+      postSeen[code] = Date.now();
+      if (F.accOut[code]) { delete F.accOut[code]; saveF(); } // they have the key: our acceptance arrived
+      if (!was) { status(code); sendSum(code); flush(code); renderFriends(); if (chatWith === code) renderChat(); }
+      if (RELAY.has(d.t)) await onFriendData(code, d, fr);
+      return;
+    }
+    const p = md.p;
+    if (!p || typeof p !== 'object') return;
+    switch (p.t) {
+      case 'req': {
+        if (fr) return; // already friends (an old request still on its way)
+        const pk = pubJwk(p.pk), name = clean(p.name) || '?';
+        post(code, { p: { t: 'rcv' } }); // "your request arrived"
+        if (F.outReq[code]) { F.inReq[code] = { name, t: Date.now(), pk }; await acceptFriend(code, name); return; } // both asked
+        if (!F.inReq[code]) { F.inReq[code] = { name, t: Date.now(), pk }; saveF(); renderFriends(); notify({ title: fmt(L.tReq, name), kind: 'req', code }); }
+        else if (pk && !F.inReq[code].pk) { F.inReq[code].pk = pk; saveF(); }
+        return;
+      }
+      case 'rcv': if (F.outReq[code] && !F.outReq[code].sent) { F.outReq[code].sent = true; saveF(); renderFriends(); } return;
+      case 'acc': {
+        const pk = pubJwk(p.pk), mine = F.outReq[code];
+        if (fr || !pk || !mine || !mine.sk) return;
+        F.friends[code] = { name: clean(p.name) || '?', key: await ecdhKey(mine.sk, pk), since: Date.now() };
+        delete F.outReq[code]; delete F.inReq[code]; saveF();
+        notify({ title: fmt(L.tAcc, F.friends[code].name), kind: 'acc', code });
+        postSeen[code] = Date.now(); // they just answered: reachable (our signed status tells them we have the key)
+        status(code); sendSum(code); renderFriends();
+        return;
+      }
+      case 'dec': if (F.outReq[code]) { delete F.outReq[code]; saveF(); renderFriends(); } return;
+    }
+  }
   // pr: where in the game (menu / lobby / round n of 10 / end, players) - older launchers ignore it
   const myPresence = () => (gameOpen && where ? { mode: where.mode, round: where.round, total: where.total, players: where.players } : null);
   function cleanPr(p) {
@@ -1187,7 +1287,7 @@
     const n = hex(24);
     nonces[code] = [...(nonces[code] || []).slice(-3), n]; // a few recent challenges stay valid
     raw(code, { t: 'hi', n, name: F.me.name });
-    if (!fr && F.outReq[code]) { if (raw(code, { t: 'req', name: F.me.name })) { F.outReq[code].sent = true; saveF(); renderFriends(); } }
+    if (!fr && F.outReq[code]) { if (raw(code, { t: 'req', name: F.me.name, pk: F.outReq[code].pk })) { F.outReq[code].sent = true; saveF(); renderFriends(); } }
   }
   function flush(code) {
     for (const m of F.chats[code] || []) if (m.me && !m.ok) raw(code, { t: 'msg', id: m.id, text: m.text, ts: m.ts });
@@ -1208,8 +1308,9 @@
       }
       case 'req':
         if (fr) { raw(code, { t: 'acc', name: F.me.name, key: fr.key }); return; } // they lost their list: re-accept
-        if (F.outReq[code]) { acceptFriend(code, clean(d.name)); return; }        // both asked: friends
-        if (!F.inReq[code]) { F.inReq[code] = { name: clean(d.name) || '?', t: Date.now() }; saveF(); renderFriends(); notify({ title: fmt(L.tReq, F.inReq[code].name), kind: 'req', code }); }
+        if (F.outReq[code]) { F.inReq[code] = { name: clean(d.name) || '?', t: Date.now(), pk: pubJwk(d.pk) }; await acceptFriend(code, clean(d.name)); return; } // both asked: friends
+        if (!F.inReq[code]) { F.inReq[code] = { name: clean(d.name) || '?', t: Date.now(), pk: pubJwk(d.pk) }; saveF(); renderFriends(); notify({ title: fmt(L.tReq, F.inReq[code].name), kind: 'req', code }); }
+        else if (d.pk && !F.inReq[code].pk) { F.inReq[code].pk = pubJwk(d.pk); saveF(); }
         return;
       case 'acc':
         if (typeof d.key !== 'string' || d.key.length < 16) return;
@@ -1224,6 +1325,10 @@
       case 'dec': if (F.outReq[code]) { delete F.outReq[code]; saveF(); renderFriends(); } return;
     }
     if (!fr || !authed[code]) return; // everything below only from a verified friend
+    return onFriendData(code, d, fr);
+  }
+  // from a verified friend, directly or signed through the broker
+  async function onFriendData(code, d, fr) {
     switch (d.t) {
       case 'st':
         live[code] = { st: d.st === 'ingame' ? 'ingame' : 'online', room: typeof d.room === 'string' ? clean(d.room, 8) : null, pr: d.st === 'ingame' ? cleanPr(d.pr) : null };
@@ -1256,29 +1361,41 @@
   }
 
   // ---- actions
-  function addFriend() {
+  async function addFriend() {
     const code = normCode($('addIn').value);
     const note = (t, bad) => { $('addNote').textContent = t; $('addNote').className = 'addnote' + (bad ? ' bad' : ''); };
     if (code.length !== 8) return note(L.badCode, true);
     if (code === F.me.code) return note(L.ownCode, true);
     if (F.friends[code]) return note(L.already, true);
-    if (F.inReq[code]) { acceptFriend(code, F.inReq[code].name); $('addIn').value = ''; return note(''); }
+    if (F.inReq[code]) { $('addIn').value = ''; note(''); await acceptFriend(code, F.inReq[code].name); return; }
     if (F.outReq[code]) return note(L.reqExists, true);
-    F.outReq[code] = { t: Date.now(), sent: false }; saveF();
     $('addIn').value = '';
+    const pair = await ecdhPair();
+    F.outReq[code] = { t: Date.now(), sent: false, sk: pair.sk, pk: pair.pk }; saveF();
     note(L.queuedReq);
     if (conns[code]) greet(code); else dial(code);
+    post(code, { p: { t: 'req', name: F.me.name, pk: pair.pk } });
     renderFriends();
   }
-  function acceptFriend(code, name) {
-    F.friends[code] = { name: clean(name) || '?', key: hex(48), since: Date.now() };
+  // A request from a new launcher carries its ECDH public key: the friendship key is derived from it
+  // (with our own request's key pair when we asked too, so both sides end up with the same key) and
+  // our public key goes back in the acceptance. Older launchers get a random key over the direct line.
+  async function acceptFriend(code, name) {
+    const req = F.inReq[code], mine = F.outReq[code], theirs = req && pubJwk(req.pk);
+    let key = hex(48), pk = null;
+    if (theirs) {
+      const pair = mine && mine.sk ? { sk: mine.sk, pk: mine.pk } : await ecdhPair();
+      key = await ecdhKey(pair.sk, theirs); pk = pair.pk;
+    }
+    F.friends[code] = { name: clean(name) || '?', key, since: Date.now() };
     delete F.inReq[code]; delete F.outReq[code];
-    F.accOut[code] = { t: Date.now() };
+    F.accOut[code] = { t: Date.now(), pk };
     saveF();
     if (conns[code]) greet(code); else dial(code);
+    if (pk) post(code, { p: { t: 'acc', name: F.me.name, pk } });
     renderFriends();
   }
-  function declineFriend(code) { delete F.inReq[code]; saveF(); raw(code, { t: 'dec' }); renderFriends(); }
+  function declineFriend(code) { delete F.inReq[code]; saveF(); if (!raw(code, { t: 'dec' })) post(code, { p: { t: 'dec' } }); renderFriends(); }
   function cancelRequest(code) { delete F.outReq[code]; saveF(); renderFriends(); }
   function removeFriend(code) {
     const fr = F.friends[code]; if (!fr || !confirm(fmt(L.removeQ, fr.name))) return;
@@ -1579,10 +1696,11 @@
   });
   renderFriends();
   send('profile', { name: F.me.name });
+  (async () => { for (const r of Object.values(F.outReq)) if (!r.sk) { const p = await ecdhPair(); r.sk = p.sk; r.pk = p.pk; r.sent = false; } saveF(); })().catch(() => {});
   startPeer();
   send('ready');
   // test hooks (the automated two-launcher test drives these)
-  window.__fr = { F, addFriendCode: (c) => { $('addIn').value = c; addFriend(); }, acceptFriend, sendTo: (c, t) => { openChat(c); $('msgIn').value = t; sendChat(); }, inviteFriend, fromGame, isOnline, get net() { return net; }, live, get party() { return party; }, partyInvite, partyGo, partyLeave };
+  window.__fr = { F, isDirect, postSeen, addFriendCode: (c) => { $('addIn').value = c; return addFriend(); }, acceptFriend, sendTo: (c, t) => { openChat(c); $('msgIn').value = t; sendChat(); }, inviteFriend, fromGame, isOnline, get net() { return net; }, live, get party() { return party; }, partyInvite, partyGo, partyLeave };
 </script>
 </body>
 </html>

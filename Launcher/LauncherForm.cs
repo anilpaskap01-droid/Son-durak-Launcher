@@ -124,6 +124,7 @@ namespace SonDurakLauncher
                 news = ReadJson(File.Exists(NewsCache) ? NewsCache : installedNews),
                 installedVersion = installed ? NewsVersion(installedNews) : null,
                 latestVersion = NewsVersion(NewsCache),
+                store = Config.Store,
                 playSeconds = PlayStats.Seconds,
                 lastPlayed = PlayStats.LastPlayed,
                 // every anomaly of the installed game, for the collection tab

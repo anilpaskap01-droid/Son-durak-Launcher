@@ -24,6 +24,7 @@ It is a C# (.NET Framework 4.8) WinForms app hosting its UI in Microsoft Edge We
 - **Arkadaşlar:** sağdaki panel. Herkesin 8 karakterlik bir arkadaşlık kodu var (ör. `K7Q2-9XMB`); kodla istek gönderilir, kabul edilince mesajlaşılır, odaya davet edilir, oyundaki arkadaşın odasına **Katıl** ile girilir. Sunucu yok: launcher'lar oyunun çok oyunculusu gibi PeerJS (WebRTC) ile birbirine doğrudan bağlanır, eş adı `sondurak-fr-<kod>`. Arkadaş listesi, sohbetler ve gönderilmeyi bekleyen mesajlar sayfanın kendi deposunda (WebView2 profili) durur; çevrimdışı arkadaşa yazılan mesaj ikiniz de çevrimiçi olunca iletilir. Her arkadaşlıkta bir kez rastgele bir gizli anahtar paylaşılır; her bağlantıda karşı taraf bu anahtarla doğrulanır (anahtar tekrar gönderilmez), yani kodu bilen biri arkadaşın gibi davranamaz.
 - **Oyunla köprü:** oyun açıkken launcher kapanmaz (kapatma düğmesi küçültür). Oyun `index.html?lang=..&name=..&join=..` ile açılır; oyundan launcher'a `friends`, `invite:{code,room}`, `room:KOD`, `name:..`, `lang:..` mesajları gelir, launcher oyuna `{type:'friends'|'invite'|'toast'|'join'|'name'}` gönderir.
 - **Discord durumu:** launcher açıkken ve oyun oynanırken Discord profilinde "Son Durak oynuyor" görünür: launcher'da / ana menüde / co-op lobisinde / hat + tur, tek oyunculu ya da co-op (kaç kişi), geçen süre ve sitenin bağlantısı. Launcher bilgisayardaki Discord uygulamasıyla yerel IPC kanalından (`\\.\pipe\discord-ipc-N`) konuşur (`Launcher/Discord.cs`, kütüphane yok); Discord kapalıysa 15 saniyede bir yeniden dener. Ayarlardan kapatılabilir (`discord` seçeneği). Discord uygulaması: Developer Portal'daki "Son Durak" (Application ID kodda).
+- **Microsoft Store sürümü:** aynı launcher'ın MSIX paketi (`store-msix.mjs`). Oyunu yine kendisi indirir ve günceller (arkadaşlar, davetler, Discord durumu aynı); sadece kendini güncellemez, onu Store günceller (`Config.Store`: paketli çalışınca ya da `SONDURAK_STORE=1` ile açılır). Ayarlarda oyun klasörü satırı yoktur (Windows o klasörü pakete özel bir yere yönlendirir).
 - **Dil:** üst çubuktaki TR / EN düğmeleri. Seçim `%LOCALAPPDATA%\SonDurak\launcher.json`'a kaydedilir ve oyunla eşitlenir (oyun `index.html?lang=..` ile açılır, oyunda değiştirilirse launcher'a bildirir). Kurulum penceresi de bu seçimi / Windows dilini kullanır.
 
 ## Klasörler
@@ -33,6 +34,8 @@ Launcher/   C# (.NET Framework 4.8) + WebView2: launcher penceresi, oyun pencere
 Setup/      yönetici izni istemeyen kurulum (payload.zip gömülü)
 release/    derlenmiş launcher: launcher'lar kendini buradan günceller (anahtar İÇERMEZ)
 build.mjs   derleme: release/ + dist/SonDurak-Setup.exe (10 MB altı olmalı)
+store/      Store paketinin logoları
+store-msix.mjs  Store paketi: dist/SonDurak-Store-<sürüm>.msix (önce build.mjs)
 ```
 
 ## Derleme
@@ -45,12 +48,14 @@ Gerekenler: .NET SDK, `SONDURAK_READ_TOKEN` ortam değişkeninde **sadece okuma 
 
 GitHub Actions da aynısını yapar (`.github/workflows/build.yml`): anahtar reponun **Settings → Secrets and variables → Actions** kısmında `SONDURAK_READ_TOKEN` adlı gizli değişken olarak durur. İmzalanmamış çıktı "SonDurak-unsigned" adlı artifact olarak yüklenir; SignPath projesi açılınca aynı iş akışı onu SignPath'e imzalatır.
 
+Store paketi: `node build.mjs` sonra `node store-msix.mjs 1.9.5.0` (Windows SDK'daki makeappx gerekir). Sürümün son sayısı 0 olmalı ve her Store gönderiminde büyümeli. Paket imzasızdır, Store imzalar; Partner Center'a yüklenir.
+
 ## Test bayrakları
 
 - `SonDurakLauncher.exe --selftest-install <json>`: oyunu başsız indir / güncelle
 - `SonDurakLauncher.exe --selftest-selfupdate <json>`: launcher'ı bu reponun `release/`'i ile güncelle (yeniden başlatmadan)
 - `SonDurakLauncher.exe --shot-launcher <png>` / `--shot-game <png>`
 - `SONDURAK_INSTANCE=<ad>`: açık bir launcher'ın yanında ikinci bir test kopyası çalıştır
-- `SONDURAK_DATA_DIR=<klasör>`: ayrı bir profil (iki launcher'ı birbirine arkadaş ekletmek için), `SONDURAK_TEST_OFFSCREEN=1`: pencereyi ekran dışında aç, `SONDURAK_NO_SELFUPDATE=1`: kendini güncellemeyi kapat
+- `SONDURAK_DATA_DIR=<klasör>`: ayrı bir profil (iki launcher'ı birbirine arkadaş ekletmek için), `SONDURAK_TEST_OFFSCREEN=1`: pencereyi ekran dışında aç, `SONDURAK_NO_SELFUPDATE=1`: kendini güncellemeyi kapat, `SONDURAK_STORE=1`: Store sürümü gibi davran
 - `SonDurakLauncher.exe --selftest-discord <json> [saniye]`: Discord'a sırayla her durumu gönderir (launcher, menü, lobi, tek oyunculu, co-op, bitiş) ve Discord'un cevaplarını yazar; `SONDURAK_DISCORD_LOG=<dosya>`: gönderilen her durum bir satır; `SONDURAK_NO_DISCORD=1`: testlerde Discord durumunu kapatır
 - `SonDurak-Setup.exe --silent --test --dir <klasör>` (dikkat: kurulum açık launcher'ları kapatır)

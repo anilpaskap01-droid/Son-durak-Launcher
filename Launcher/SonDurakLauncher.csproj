@@ -9,7 +9,7 @@
     <PlatformTarget>x64</PlatformTarget>
     <ApplicationIcon>..\icon.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>1.7.0</Version>
+    <Version>1.7.1</Version>
     <Deterministic>true</Deterministic>
     <Product>Son Durak Launcher</Product>
     <Company>Gökhan Abi ile Projeler</Company>

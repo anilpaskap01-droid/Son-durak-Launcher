@@ -33,6 +33,17 @@ namespace SonDurakLauncher
             ? Environment.GetEnvironmentVariable("SONDURAK_DATA_DIR")
             : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SonDurak");
         public static string GameDir => Path.Combine(DataDir, "game");
+        // Microsoft Store edition (the launcher packaged as MSIX): it downloads and updates the game like
+        // any launcher, but the launcher itself is updated by the Store (its install folder is read-only),
+        // so it never replaces its own files. SONDURAK_STORE=1 makes a normal build act like it (tests).
+        public static readonly bool Store = Environment.GetEnvironmentVariable("SONDURAK_STORE") == "1" || IsPackaged();
+        [System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+        static extern int GetCurrentPackageFullName(ref int length, StringBuilder name);
+        static bool IsPackaged()
+        {
+            try { int len = 0; return GetCurrentPackageFullName(ref len, null) != 15700; } // 15700 = APPMODEL_ERROR_NO_PACKAGE
+            catch { return false; } // (Windows 7: no such function)
+        }
         public static string StateFile => Path.Combine(DataDir, "state.json");
         public static string WebViewData => Path.Combine(DataDir, "webview");
         public static string RepoUrl => $"https://github.com/{Owner}/{Repo}";
@@ -264,7 +275,7 @@ namespace SonDurakLauncher
         // ---------------------------------------------------------------- launcher self-update
         // Never on a developer build (bin\Debug|Release) or when SONDURAK_NO_SELFUPDATE=1.
         public static bool SelfUpdateAllowed =>
-            Environment.GetEnvironmentVariable("SONDURAK_NO_SELFUPDATE") != "1"
+            Environment.GetEnvironmentVariable("SONDURAK_NO_SELFUPDATE") != "1" && !Config.Store
             && Config.AppDir.IndexOf(@"\bin\", StringComparison.OrdinalIgnoreCase) < 0;
 
         // Launcher files in release/ of the launcher repository (latest commit on the branch) that

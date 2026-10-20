@@ -73,7 +73,7 @@ namespace SonDurakLauncher
                         return;
                     }
                     Directory.CreateDirectory(Config.DataDir);
-                    Updater.CleanupOldLauncherFiles();
+                    if (!Config.Store) Updater.CleanupOldLauncherFiles(); // (the Store edition never leaves *.old files)
                     Application.Run(new LauncherForm(updated));
                 }
                 finally { mutex.ReleaseMutex(); }

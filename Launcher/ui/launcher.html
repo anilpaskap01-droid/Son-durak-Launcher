@@ -584,6 +584,7 @@
 
   function render(s) {
     last = s;
+    store = !!s.store;
     if (s.settings && typeof s.settings === 'object') { Object.assign(OPT, s.settings); renderLines(); $('sub').textContent = L.subFor[OPT.map] || L.sub; if ($('optsModal').classList.contains('show')) renderOpts(); }
     if (s.anomalies && Array.isArray(s.anomalies.list)) CAT = s.anomalies.list.filter((a) => a && typeof a.id === 'string' && typeof a.tr === 'string');
     const v = (x) => x ? 'v' + x : '—';
@@ -890,13 +891,15 @@
   });
 
   // ---- launcher settings window (gear): automatic updates, fullscreen, chat filter, repair, game folder
+  let store = false; // the Microsoft Store edition (state.store)
   function renderOpts() {
     const sw = (key) => `<button class="sw ${OPT[key] ? 'on' : ''}" data-opt="${key}" aria-pressed="${OPT[key] ? 'true' : 'false'}"></button>`;
     const row = ([title, desc], ctl) => `<div class="opt"><div class="ot"><b>${esc(title)}</b><span>${esc(desc)}</span></div>${ctl}</div>`;
     $('optsBox').innerHTML = `<h3>${L.optsTitle}</h3>`
       + row(L.oAuto, sw('autoUpdate')) + row(L.oFull, sw('fullscreen')) + row(L.oFilter, sw('chatFilter')) + row(L.oDiscord, sw('discord'))
       + row(L.oRepair, `<button class="btn blue" data-oa="repair">${esc(L.repairBtn)}</button>`)
-      + row(L.oFolder, `<button class="btn ghost" data-oa="folder">${esc(L.folderBtn)}</button>`)
+      // (the Store edition's data folder is virtualised by Windows: Explorer would open an empty folder)
+      + (store ? '' : row(L.oFolder, `<button class="btn ghost" data-oa="folder">${esc(L.folderBtn)}</button>`))
       + `<div class="mfoot"><span class="lver">Launcher ${esc(last ? last.version || '' : '')}</span><button class="btn ghost" data-oa="close">${esc(L.close)}</button></div>`;
   }
   $('opts').onclick = () => { renderOpts(); $('optsModal').classList.add('show'); };

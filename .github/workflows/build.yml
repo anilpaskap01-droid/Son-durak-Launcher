@@ -11,6 +11,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   build:
@@ -41,16 +42,24 @@ jobs:
             dist/SonDurak-Setup.exe
           if-no-files-found: error
 
-      # Code signing through SignPath Foundation - enabled once the SignPath project exists
-      # (organization id, project and policy slugs come from SignPath; SIGNPATH_API_TOKEN is a repo secret):
-      #
-      # - name: Sign with SignPath
-      #   uses: signpath/github-action-submit-signing-request@v1
-      #   with:
-      #     api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
-      #     organization-id: <SignPath organization id>
-      #     project-slug: son-durak
-      #     signing-policy-slug: release-signing
-      #     github-artifact-id: ${{ steps.upload-unsigned.outputs.artifact-id }}
-      #     wait-for-completion: true
-      #     output-artifact-directory: signed
+      # Code signing through SignPath Foundation. Skipped until the SignPath project exists:
+      # it runs once the repo variable SIGNPATH_ORGANIZATION_ID and the secret SIGNPATH_API_TOKEN are set.
+      - name: Sign with SignPath
+        if: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' }}
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG || 'son-durak' }}
+          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG || 'release-signing' }}
+          github-artifact-id: ${{ steps.upload-unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed
+
+      - name: Upload signed build
+        if: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: SonDurak-signed
+          path: signed/
+          if-no-files-found: error

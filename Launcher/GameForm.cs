@@ -1,5 +1,6 @@
-// The game window: WebView2 serving the downloaded game folder as https://sondurak.game/
-// (a secure origin, so ES modules, pointer lock and WebRTC multiplayer all work).
+// The game window: WebView2 serving the downloaded game folder from the game's own host
+// (https://sondurak.game/, https://firtina.game/ … see Games.cs): a secure origin, so ES modules,
+// pointer lock and WebRTC multiplayer all work.
 using System;
 using System.Diagnostics;
 using System.Drawing;
@@ -9,19 +10,23 @@ using Microsoft.Web.WebView2.WinForms;
 
 namespace SonDurakLauncher
 {
-    public class GameForm : Form
+    class GameForm : Form
     {
         readonly WebView2 web;
         bool full;
-        // messages from the game page the launcher page handles (friends list, invites, name, room)
+        // messages from the game page the launcher page handles (friends list, invites, name, room,
+        // stats, achievements)
         public event Action<string> HostMessage;
+        public readonly GameDef Game;
         FormWindowState prevState;
         Rectangle prevBounds;
 
-        // join: a room code to join right away (an accepted invite); host: host a room right away (party leader)
-        public GameForm(string join = null, bool host = false)
+        // join: a room code to join right away (an accepted invite); host: host a room right away (party
+        // leader). Both only for a game with friends (GameDef.Social).
+        public GameForm(GameDef game, string join = null, bool host = false)
         {
-            Text = "Son Durak";
+            Game = game;
+            Text = game.Name;
             BackColor = Color.Black;
             StartPosition = FormStartPosition.CenterScreen;
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
@@ -47,7 +52,7 @@ namespace SonDurakLauncher
                 cw.Settings.AreDevToolsEnabled = !AntiCheat.Enforced && Environment.GetEnvironmentVariable("SONDURAK_DEVTOOLS") == "1"; // (never in release builds: a cheat would run in DevTools)
                 // no browser shortcuts in the game (Ctrl is crouch: Ctrl+R / Ctrl+P / Ctrl+F must not reload, print or search)
                 cw.Settings.AreBrowserAcceleratorKeysEnabled = false;
-                cw.SetVirtualHostNameToFolderMapping("sondurak.game", Config.GameDir, CoreWebView2HostResourceAccessKind.Allow);
+                cw.SetVirtualHostNameToFolderMapping(game.Host, game.Dir, CoreWebView2HostResourceAccessKind.Allow);
                 cw.WebMessageReceived += (s2, a) =>
                 {
                     string m;
@@ -59,8 +64,9 @@ namespace SonDurakLauncher
                     {
                         if (m.StartsWith("lang:")) Lang.Set(m.Substring(5));
                         if (m.StartsWith("name:")) Prefs.Set("name", m.Substring(5));
-                        if (m.StartsWith("map:")) Options.Set("map", m.Substring(4));
-                        if (m.StartsWith("filter:")) Options.Set("chatFilter", m.Substring(7) == "1");
+                        // (the line and the chat filter are Son Durak settings)
+                        if (game == Games.SonDurak && m.StartsWith("map:")) Options.Set("map", m.Substring(4));
+                        if (game == Games.SonDurak && m.StartsWith("filter:")) Options.Set("chatFilter", m.Substring(7) == "1");
                         HostMessage?.Invoke(m);
                     }
                 };
@@ -70,10 +76,11 @@ namespace SonDurakLauncher
                     a.Handled = true;
                     if (a.Uri.StartsWith("https://") || a.Uri.StartsWith("http://")) Process.Start(new ProcessStartInfo(a.Uri) { UseShellExecute = true });
                 };
-                var url = "https://sondurak.game/index.html?lang=" + Lang.Current + "&map=" + Options.Map + "&filter=" + (Options.ChatFilter ? "1" : "0");
+                var url = "https://" + game.Host + "/index.html?lang=" + Lang.Current;
+                if (game == Games.SonDurak) url += "&map=" + Options.Map + "&filter=" + (Options.ChatFilter ? "1" : "0");
                 if (Prefs.Get("name") is string name && name.Length > 0) url += "&name=" + Uri.EscapeDataString(name);
-                if (!string.IsNullOrEmpty(join)) url += "&join=" + Uri.EscapeDataString(join);
-                else if (host) url += "&host=1";
+                if (game.Social && !string.IsNullOrEmpty(join)) url += "&join=" + Uri.EscapeDataString(join);
+                else if (game.Social && host) url += "&host=1";
                 cw.Navigate(url);
             };
         }

@@ -1,8 +1,11 @@
 // Automated checks (used by tools/launcher-test, no clicking needed):
-//   --selftest-install <log>   check + install/update headless, write a JSON report
+//   --selftest-install <log> [--game <id>]  check + install/update one game headless (default: sondurak), write a JSON report
+//   --selftest-games <log>      check every game of the library (no download): installed, coming soon, what an
+//                               update would download, the status the launcher page would show
+//   --selftest-anticheat <log>  the release anti-cheat checks (every installed game's files)
 //   --selftest-selfupdate <log> check the launcher itself against the repo and replace it (no restart)
-//   --shot-launcher <png>      render the launcher UI off-screen and save a PNG
-//   --shot-game <png>          start the installed game off-screen, begin a round, save a PNG
+//   --shot-launcher <png>      render the launcher UI off-screen and save a PNG (SONDURAK_SHOT_GAME=firtina: that game)
+//   --shot-game <png>          start the installed Son Durak off-screen, begin a round, save a PNG
 //   --selftest-discord <json> [s] show a sample Discord status for s seconds (Discord.cs)
 using System;
 using System.Drawing;
@@ -20,52 +23,98 @@ namespace SonDurakLauncher
     static class SelfTest
     {
         // --selftest-anticheat <json>: the release anti-cheat (AntiCheat.cs) as it would run: the WEBVIEW2_*
-        // variables dropped, no debugging policy, and the installed game files that differ from the repository.
+        // variables dropped, no debugging policy, and the installed game files that differ from the repository
+        // ("tampered": Son Durak, as before 1.9; "games": every game that is installed, plus Son Durak).
         public static int AntiCheatCheck(string log)
         {
             var report = new System.Collections.Generic.Dictionary<string, object>();
             report["enforced"] = AntiCheat.Enforced;
             report["refused"] = AntiCheat.Harden();
             report["argsLeft"] = Environment.GetEnvironmentVariable("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS");
-            var bad = Updater.TamperedFilesAsync(true, CancellationToken.None).GetAwaiter().GetResult();
-            report["tampered"] = bad;
+            var games = new System.Collections.Generic.Dictionary<string, object>();
+            var clean = true;
+            foreach (var g in Games.All)
+            {
+                if (g != Games.SonDurak && !Updater.IsInstalled(g, Updater.LoadState(g))) continue;
+                var bad = Updater.TamperedFilesAsync(g, true, CancellationToken.None).GetAwaiter().GetResult();
+                games[g.Id] = bad;
+                clean &= bad.Count == 0;
+            }
+            report["tampered"] = games[Games.SonDurak.Id];
+            report["games"] = games;
             File.WriteAllText(log, new JavaScriptSerializer().Serialize(report));
-            return report["refused"] == null && bad.Count == 0 ? 0 : 1;
+            return report["refused"] == null && clean ? 0 : 1;
         }
 
-        public static int Install(string log)
+        public static int Install(string log, GameDef g)
         {
             var report = new System.Collections.Generic.Dictionary<string, object>();
+            report["game"] = g.Id;
+            report["folder"] = g.Folder;
+            report["dir"] = g.Dir;
             try
             {
-                var before = Updater.LoadState();
+                var before = Updater.LoadState(g);
                 report["before"] = before.sha;
-                var remote = Updater.CheckAsync(CancellationToken.None).GetAwaiter().GetResult();
+                var remote = Updater.CheckAsync(g, CancellationToken.None).GetAwaiter().GetResult();
+                if (remote == null) throw new Exception("not published: no commits in \"" + g.Folder + "/\"");
                 report["remote"] = remote.Sha;
                 report["message"] = remote.Message;
-                var plan = Updater.PlanAsync(remote, CancellationToken.None).GetAwaiter().GetResult();
+                var plan = Updater.PlanAsync(g, remote, CancellationToken.None).GetAwaiter().GetResult();
                 report["planFiles"] = plan.Files;
                 report["planBytes"] = plan.Bytes;
                 long bytes = 0; int files = 0, reports = 0, partial = 0;
-                Updater.InstallAsync(remote, new SyncProgress(p =>
+                Updater.InstallAsync(g, remote, new SyncProgress(p =>
                 {
                     reports++;
                     // a report between whole files = bytes streamed live (the download screen's speed)
                     if (p.Done != bytes && p.Files == files) partial++;
                     bytes = p.Done; files = p.Files;
                 }), CancellationToken.None).GetAwaiter().GetResult();
-                var after = Updater.LoadState();
+                var after = Updater.LoadState(g);
                 report["after"] = after.sha;
                 report["downloadedFiles"] = files;
                 report["downloadedBytes"] = bytes;
                 report["progressReports"] = reports;
                 report["liveByteReports"] = partial;
                 report["installedFiles"] = after.files.Count;
-                report["ok"] = after.sha == remote.Sha && Updater.IsInstalled(after) && bytes == plan.Bytes && files == plan.Files;
+                report["ok"] = after.sha == remote.Sha && Updater.IsInstalled(g, after) && bytes == plan.Bytes && files == plan.Files;
             }
             catch (Exception ex) { report["ok"] = false; report["error"] = ex.ToString(); }
             File.WriteAllText(log, new JavaScriptSerializer().Serialize(report));
             return (bool)report["ok"] ? 0 : 1;
+        }
+
+        // --selftest-games <json>: what the launcher knows about each game after a check, without downloading
+        // anything (the same GameRun.CheckAsync the launcher window uses). Exit 0 when every check succeeded.
+        public static int GamesCheck(string log)
+        {
+            var report = new System.Collections.Generic.Dictionary<string, object>();
+            var ok = true;
+            foreach (var g in Games.All)
+            {
+                var r = new GameRun(g);
+                var st = r.Local;
+                var e = new System.Collections.Generic.Dictionary<string, object>
+                {
+                    ["name"] = g.Name, ["folder"] = g.Folder, ["dir"] = g.Dir, ["stateFile"] = g.StateFile,
+                    ["installedBefore"] = Updater.IsInstalled(g, st), ["localSha"] = st.sha,
+                };
+                try { r.CheckAsync(CancellationToken.None).GetAwaiter().GetResult(); }
+                catch (Exception ex) { r.Error = ex.Message; ok = false; }
+                e["remoteSha"] = r.Remote?.Sha;
+                e["comingSoon"] = r.ComingSoon;
+                e["planFiles"] = r.Plan?.Files;
+                e["planBytes"] = r.Plan?.Bytes;
+                e["updateWaiting"] = r.UpdateWaiting;
+                e["error"] = r.Error;
+                e["status"] = r.Status(false, false, false, false);
+                e["newsCached"] = File.Exists(g.NewsCache);
+                report[g.Id] = e;
+            }
+            report["ok"] = ok;
+            File.WriteAllText(log, new JavaScriptSerializer().Serialize(report));
+            return ok ? 0 : 1;
         }
 
         public static int SelfUpdate(string log)
@@ -115,8 +164,8 @@ namespace SonDurakLauncher
                     cw.NavigationCompleted += (s, a) => loaded.TrySetResult(true);
                     if (game)
                     {
-                        cw.SetVirtualHostNameToFolderMapping("sondurak.game", Config.GameDir, CoreWebView2HostResourceAccessKind.Allow);
-                        cw.Navigate("https://sondurak.game/index.html?lang=" + Lang.Current);
+                        cw.SetVirtualHostNameToFolderMapping(Games.SonDurak.Host, Games.SonDurak.Dir, CoreWebView2HostResourceAccessKind.Allow);
+                        cw.Navigate("https://" + Games.SonDurak.Host + "/index.html?lang=" + Lang.Current);
                     }
                     else
                     {
@@ -139,20 +188,24 @@ namespace SonDurakLauncher
                     else
                     {
                         // fake a state so the page renders like a real launcher (status from SONDURAK_SHOT_STATUS,
-                        // patch notes from SONDURAK_NEWS_FILE or the last downloaded ones)
+                        // patch notes from SONDURAK_NEWS_FILE or the last downloaded ones, the game shown from
+                        // SONDURAK_SHOT_GAME: sondurak / firtina)
                         await Task.Delay(800);
+                        var g = Games.Get(Environment.GetEnvironmentVariable("SONDURAK_SHOT_GAME") ?? "") ?? Games.SonDurak;
                         var newsFile = Environment.GetEnvironmentVariable("SONDURAK_NEWS_FILE");
-                        if (string.IsNullOrEmpty(newsFile)) newsFile = Path.Combine(Config.DataDir, "news.json");
+                        if (string.IsNullOrEmpty(newsFile)) newsFile = g.NewsCache;
                         var js = new JavaScriptSerializer { MaxJsonLength = int.MaxValue };
                         object news = File.Exists(newsFile) ? js.DeserializeObject(File.ReadAllText(newsFile, System.Text.Encoding.UTF8)) : null;
                         var st = Environment.GetEnvironmentVariable("SONDURAK_SHOT_STATUS") ?? "update";
+                        var installed = st != "comingSoon" && st != "notInstalled";
                         cw.PostWebMessageAsJson(js.Serialize(new
                         {
-                            type = "state", status = st, installed = true, offline = false, error = (string)null,
+                            type = "state", game = g.Id, status = st, installed, comingSoon = st == "comingSoon", offline = false, error = (string)null,
                             plan = st == "update" ? new { files = 7, bytes = 131072 } : null,
                             version = Application.ProductVersion, launcherUpdated = false, lang = Lang.Current, news,
-                            installedVersion = st == "update" ? "1.4.0" : "1.4.1", latestVersion = "1.4.1",
+                            installedVersion = !installed ? null : st == "update" ? "1.4.0" : "1.4.1", latestVersion = st == "comingSoon" ? null : "1.4.1",
                             playSeconds = 7560, lastPlayed = DateTime.UtcNow.AddDays(-1).ToString("o"),
+                            games = Games.All.Select(x => new { id = x.Id, name = x.Name, status = x == g ? st : x == Games.SonDurak ? "ready" : "comingSoon", installed = x == g ? installed : x == Games.SonDurak, comingSoon = x == g ? st == "comingSoon" : x != Games.SonDurak }).ToArray(),
                         }));
                         await Task.Delay(800);
                         using (var fs = File.Create(png)) await cw.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, fs);

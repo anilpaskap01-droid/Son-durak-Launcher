@@ -30,8 +30,26 @@
   .body { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 320px; }
   .main { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
 
+  /* game library: one card per game above the hero */
+  .gamebar { flex: none; height: 50px; display: flex; align-items: stretch; gap: 4px; padding: 6px 22px 0; background: #0a0f15; border-bottom: 1px solid var(--line); }
+  .gcard { display: flex; align-items: center; gap: 10px; min-width: 214px; padding: 0 16px 0 7px; border: 0; border-radius: 5px 5px 0 0; background: transparent;
+    color: var(--soft); cursor: pointer; text-align: left; font: inherit; transition: background .15s; }
+  .gcard:hover { background: rgba(255,255,255,.045); color: #fff; }
+  .gcard.sel { background: var(--card); color: #fff; box-shadow: inset 0 2px 0 var(--gc); }
+  .gcard .gt { flex: none; width: 60px; height: 32px; border-radius: 3px; background: url("bg.jpg") center 42% / cover no-repeat; box-shadow: 0 0 0 1px rgba(255,255,255,.08); filter: saturate(.7) brightness(.8); }
+  .gcard .gt.firtina { background-image: url("firtina.jpg"); background-position: 70% 60%; }
+  .gcard.sel .gt, .gcard:hover .gt { filter: none; }
+  .gcard .gn { display: block; font-size: 13px; font-weight: 600; letter-spacing: .04em; white-space: nowrap; }
+  .gcard .gs { display: flex; align-items: center; gap: 6px; margin-top: 2px; font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .gcard .gs i { width: 7px; height: 7px; border-radius: 50%; background: #56616c; }
+  .gcard .gs i.ok { background: var(--green); } .gcard .gs i.up { background: var(--blue); } .gcard .gs i.soon { background: var(--amber); } .gcard .gs i.run { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  /* Son Durak-only parts (line picker, profile / quests / collection / leaderboard tabs) */
+  .nosocial .sd { display: none !important; }
+
   /* hero art */
-  .hero { position: relative; height: 238px; flex: none; background: url("bg.jpg") center 42% / cover no-repeat; }
+  .hero { position: relative; height: 196px; flex: none; background: url("bg.jpg") center 42% / cover no-repeat; }
+  .hero.firtina { background-image: url("firtina.jpg"); background-position: center 62%; }
+  .hero.firtina .logo { font-size: 44px; letter-spacing: .16em; color: #7fd3e6; text-shadow: 0 0 26px rgba(80,200,230,.45); }
   .hero::after { content: ''; position: absolute; inset: 0;
     background: linear-gradient(180deg, rgba(14,20,27,0) 35%, rgba(14,20,27,.7) 75%, var(--bg) 100%),
                 linear-gradient(90deg, rgba(14,20,27,.88) 0%, rgba(14,20,27,.35) 45%, rgba(14,20,27,0) 70%); }
@@ -51,6 +69,7 @@
   .main-btn:hover:not(:disabled) { filter: brightness(1.1); }
   .main-btn:active:not(:disabled) { transform: translateY(1px); }
   .main-btn:disabled { filter: grayscale(.75) brightness(.6); cursor: default; box-shadow: none; }
+  .main-btn.soon, .main-btn.soon:disabled { filter: none; background: rgba(255,176,32,.1); color: var(--amber); box-shadow: inset 0 0 0 1px rgba(255,176,32,.45); }
   .astatus { flex: 1; min-width: 0; }
   .astatus .st { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .astatus .st b { color: #fff; }
@@ -313,8 +332,9 @@
   </div>
   <div class="body">
     <div class="main">
-      <header class="hero" id="hero"><div class="txt"><h1 class="logo">SON DURAK</h1><p class="sub" id="sub"></p><div class="tags" id="tags"></div></div>
-        <div class="linepick"><span class="lh" id="lLine"></span><div class="row" id="linePick"></div></div></header>
+      <nav class="gamebar" id="gamebar"></nav>
+      <header class="hero" id="hero"><div class="txt"><h1 class="logo" id="logo">SON DURAK</h1><p class="sub" id="sub"></p><div class="tags" id="tags"></div></div>
+        <div class="linepick sd"><span class="lh" id="lLine"></span><div class="row" id="linePick"></div></div></header>
       <div class="actionbar">
         <button class="main-btn play" id="main" disabled></button>
         <div class="astatus">
@@ -335,7 +355,7 @@
         </div>
       </div>
       <div class="content" id="content">
-        <div class="tabs" id="tabs"><button data-tab="news" id="tabNews" class="sel"></button><button data-tab="profile" id="tabProfile"></button><button data-tab="quests" id="tabQuests"></button><button data-tab="ach" id="tabAch"></button><button data-tab="col" id="tabCol"></button><button data-tab="lb" id="tabLb"></button><button data-tab="about" id="tabAbout"></button></div>
+        <div class="tabs" id="tabs"><button data-tab="news" id="tabNews" class="sel"></button><button data-tab="profile" id="tabProfile" class="sd"></button><button data-tab="quests" id="tabQuests" class="sd"></button><button data-tab="ach" id="tabAch"></button><button data-tab="col" id="tabCol" class="sd"></button><button data-tab="lb" id="tabLb" class="sd"></button><button data-tab="about" id="tabAbout"></button></div>
         <div class="list" data-pane="news" id="news"></div>
         <div class="list" data-pane="profile" id="profilePane" style="display:none"></div>
         <div class="list" data-pane="quests" id="questPane" style="display:none"></div>
@@ -405,7 +425,14 @@
       lVer: 'SÜRÜM', lTime: 'OYNAMA SÜRESİ', lLast: 'SON OYNAMA', never: 'Hiç', today: 'Bugün', yesterday: 'Dün', hours: 'saat', minutes: 'dk',
       tabNews: 'YENİLİKLER', tabAbout: 'OYUN HAKKINDA', fresh: 'YENİ', noNews: 'Yenilikler internete bağlanınca görünecek.', mpTitle: 'ARKADAŞLARINLA OYNA',
       recheck: 'Güncellemeleri denetle', folder: 'Oyun klasörü', launcherUpdated: 'güncellendi',
-      dlInstall: 'SON DURAK İNDİRİLİYOR', dlUpdate: 'GÜNCELLEME İNDİRİLİYOR', dlLauncher: 'LAUNCHER GÜNCELLENİYOR', dlDone: 'TAMAMLANDI',
+      dlInstall: '{n} İNDİRİLİYOR', dlUpdate: 'GÜNCELLEME İNDİRİLİYOR', dlLauncher: 'LAUNCHER GÜNCELLENİYOR', dlDone: 'TAMAMLANDI',
+      // game library
+      gReady: 'Yüklü', gUpdate: 'Güncelleme var', gNot: 'Yüklü değil', gSoon: 'Yakında', gBusy: 'İndiriliyor…', gRepair: 'Onarılıyor…', gRunning: 'Oyun açık', gChecking: 'Denetleniyor…',
+      soon: 'YAKINDA', comingSoon: 'Yakında', soonSmall: 'Çıkınca otomatik gelecek.',
+      soonTitle: '{n} yakında burada', soonText: 'Oyun henüz yayınlanmadı. Yayınlandığı an launcher onu kendiliğinden fark eder; YÜKLE ile indirip hemen oynayabilirsin.',
+      otherBusy: '{n} indiriliyor; bitince devam edebilirsin.', otherRunning: '{n} açık. Bu oyunu başlatmak için önce onu kapat.',
+      fSub: 'Co-op Deniz Macerası', fTags: ['Co-op', 'Hayatta Kalma', 'Keşif'],
+      achFirst: 'Oyunu bir kez açınca başarımlar burada görünür.', achGameNote: 'Başarımları oyun verir; bu bilgisayarda, launcher\'da tutulur.',
       lSpeed: 'HIZ', lPeak: 'EN YÜKSEK', lGot: 'İNDİRİLEN', lFiles: 'DOSYALAR', lEta: 'KALAN SÜRE', etaCalc: 'hesaplanıyor', sec: 'sn', left: 'kaldı',
       // profile & stats
       tabProfile: 'PROFİL', level: 'Seviye', titles: ['Yolcu', 'Düzenli Yolcu', 'Gece Yolcusu', 'Hat Bekçisi', 'Son Durak Efsanesi'],
@@ -434,7 +461,7 @@
       opts: 'Ayarlar', optsTitle: 'LAUNCHER AYARLARI', close: 'Kapat', repairBtn: 'Onar', folderBtn: 'Klasörü aç',
       oAuto: ['Otomatik güncelleme', 'Yeni sürüm çıkınca launcher kendisi indirir; OYNA her zaman en yeni sürümü açar.'],
       oFull: ['Oyunu tam ekran başlat', 'Kapalıysa oyun büyütülmüş pencerede açılır (oyunda F11 ile değişir).'],
-      oDiscord: ['Discord durumu', 'Oynarken Discord profilinde "Son Durak oynuyor", hattın, turun ve kaç kişi olduğunuz görünür (Discord açıksa).'],
+      oDiscord: ['Discord durumu', 'Oynarken Discord profilinde hangi oyunu oynadığın, oyunda nerede olduğun ve kaç kişi olduğunuz görünür (Discord açıksa).'],
       oFilter: ['Uygunsuz dil filtresi', 'Oyun içi sohbette ve arkadaş sohbetinde küfürler **** olarak görünür.'],
       oRepair: ['Oyunu onar', 'Bütün oyun dosyalarını kontrol eder; bozuk ya da eksik olanları yeniden indirir.'],
       oFolder: ['Oyun klasörü', 'İndirilen oyun dosyalarının olduğu klasörü açar.'],
@@ -477,7 +504,13 @@
       lVer: 'VERSION', lTime: 'PLAY TIME', lLast: 'LAST PLAYED', never: 'Never', today: 'Today', yesterday: 'Yesterday', hours: 'hrs', minutes: 'min',
       tabNews: "WHAT'S NEW", tabAbout: 'ABOUT', fresh: 'NEW', noNews: 'News will appear once you are online.', mpTitle: 'PLAY WITH FRIENDS',
       recheck: 'Check for updates', folder: 'Game folder', launcherUpdated: 'updated',
-      dlInstall: 'DOWNLOADING SON DURAK', dlUpdate: 'DOWNLOADING UPDATE', dlLauncher: 'UPDATING THE LAUNCHER', dlDone: 'DONE',
+      dlInstall: 'DOWNLOADING {n}', dlUpdate: 'DOWNLOADING UPDATE', dlLauncher: 'UPDATING THE LAUNCHER', dlDone: 'DONE',
+      gReady: 'Installed', gUpdate: 'Update available', gNot: 'Not installed', gSoon: 'Coming soon', gBusy: 'Downloading…', gRepair: 'Repairing…', gRunning: 'Running', gChecking: 'Checking…',
+      soon: 'COMING SOON', comingSoon: 'Coming soon', soonSmall: 'Arrives by itself once out.',
+      soonTitle: '{n} is coming soon', soonText: 'The game is not out yet. The moment it is, the launcher picks it up by itself; press INSTALL and play right away.',
+      otherBusy: '{n} is downloading; continue when it is done.', otherRunning: '{n} is running. Close it first to start this game.',
+      fSub: 'Co-op Sea Adventure', fTags: ['Co-op', 'Survival', 'Exploration'],
+      achFirst: 'Achievements show up here after you open the game once.', achGameNote: 'The game awards its achievements; they are kept on this computer, in the launcher.',
       lSpeed: 'SPEED', lPeak: 'PEAK', lGot: 'DOWNLOADED', lFiles: 'FILES', lEta: 'TIME LEFT', etaCalc: 'calculating', sec: 's', left: 'left',
       tabProfile: 'PROFILE', level: 'Level', titles: ['Passenger', 'Regular', 'Night Rider', 'Line Keeper', 'Last Stop Legend'],
       sRuns: 'RIDES', sWins: 'LAST STOP', sBest: 'BEST TIME', sPerfect: 'FLAWLESS', sStreak: 'BEST STREAK', sAcc: 'ACCURACY', sFound: 'ANOMALIES FOUND', sTime: 'PLAY TIME', sTalks: 'CHATS', sCoop: 'CO-OP WINS',
@@ -502,7 +535,7 @@
       opts: 'Settings', optsTitle: 'LAUNCHER SETTINGS', close: 'Close', repairBtn: 'Repair', folderBtn: 'Open folder',
       oAuto: ['Automatic updates', 'The launcher downloads new versions by itself; PLAY always starts the newest one.'],
       oFull: ['Start the game fullscreen', 'When off, the game opens in a maximised window (F11 in the game switches).'],
-      oDiscord: ['Discord status', 'While you play, your Discord profile shows "Playing Son Durak" with your line, round and party size (when Discord is running).'],
+      oDiscord: ['Discord status', 'While you play, your Discord profile shows which game you are playing, where you are in it and your party size (when Discord is running).'],
       oFilter: ['Inappropriate language filter', 'Swear words show as **** in the in-game chat and the friends chat.'],
       oRepair: ['Repair the game', 'Checks every game file and downloads again whatever is damaged or missing.'],
       oFolder: ['Game folder', 'Opens the folder with the downloaded game files.'],
@@ -538,6 +571,31 @@
   };
   let lang = (navigator.language || 'tr').toLowerCase().startsWith('tr') ? 'tr' : 'en', L = STR[lang], last = null, action = null, tab = 'news';
   const $ = (id) => document.getElementById(id);
+  // ---- the game library (the host's Games.cs). social: friends, invites, party, line picker, stats / quests /
+  // collection / leaderboard (Son Durak only for now). The page shows GAME; the host remembers it ({cmd:'select'}).
+  const GAMES = {
+    sondurak: { name: 'Son Durak', color: '#ffb020', social: true },
+    firtina: { name: 'Fırtına Teknesi', logo: 'FIRTINA TEKNESİ', color: '#4fc3dc', social: false },
+  };
+  const PROFILE = new URLSearchParams(location.search).get('profile') || '';
+  const GAME_KEY = 'launcher.game' + PROFILE;
+  let GAME = (() => { try { const g = localStorage.getItem(GAME_KEY); return GAMES[g] ? g : 'sondurak'; } catch { return 'sondurak'; } })();
+  let running = null; // the game whose window is open ('sondurak' / 'firtina')
+  let pendingGame = null; // picked here, not yet confirmed by the host
+  const social = () => GAMES[GAME].social;
+  const gameName = (id) => (GAMES[id] || { name: id }).name;
+  const upName = (id) => (GAMES[id] && GAMES[id].logo) || gameName(id).toLocaleUpperCase('tr');
+  const SD_TABS = ['profile', 'quests', 'col', 'lb'];
+  // One game's view of a host state: the shared fields plus that game's entry of s.games (launchers before 1.9
+  // and the screenshot self-test send a single game at the top level).
+  function view(s, id) {
+    if (!s) return null;
+    const e = (s.games || []).find((g) => g && g.id === id);
+    const top = (s.game || 'sondurak') === id;
+    if (!e) return top ? s : null;
+    return { ...s, ...e, game: id, news: e.news !== undefined ? e.news : top ? s.news : null };
+  }
+  const sdSeconds = () => { const v = view(last, 'sondurak'); return v ? v.playSeconds || 0 : 0; }; // (Son Durak's play time: stats, achievements)
   const send = (cmd, extra) => HOST.postMessage({ cmd, ...extra });
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const fmt = (s, n) => String(s).replace('{n}', n);
@@ -549,6 +607,7 @@
   const ICON = {
     play: '<svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg>',
     dl: '<svg viewBox="0 0 24 24"><path d="M11 3h2v10l4-4 1.4 1.4L12 16.8 5.6 10.4 7 9l4 4zM4 19h16v2H4z"/></svg>',
+    soon: '<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16zm-1 3v6l5 3 1-1.7-4-2.3V7z"/></svg>',
   };
   function cmpVer(a, b) { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) - (y[i] || 0); } return 0; }
   const loc = () => (lang === 'tr' ? 'tr-TR' : 'en-GB');
@@ -563,35 +622,80 @@
 
   function applyStatic() {
     document.documentElement.lang = lang;
-    $('sub').textContent = L.subFor[OPT.map] || L.sub;
-    $('tags').innerHTML = L.tags.map((t) => `<span>${esc(t)}</span>`).join('');
     for (const k of ['lVer', 'lTime', 'lLast', 'tabNews', 'tabProfile', 'tabQuests', 'tabAch', 'tabLb', 'tabAbout', 'lCode', 'lSpeed', 'lPeak', 'lGot', 'lFiles', 'lEta', 'lLine']) $(k).textContent = L[k];
     $('opts').title = L.opts;
-    renderLines(); if ($('optsModal').classList.contains('show')) renderOpts();
+    renderHero(); renderGameBar(); if ($('optsModal').classList.contains('show')) renderOpts();
     tabBadges();
     $('recheck').title = L.recheck; $('folder').title = L.folder; $('copyCode').title = L.copy; $('editName').title = L.editName;
     $('addIn').placeholder = L.addPh; $('addBtn').textContent = L.add; $('msgIn').placeholder = L.msgPh; $('msgSend').textContent = L.send;
     for (const b of $('langs').children) b.classList.toggle('sel', b.dataset.l === lang);
   }
-  function setLang(l) { if (!STR[l]) return; lang = l; L = STR[l]; applyStatic(); if (last) render(last); renderFriends(); renderTab(); }
+  function setLang(l) { if (!STR[l]) return; lang = l; L = STR[l]; applyStatic(); render(); renderFriends(); renderTab(); }
+
+  // the selected game's art, name, tagline (Son Durak: of the selected line) and which parts of the page it has
+  function renderHero() {
+    const g = GAMES[GAME], sd = GAME === 'sondurak';
+    document.body.classList.toggle('nosocial', !g.social);
+    for (const id of Object.keys(GAMES)) $('hero').classList.toggle(id, id === GAME && !sd);
+    $('logo').textContent = upName(GAME);
+    $('sub').textContent = sd ? L.subFor[OPT.map] || L.sub : L.fSub;
+    $('tags').innerHTML = (sd ? L.tags : L.fTags).map((t) => `<span>${esc(t)}</span>`).join('');
+    renderLines();
+  }
+  // the library cards: each game with its state (installed, update, coming soon, running …)
+  function renderGameBar() {
+    $('gamebar').innerHTML = Object.entries(GAMES).map(([id, g]) => {
+      const s = view(last, id) || {};
+      const st = running === id ? 'running' : s.status || 'checking';
+      const [dot, text] = {
+        running: ['run', L.gRunning], busy: ['up', L.gBusy], repair: ['up', L.gRepair], update: ['up', L.gUpdate], ready: ['ok', L.gReady], comingSoon: ['soon', L.gSoon],
+        notInstalled: ['', L.gNot], offlineNoGame: ['', L.gNot],
+      }[st] || (s.installed ? ['ok', L.gReady] : ['', s.status ? L.gNot : L.gChecking]);
+      return `<button class="gcard ${GAME === id ? 'sel' : ''}" data-game="${id}" style="--gc:${g.color}"><span class="gt ${id}"></span>`
+        + `<span><span class="gn">${esc(g.name)}</span><span class="gs"><i class="${dot}"></i>${esc(text)}</span></span></button>`;
+    }).join('');
+  }
+  function selectGame(id) {
+    if (!GAMES[id] || id === GAME) return;
+    GAME = id; pendingGame = id;
+    try { localStorage.setItem(GAME_KEY, id); } catch { /* storage blocked */ }
+    dlReset(); // (another game's download screen)
+    if (!social() && SD_TABS.includes(tab)) showTab('news');
+    applyStatic(); render(); renderTab();
+    send('select', { game: id });
+    setTimeout(() => { if (pendingGame === id) pendingGame = null; }, 3000);
+  }
+  $('gamebar').addEventListener('click', (e) => { const b = e.target.closest('[data-game]'); if (b) selectGame(b.dataset.game); });
 
   function setButton(kind, text, act, disabled = false) {
     const b = $('main');
-    b.className = 'main-btn ' + (kind === 'play' ? 'play' : 'dl');
-    b.innerHTML = (kind === 'play' ? ICON.play : ICON.dl) + `<span>${esc(text)}</span>`;
+    b.className = 'main-btn ' + (kind === 'play' ? 'play' : kind === 'soon' ? 'soon' : 'dl');
+    b.innerHTML = (kind === 'play' ? ICON.play : kind === 'soon' ? ICON.soon : ICON.dl) + `<span>${esc(text)}</span>`;
     b.disabled = disabled; action = act;
   }
 
-  function render(s) {
-    last = s;
-    store = !!s.store;
-    if (s.settings && typeof s.settings === 'object') { Object.assign(OPT, s.settings); renderLines(); $('sub').textContent = L.subFor[OPT.map] || L.sub; if ($('optsModal').classList.contains('show')) renderOpts(); }
-    if (s.anomalies && Array.isArray(s.anomalies.list)) CAT = s.anomalies.list.filter((a) => a && typeof a.id === 'string' && typeof a.tr === 'string');
+  // a host state message (or, without one, the last again: language, party, game switched)
+  function render(msg) {
+    if (msg) {
+      last = msg;
+      store = !!msg.store;
+      if ('running' in msg) running = msg.running || null;
+      // the host's choice counts unless a click here is still on its way to it
+      if (!pendingGame && msg.game && GAMES[msg.game] && msg.game !== GAME) {
+        GAME = msg.game; try { localStorage.setItem(GAME_KEY, GAME); } catch { /* storage blocked */ }
+        dlReset(); if (!social() && SD_TABS.includes(tab)) showTab('news'); applyStatic();
+      } else if (pendingGame && msg.game === pendingGame) pendingGame = null;
+      if (msg.settings && typeof msg.settings === 'object') { Object.assign(OPT, msg.settings); renderHero(); if ($('optsModal').classList.contains('show')) renderOpts(); }
+      if (msg.anomalies && Array.isArray(msg.anomalies.list)) CAT = msg.anomalies.list.filter((a) => a && typeof a.id === 'string' && typeof a.tr === 'string');
+    }
+    renderGameBar();
+    const s = view(last, GAME);
+    if (!s) return;
     const v = (x) => x ? 'v' + x : '—';
     let status = '', small = '';
     const downloading = s.status === 'busy' || s.status === 'selfUpdate' || s.status === 'repair';
     $('progress').classList.toggle('show', downloading);
-    if (downloading && !dl.on) dlStart(s.status === 'selfUpdate' ? L.dlLauncher : s.status === 'repair' ? L.dlRepair : s.installed ? L.dlUpdate : L.dlInstall, s.status === 'selfUpdate' ? '' : v(s.latestVersion));
+    if (downloading && !dl.on) dlStart(s.status === 'selfUpdate' ? L.dlLauncher : s.status === 'repair' ? L.dlRepair : s.installed ? L.dlUpdate : fmt(L.dlInstall, upName(GAME)), s.status === 'selfUpdate' ? '' : v(s.latestVersion));
     else if (!downloading && dl.on) dlFinish();
     switch (s.status) {
       case 'checking': status = `<span class="spin"></span>${L.checking}`; setButton('play', s.installed ? L.play : L.install, s.installed ? 'play' : null, !s.installed); break;
@@ -605,25 +709,33 @@
         small = (s.installedVersion && s.latestVersion && s.installedVersion !== s.latestVersion ? `${v(s.installedVersion)} → ${v(s.latestVersion)}` : v(s.latestVersion))
           + (s.plan ? ` · ${s.plan.files} ${L.files} · ${mb(s.plan.bytes)}` : '') + `<button class="link" id="anyway">${L.playAnyway}</button>`;
         setButton('dl', L.update, 'update'); break;
+      // the game's folder is not on GitHub yet: no PLAY / INSTALL, no error (the host keeps looking)
+      case 'comingSoon': status = `<b>${L.comingSoon}</b>`; small = L.soonSmall; setButton('soon', L.soon, null, true); break;
       default: status = s.offline ? L.offline : `<b>${L.ready}</b>`; small = v(s.installedVersion); setButton('play', L.play, 'play');
     }
-    if (gameOpen && (s.status === 'ready' || s.status === 'update' || s.status === 'checking')) { status = `<b>${L.gameOpen}</b>`; setButton('play', L.running, 'play'); }
-    if (action === 'play' && amLeader() && party.members.length > 1) setButton('play', L.partyPlay, 'partygo'); // the party leader's PLAY takes everyone along
+    if (running === GAME && (s.status === 'ready' || s.status === 'update' || s.status === 'checking')) { status = `<b>${L.gameOpen}</b>`; setButton('play', L.running, 'play'); }
+    // one game at a time: another game's window is open, or another game is downloading
+    else if (running && running !== GAME && action === 'play') { status = esc(fmt(L.otherRunning, gameName(running))); small = ''; setButton('play', L.play, null, true); }
+    if (s.busyGame && s.busyGame !== GAME && action) { status = esc(fmt(L.otherBusy, gameName(s.busyGame))); setButton(action === 'play' ? 'play' : 'dl', $('main').textContent, null, true); }
+    if (social() && action === 'play' && amLeader() && party.members.length > 1) setButton('play', L.partyPlay, 'partygo'); // the party leader's PLAY takes everyone along
     $('status').innerHTML = status;
     $('small').innerHTML = small;
-    const anyway = $('anyway'); if (anyway) anyway.onclick = () => send('play', { anyway: true });
-    $('err').textContent = s.error ? (L.errors[s.error] || L.errors.other) : '';
+    const anyway = $('anyway'); if (anyway) anyway.onclick = () => send('play', { anyway: true, game: GAME });
+    // ("msg:" = already written for the player, e.g. the anti-cheat's)
+    $('err').textContent = !s.error ? '' : String(s.error).startsWith('msg:') ? String(s.error).slice(4) : L.errors[s.error] || L.errors.other;
     $('sVer').textContent = v(s.installedVersion || (s.installed ? null : s.latestVersion));
     $('sTime').textContent = fmtTime(s.playSeconds);
     $('sLast').textContent = fmtLast(s.lastPlayed);
 
     const news = s.news || {}, notes = news.notes || [], game = (news.game || {})[lang] || {};
-    $('news').innerHTML = notes.length ? notes.map((n) => {
+    const soon = s.comingSoon && !notes.length
+      ? `<div class="card new"><div class="hd"><span class="ttl">${esc(fmt(L.soonTitle, gameName(GAME)))}</span><span class="badge">${esc(L.soon)}</span></div><p style="margin-top:8px">${esc(L.soonText)}</p></div>` : '';
+    $('news').innerHTML = soon || (notes.length ? notes.map((n) => {
       const t = n[lang] || n.tr || {}, fresh = s.installedVersion && cmpVer(n.version, s.installedVersion) > 0;
       return `<div class="card ${fresh ? 'new' : ''}"><div class="hd"><span class="ver">v${esc(n.version)}</span><span class="ttl">${esc(t.title)}</span>${fresh ? `<span class="badge">${L.fresh}</span>` : ''}<span class="date">${esc(fmtDate(n.date))}</span></div>`
         + `<ul>${(t.items || []).map((i) => `<li>${esc(i)}</li>`).join('')}</ul></div>`;
-    }).join('') : `<div class="empty">${L.noNews}</div>`;
-    $('aboutPane').innerHTML = `<div class="card"><p>${esc(game.about || '')}</p><ul class="facts">${(game.facts || []).map((f) => `<li>${esc(f)}</li>`).join('')}</ul></div>`
+    }).join('') : `<div class="empty">${L.noNews}</div>`);
+    $('aboutPane').innerHTML = (soon || `<div class="card"><p>${esc(game.about || '')}</p><ul class="facts">${(game.facts || []).map((f) => `<li>${esc(f)}</li>`).join('')}</ul></div>`)
       + (game.multiplayer ? `<div class="card"><h4>${L.mpTitle}</h4><p>${esc(game.multiplayer)}</p></div>` : '')
       + `<div class="lver">Launcher ${esc(s.version || '')}${s.launcherUpdated ? `<span class="badge">${L.launcherUpdated}</span>` : ''}</div>`;
     checkAch(); achLive = true; // (play time / the anomaly list may complete one)
@@ -656,6 +768,12 @@
     $('dlTitle').textContent = L.dlDone; $('dlPct').textContent = '100%'; $('dlFill').style.width = '100%';
     $('dlEta').textContent = '—'; $('dlSpeed').textContent = '—'; $('dlFile').textContent = '';
     setTimeout(() => { if (!dl.on) $('content').classList.remove('downloading'); }, 2500);
+  }
+  // another game was selected: its download screen (if any) starts afresh
+  function dlReset() {
+    clearInterval(dl.timer);
+    dl.on = false;
+    $('dlPanel').classList.remove('finished'); $('content').classList.remove('downloading'); $('progress').classList.remove('show');
   }
   // every 250 ms: speed over the last ~2 s of byte counts, smoothed; one point on the graph
   function dlSample() {
@@ -692,6 +810,7 @@
     g.fillStyle = grad; g.fill();
   }
   function progress(p) {
+    if (p.game && p.game !== GAME) return; // (another game downloads: its card says so)
     const k = p.total ? p.done / p.total : (p.filesTotal ? p.files / p.filesTotal : 1);
     $('fill').style.width = (k * 100).toFixed(1) + '%';
     if (!dl.on) dlStart(last && last.status === 'selfUpdate' ? L.dlLauncher : L.dlUpdate, '');
@@ -704,6 +823,7 @@
     $('small').textContent = `${pct}% · ${mb(p.done)} / ${mb(p.total)}` + (dl.speed > 0 ? ` · ${rate(dl.speed)}` : '');
   }
   function showTab(t) {
+    if (!social() && SD_TABS.includes(t)) t = 'news'; // (Son Durak's own tabs)
     if (tab === 'col' && t !== 'col') { S.colSeen = Date.now(); saveS(); } // new finds were seen
     tab = t;
     for (const b of $('tabs').children) b.classList.toggle('sel', b.dataset.tab === t);
@@ -719,7 +839,11 @@
     $('tabQuests').innerHTML = esc(L.tabQuests) + (q && tab !== 'quests' ? ` <span class="badge">${q}</span>` : '');
   }
   // the panes built from local data (news / about come with the host's state)
-  function renderTab() { if (tab === 'profile') renderProfile(); else if (tab === 'quests') renderQuests(); else if (tab === 'col') renderCollection(); else if (tab === 'ach') renderAch(); else if (tab === 'lb') renderLb(); }
+  function renderTab() {
+    if (tab === 'ach') { if (GAME === 'sondurak') renderAch(); else renderGameAch(GAME); return; }
+    if (!social()) return;
+    if (tab === 'profile') renderProfile(); else if (tab === 'quests') renderQuests(); else if (tab === 'col') renderCollection(); else if (tab === 'lb') renderLb();
+  }
 
   // ============================================================== stats (from the game's "stat:" reports)
   // Kept in this page's storage: totals, the anomalies you spotted, achievements, recent rides.
@@ -861,7 +985,7 @@
     ['seen_it_all', '🏆', () => [foundInGame(), CAT.length || Infinity]], ['regular', '🎫', () => [S.wins, 5]], ['travel_buddy', '🤝', () => [S.coopWins, 1]],
     ['packed', '👥', () => [S.maxPlayers, 4]], ['chatty', '💬', () => [S.talks, 25]], ['paranoid', '😰', () => [S.falseAlarms, 10]],
     ['so_close', '😬', () => [S.nearMiss, 1]], ['night_owl', '🦉', () => [S.nightOwl ? 1 : 0, 1]],
-    ['commuter', '⏱️', () => [Math.floor((last ? last.playSeconds || 0 : 0) / 360) / 10, 5]], ['social', '📇', () => [Object.keys(F.friends).length, 3]],
+    ['commuter', '⏱️', () => [Math.floor(sdSeconds() / 360) / 10, 5]], ['social', '📇', () => [Object.keys(F.friends).length, 3]],
     // 1.6: slapping (retired, see RETIRED), the metro, daily quests
     ['first_slap', '👋', () => [S.slaps, 1]], ['slapper', '🖐️', () => [S.slaps, 50]], ['slapped', '😵', () => [S.slapped, 1]],
     ['underground', '🚇', () => [S.metroWins, 1]], ['both_lines', '🗺️', () => [(S.metroWins > 0 ? 1 : 0) + (S.tramWins > 0 ? 1 : 0), 2]], ['dark_tunnel', '🌑', () => [S.metroPerfect, 1]],
@@ -908,18 +1032,91 @@
       + `<div class="agrid">${tiles}</div>`;
   }
 
+  // ---- achievements a game defines itself (Fırtına Teknesi): new ones need no launcher update. The game sends
+  //   achlist:[{id, icon, tr:[name, desc], en:[name, desc]}, …]   its list, when it starts
+  //   ach:{id, at}                                              an unlock (at: ms since 1970)
+  //   achall:[{id, at}, …]                                      everything it has unlocked, at start (no toasts)
+  // Kept per game in this page's storage (like Son Durak's stats).
+  const GACH = {};
+  const gachKey = (gid) => `launcher.ach.${gid}.v1` + PROFILE;
+  function gachOf(gid) {
+    if (GACH[gid]) return GACH[gid];
+    let a = null;
+    try { a = JSON.parse(localStorage.getItem(gachKey(gid)) || 'null'); } catch { a = null; }
+    a = a && typeof a === 'object' ? a : {};
+    if (!Array.isArray(a.list)) a.list = [];
+    if (!a.got || typeof a.got !== 'object') a.got = {};
+    if (!a.gone || typeof a.gone !== 'object') a.gone = {}; // unlocked ones the game no longer lists: their last definition
+    return (GACH[gid] = a);
+  }
+  const saveGach = (gid) => { try { localStorage.setItem(gachKey(gid), JSON.stringify(GACH[gid])); } catch { /* storage full / blocked */ } };
+  const achId = (x) => (typeof x === 'string' && /^[\w.-]{1,48}$/.test(x) ? x : null);
+  const achText = (x) => (Array.isArray(x) ? [clean(x[0], 60), clean(x[1], 160)] : null);
+  const achIcon = (x) => [...String(x ?? '').replace(/[\u0000-\u001f\u007f]/g, '')].slice(0, 6).join('') || '🏆';
+  const achTime = (t) => { const n = Number(t); return Number.isFinite(n) && n > 1.5e12 && n < Date.now() + 864e5 ? Math.floor(n) : Date.now(); };
+  function gameAchList(gid, raw) {
+    let arr; try { arr = JSON.parse(raw); } catch { return; }
+    if (!Array.isArray(arr)) return;
+    const a = gachOf(gid), seen = new Set();
+    const list = arr.slice(0, 300).map((d) => {
+      if (!d || typeof d !== 'object' || !achId(d.id) || seen.has(d.id)) return null;
+      const tr = achText(d.tr), en = achText(d.en);
+      if (!tr && !en) return null;
+      seen.add(d.id);
+      return { id: d.id, icon: achIcon(d.icon), tr: tr || en, en: en || tr };
+    }).filter(Boolean);
+    // an unlocked achievement the game dropped keeps showing (to those who have it) with its last name
+    for (const d of a.list) if (a.got[d.id] && !seen.has(d.id)) a.gone[d.id] = d;
+    for (const id of seen) delete a.gone[id];
+    a.list = list;
+    saveGach(gid); gachChanged(gid);
+  }
+  // live: an unlock that just happened (a toast); otherwise the game re-sending what it has
+  function gameAchGot(gid, raw, live) {
+    let o; try { o = JSON.parse(raw); } catch { return; }
+    const a = gachOf(gid);
+    let changed = false;
+    for (const u of (Array.isArray(o) ? o : [o]).slice(0, 300)) {
+      const id = u && achId(u.id);
+      if (!id || a.got[id] || Object.keys(a.got).length >= 1000) continue;
+      a.got[id] = achTime(u.at); changed = true;
+      if (!live) continue;
+      const d = a.list.find((x) => x.id === id), [name, desc] = d ? d[lang] || d.tr : [id, ''];
+      notify({ title: `${d ? d.icon : '🏆'}  ${L.achUnlocked}: ${name}`, sub: desc, kind: 'ach' });
+    }
+    if (changed) { saveGach(gid); gachChanged(gid); }
+  }
+  function gachChanged(gid) { if (GAME === gid && tab === 'ach') renderGameAch(gid); }
+  function renderGameAch(gid) {
+    const a = gachOf(gid), list = a.list.slice();
+    // unlocks the list does not have (any more, or yet) still show: with their last definition, or by id
+    for (const id of Object.keys(a.got)) if (!list.some((x) => x.id === id)) list.push(a.gone[id] || { id, icon: '🏆', tr: [id, ''], en: [id, ''] });
+    if (!list.length) { $('achPane').innerHTML = `<div class="card"><p>🏆&nbsp; ${esc(L.achFirst)}</p></div>`; return; }
+    const got = list.filter((x) => a.got[x.id]).length;
+    const tiles = list.map((d) => {
+      const [name, desc] = d[lang] || d.tr, at = a.got[d.id];
+      return `<div class="ach ${at ? 'on' : ''}"><div class="ai">${esc(d.icon)}</div><div class="ab"><div class="an2">${esc(name)}</div><div class="ad">${esc(desc)}</div>`
+        + (at ? `<div class="dt">${L.achAt} ${esc(fmtDate(new Date(at).toISOString()))}</div>` : '') + '</div></div>';
+    }).join('');
+    $('achPane').innerHTML =
+      `<div class="card"><div class="colhd"><div class="big">${got}<small> / ${list.length}</small></div>`
+      + `<div class="grow"><div style="font-size:13px;color:#fff">${esc(fmt(L.achOf, got))}</div><div class="bar"><i style="width:${(got / list.length * 100).toFixed(1)}%"></i></div></div></div></div>`
+      + `<div class="agrid">${tiles}</div>`
+      + `<div class="note">${esc(a.list.length ? L.achGameNote : L.achFirst)}</div>`;
+  }
+
   // ---- the line (map) the game starts on: picked on the hero, kept by the host with the other settings
   const LINES = { tram: { code: 'T9', color: '#ffb020' }, metro: { code: 'M2', color: '#2fbf5a' } };
   const OPT = { autoUpdate: true, fullscreen: true, chatFilter: true, map: 'tram', discord: true };
   function setOpt(key, value) { OPT[key] = value; send('pref', { key, value }); }
   function renderLines() {
     $('linePick').innerHTML = Object.entries(LINES).map(([id, l]) => `<button class="lp ${OPT.map === id ? 'sel' : ''}" data-line="${id}" style="--lc:${l.color}"><b>${l.code}</b>${esc(L.lines[id])}</button>`).join('');
-    $('hero').classList.toggle('metro', OPT.map === 'metro');
+    $('hero').classList.toggle('metro', GAME === 'sondurak' && OPT.map === 'metro');
   }
   $('linePick').addEventListener('click', (e) => {
     const b = e.target.closest('[data-line]'); if (!b || OPT.map === b.dataset.line) return;
     setOpt('map', b.dataset.line);
-    renderLines(); $('sub').textContent = L.subFor[OPT.map] || L.sub;
+    renderHero();
     toGame({ type: 'map', map: OPT.map }); // a game on its main menu switches too
   });
 
@@ -928,11 +1125,14 @@
   function renderOpts() {
     const sw = (key) => `<button class="sw ${OPT[key] ? 'on' : ''}" data-opt="${key}" aria-pressed="${OPT[key] ? 'true' : 'false'}"></button>`;
     const row = ([title, desc], ctl) => `<div class="opt"><div class="ot"><b>${esc(title)}</b><span>${esc(desc)}</span></div>${ctl}</div>`;
+    // (repair / folder: the selected game; the chat filter: Son Durak's chats)
+    const forGame = ([title, desc]) => [`${title} · ${gameName(GAME)}`, desc];
+    const cur = view(last, GAME);
     $('optsBox').innerHTML = `<h3>${L.optsTitle}</h3>`
-      + row(L.oAuto, sw('autoUpdate')) + row(L.oFull, sw('fullscreen')) + row(L.oFilter, sw('chatFilter')) + row(L.oDiscord, sw('discord'))
-      + row(L.oRepair, `<button class="btn blue" data-oa="repair">${esc(L.repairBtn)}</button>`)
+      + row(L.oAuto, sw('autoUpdate')) + row(L.oFull, sw('fullscreen')) + (social() ? row(L.oFilter, sw('chatFilter')) : '') + row(L.oDiscord, sw('discord'))
+      + (cur && cur.comingSoon ? '' : row(forGame(L.oRepair), `<button class="btn blue" data-oa="repair">${esc(L.repairBtn)}</button>`))
       // (the Store edition's data folder is virtualised by Windows: Explorer would open an empty folder)
-      + (store ? '' : row(L.oFolder, `<button class="btn ghost" data-oa="folder">${esc(L.folderBtn)}</button>`))
+      + (store ? '' : row(forGame(L.oFolder), `<button class="btn ghost" data-oa="folder">${esc(L.folderBtn)}</button>`))
       + `<div class="mfoot"><span class="lver">Launcher ${esc(last ? last.version || '' : '')}</span><button class="btn ghost" data-oa="close">${esc(L.close)}</button></div>`;
   }
   $('opts').onclick = () => { renderOpts(); $('optsModal').classList.add('show'); };
@@ -942,10 +1142,10 @@
     if (t) { setOpt(t.dataset.opt, !OPT[t.dataset.opt]); renderOpts(); if (chatWith) renderChat(); return; }
     const a = e.target.closest('[data-oa]'); if (!a) return;
     if (a.dataset.oa === 'close') $('optsModal').classList.remove('show');
-    else if (a.dataset.oa === 'folder') send('folder');
+    else if (a.dataset.oa === 'folder') send('folder', { game: GAME });
     else if (a.dataset.oa === 'repair') {
-      if (gameOpen) { notify({ title: L.closeGameFirst, kind: 'info' }); return; }
-      $('optsModal').classList.remove('show'); showTab('news'); send('repair');
+      if (running) { notify({ title: L.closeGameFirst, kind: 'info' }); return; }
+      $('optsModal').classList.remove('show'); showTab('news'); send('repair', { game: GAME });
     }
   });
   addEventListener('keydown', (e) => { if (e.key === 'Escape') $('optsModal').classList.remove('show'); });
@@ -1044,7 +1244,7 @@
       + `<div class="lvl"><div class="row"><span>${L.level} <b>${lv.n}</b></span><span>${lv.into} / ${lv.need} XP</span></div><div class="bar"><i style="width:${(lv.into / lv.need * 100).toFixed(1)}%"></i></div></div></div></div>`
       + `<div class="sgrid">`
       + box(L.sRuns, S.runs) + box(L.sWins, S.wins) + box(L.sBest, S.bestTime ? mmss(S.bestTime) : '—') + box(L.sPerfect, S.perfect) + box(L.sStreak, S.bestStreak)
-      + box(L.sAcc, acc) + box(L.sFound, uniqueFound(), total ? '/ ' + total : '') + box(L.sTime, fmtTime(last ? last.playSeconds : 0)) + box(L.sTalks, S.talks) + box(L.sCoop, S.coopWins)
+      + box(L.sAcc, acc) + box(L.sFound, uniqueFound(), total ? '/ ' + total : '') + box(L.sTime, fmtTime(sdSeconds())) + box(L.sTalks, S.talks) + box(L.sCoop, S.coopWins)
       + box(L.sQuests, S.questsDone) + box(L.sMetro, S.metroWins)
       + `</div>`
       + `<div class="card"><h4>${L.recent}</h4><div class="runs">${runs || `<div class="empty">${L.noRuns}</div>`}</div></div>`
@@ -1475,7 +1675,9 @@
     if (fromGame) toGame({ type: 'toast', text });
     notify({ title: text, kind: 'info' });
   }
-  const joinRoom = (room) => send('play', { join: room });
+  // (rooms, invites and parties are Son Durak's: only one game window at a time)
+  const otherGameOpen = () => { if (!running || running === 'sondurak') return false; notify({ title: fmt(L.otherRunning, gameName(running)), kind: 'info' }); return true; };
+  const joinRoom = (room) => { if (!otherGameOpen()) send('play', { join: room, game: 'sondurak' }); };
 
   // ---- party: a leader gathers up to 6 online friends; "play as a party" hosts a room in the
   // leader's game and every member's launcher joins it. Members only talk to the leader (who is
@@ -1485,7 +1687,7 @@
   const offSince = {};
   const amLeader = () => !!party && party.leader === F.me.code;
   const inParty = (code) => !!party && party.members.some((m) => m.code === code);
-  function partyChanged() { renderParty(); renderFriends(); if (last) render(last); }
+  function partyChanged() { renderParty(); renderFriends(); render(); }
   function partyBroadcast() {
     if (!amLeader()) return;
     const members = party.members.map((m) => ({ code: m.code, name: m.code === F.me.code ? F.me.name : (F.friends[m.code] || m).name }));
@@ -1523,9 +1725,10 @@
   function partyGo() {
     if (!amLeader()) return;
     if (myRoom) { partySendGo(myRoom); return; }
+    if (otherGameOpen()) return;
     partyGoPending = true;
     notify({ title: L.partyStarting, kind: 'info' });
-    if (gameOpen) toGame({ type: 'host' }); else send('play', { host: true });
+    if (gameOpen) toGame({ type: 'host' }); else send('play', { host: true, game: 'sondurak' });
   }
   function partySendGo(room) {
     partyGoPending = false;
@@ -1604,8 +1807,17 @@
     return Object.entries(F.friends).map(([code, f]) => ({ code, name: f.name, st: isOnline(code) ? (live[code] && live[code].st) || 'online' : 'offline', room: (live[code] && live[code].room) || null, pr: isOnline(code) && live[code] ? live[code].pr : null }))
       .sort((a, b) => (a.st === 'offline') - (b.st === 'offline') || a.name.localeCompare(b.name));
   }
-  function fromGame(m) {
+  // gid: which game's window sent it. Games without friends / stats (Fırtına Teknesi) send their achievements
+  // and the player's name; quit / fullscreen / lang: the host handles.
+  function fromGame(m, gid = 'sondurak') {
     if (typeof m !== 'string') return;
+    if (gid !== 'sondurak') {
+      if (m.startsWith('achlist:')) gameAchList(gid, m.slice(8));
+      else if (m.startsWith('achall:')) gameAchGot(gid, m.slice(7), false);
+      else if (m.startsWith('ach:')) gameAchGot(gid, m.slice(4), true);
+      else if (m.startsWith('name:')) setMyName(m.slice(5), false);
+      return;
+    }
     if (m === 'friends') toGame({ type: 'friends', list: friendList() });
     else if (m.startsWith('invite:')) { try { const o = JSON.parse(m.slice(7)); inviteFriend(normCode(o.code), clean(o.room, 8).toUpperCase(), true); } catch { /* bad message */ } }
     else if (m.startsWith('name:')) setMyName(m.slice(5), false);
@@ -1615,7 +1827,7 @@
       broadcastStatus(); renderFriends();
     }
     else if (m.startsWith('stat:')) { try { onStat(JSON.parse(m.slice(5))); } catch { /* bad message */ } }
-    else if (m.startsWith('map:')) { const id = m.slice(4); if (LINES[id]) { OPT.map = id; renderLines(); $('sub').textContent = L.subFor[OPT.map] || L.sub; } }
+    else if (m.startsWith('map:')) { const id = m.slice(4); if (LINES[id]) { OPT.map = id; renderHero(); } }
     else if (m.startsWith('filter:')) { OPT.chatFilter = m.slice(7) === '1'; if (chatWith) renderChat(); }
   }
 
@@ -1735,17 +1947,23 @@
   for (const b of $('langs').children) b.onclick = () => { setLang(b.dataset.l); send('lang', { lang: b.dataset.l }); };
   $('bar').addEventListener('mousedown', (e) => { if (e.target.id === 'bar' || e.target.closest('.brand')) send('drag'); });
   $('min').onclick = () => send('min'); $('close').onclick = () => send('close');
-  $('recheck').onclick = () => send('check'); $('folder').onclick = () => send('folder');
-  $('main').onclick = () => { if (action === 'partygo') partyGo(); else if (action) send(action); };
+  $('recheck').onclick = () => send('check'); $('folder').onclick = () => send('folder', { game: GAME });
+  $('main').onclick = () => { if (action === 'partygo') partyGo(); else if (action) send(action, { game: GAME }); };
   HOST.addEventListener('message', (e) => {
     const m = e.data;
     if (m.type === 'state') { if (m.lang && m.lang !== lang && STR[m.lang]) { lang = m.lang; L = STR[lang]; applyStatic(); renderFriends(); } render(m); }
     else if (m.type === 'progress') progress(m);
-    else if (m.type === 'from-game') fromGame(m.msg);
+    else if (m.type === 'from-game') fromGame(m.msg, m.game || 'sondurak');
     else if (m.type === 'game-state') {
-      gameOpen = !!m.open;
-      if (!gameOpen) { myRoom = null; where = null; endRide(false, {}); saveS(); statsChanged(); }
-      broadcastStatus(); renderFriends(); if (last) render(last);
+      const gid = m.game || 'sondurak';
+      running = m.open ? gid : running === gid ? null : running;
+      // gameOpen: Son Durak's window (friends see "in game", invites, rides)
+      if (gid === 'sondurak') {
+        gameOpen = !!m.open;
+        if (!gameOpen) { myRoom = null; where = null; endRide(false, {}); saveS(); statsChanged(); }
+        broadcastStatus(); renderFriends();
+      }
+      render();
     }
   });
   renderFriends();
@@ -1755,6 +1973,7 @@
   send('ready');
   // test hooks (the automated two-launcher test drives these)
   window.__fr = { F, isDirect, postSeen, addFriendCode: (c) => { $('addIn').value = c; return addFriend(); }, acceptFriend, sendTo: (c, t) => { openChat(c); $('msgIn').value = t; sendChat(); }, inviteFriend, fromGame, isOnline, get net() { return net; }, live, get party() { return party; }, partyInvite, partyGo, partyLeave };
+  window.__games = { selectGame, get game() { return GAME; }, get running() { return running; }, gachOf, showTab, get tab() { return tab; } }; // (game library tests)
 </script>
 </body>
 </html>

@@ -1,5 +1,5 @@
-// Keeps a local copy of the game in sync with the "Son Durak" folder of the GitHub repo.
-// - CheckAsync: latest commits that touched the folder (version = commit SHA)
+// Keeps the local copy of each game (Games.cs) in sync with its folder of the GitHub repo.
+// - CheckAsync: latest commits that touched the folder (version = commit SHA; none = not published yet)
 // - InstallAsync: downloads only files whose git blob SHA changed, verifies every file,
 //   removes files that disappeared from the repo, then records the new version.
 // - LauncherPlanAsync / ApplyLauncherUpdateAsync: the launcher updates itself from the built
@@ -24,15 +24,12 @@ namespace SonDurakLauncher
         public const string Owner = "anilpaskap01-droid";
         public const string Repo = "Gokhan-Abi";
         public const string Branch = "main";
-        public const string Folder = "Son Durak";
-        // only the files the game needs at runtime (the repo folder also has tools, launcher sources …)
-        public static readonly string[] Runtime = { "index.html", "CREDITS.md", "news.json", "css/", "js/", "vendor/", "assets/" };
+        // (the games: their repo folders, install folders and state files are in Games.cs)
 
         // (SONDURAK_DATA_DIR: a separate profile for tests, e.g. two launchers befriending each other)
         public static readonly string DataDir = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SONDURAK_DATA_DIR"))
             ? Environment.GetEnvironmentVariable("SONDURAK_DATA_DIR")
             : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SonDurak");
-        public static string GameDir => Path.Combine(DataDir, "game");
         // Microsoft Store edition (the launcher packaged as MSIX): it downloads and updates the game like
         // any launcher, but the launcher itself is updated by the Store (its install folder is read-only),
         // so it never replaces its own files. SONDURAK_STORE=1 makes a normal build act like it (tests).
@@ -44,7 +41,6 @@ namespace SonDurakLauncher
             try { int len = 0; return GetCurrentPackageFullName(ref len, null) != 15700; } // 15700 = APPMODEL_ERROR_NO_PACKAGE
             catch { return false; } // (Windows 7: no such function)
         }
-        public static string StateFile => Path.Combine(DataDir, "state.json");
         public static string WebViewData => Path.Combine(DataDir, "webview");
         public static string RepoUrl => $"https://github.com/{Owner}/{Repo}";
         // the launcher's own repository: sources + the built launcher in release/ (exe + its dlls)
@@ -175,32 +171,33 @@ namespace SonDurakLauncher
             }
         }
 
-        public static LocalState LoadState()
+        public static LocalState LoadState(GameDef g)
         {
             try
             {
-                if (File.Exists(Config.StateFile)) return json.Deserialize<LocalState>(File.ReadAllText(Config.StateFile, Encoding.UTF8)) ?? new LocalState();
+                if (File.Exists(g.StateFile)) return json.Deserialize<LocalState>(File.ReadAllText(g.StateFile, Encoding.UTF8)) ?? new LocalState();
             }
             catch { /* corrupt state: treat as not installed */ }
             return new LocalState();
         }
 
-        static void SaveState(LocalState s)
+        static void SaveState(GameDef g, LocalState s)
         {
-            Directory.CreateDirectory(Config.DataDir);
-            var tmp = Config.StateFile + ".tmp";
+            Directory.CreateDirectory(Path.GetDirectoryName(g.StateFile));
+            var tmp = g.StateFile + ".tmp";
             File.WriteAllText(tmp, json.Serialize(s), Encoding.UTF8);
-            if (File.Exists(Config.StateFile)) File.Delete(Config.StateFile);
-            File.Move(tmp, Config.StateFile);
+            if (File.Exists(g.StateFile)) File.Delete(g.StateFile);
+            File.Move(tmp, g.StateFile);
         }
 
-        public static bool IsInstalled(LocalState s) => !string.IsNullOrEmpty(s.sha) && File.Exists(Path.Combine(Config.GameDir, "index.html"));
+        public static bool IsInstalled(GameDef g, LocalState s) => !string.IsNullOrEmpty(s.sha) && File.Exists(Path.Combine(g.Dir, "index.html"));
 
-        public static async Task<RemoteInfo> CheckAsync(CancellationToken ct)
+        // The latest commits of the game's folder, or null when it has none: the game is not published yet.
+        public static async Task<RemoteInfo> CheckAsync(GameDef g, CancellationToken ct)
         {
-            var url = Api($"/commits?sha={Config.Branch}&path={Uri.EscapeDataString(Config.Folder)}&per_page=6");
+            var url = Api($"/commits?sha={Config.Branch}&path={Uri.EscapeDataString(g.Folder)}&per_page=6");
             var list = await GetJson<List<Dictionary<string, object>>>(url, ct).ConfigureAwait(false);
-            if (list == null || list.Count == 0) throw new Exception("no-commits");
+            if (list == null || list.Count == 0) return null;
             var info = new RemoteInfo();
             foreach (var c in list)
             {
@@ -215,7 +212,7 @@ namespace SonDurakLauncher
             return info;
         }
 
-        static bool IsRuntime(string rel) => Config.Runtime.Any(p => p.EndsWith("/") ? rel.StartsWith(p, StringComparison.Ordinal) : rel == p);
+        static bool IsRuntime(GameDef g, string rel) => g.Runtime.Any(p => p.EndsWith("/") ? rel.StartsWith(p, StringComparison.Ordinal) : rel == p);
 
         // git's blob id: sha1("blob <len>\0" + content)
         public static string GitBlobSha(byte[] data)
@@ -230,11 +227,11 @@ namespace SonDurakLauncher
         }
 
         // Every file of the repo folder at a commit: path relative to the folder -> (blob sha, size)
-        static async Task<Dictionary<string, (string sha, long size)>> GetFolderAsync(string commitSha, CancellationToken ct)
+        static async Task<Dictionary<string, (string sha, long size)>> GetFolderAsync(GameDef g, string commitSha, CancellationToken ct)
         {
             var tree = await GetJson<Dictionary<string, object>>(Api($"/git/trees/{commitSha}?recursive=1"), ct).ConfigureAwait(false);
             if (tree.ContainsKey("truncated") && (bool)tree["truncated"]) throw new Exception("tree-truncated");
-            var prefix = Config.Folder + "/";
+            var prefix = g.Folder + "/";
             var files = new Dictionary<string, (string sha, long size)>();
             foreach (var o in (System.Collections.IEnumerable)tree["tree"])
             {
@@ -248,17 +245,17 @@ namespace SonDurakLauncher
         }
 
         // Runtime files of the game at a commit: relative path -> (blob sha, size)
-        static async Task<Dictionary<string, (string sha, long size)>> GetWantedAsync(string commitSha, CancellationToken ct)
+        static async Task<Dictionary<string, (string sha, long size)>> GetWantedAsync(GameDef g, string commitSha, CancellationToken ct)
         {
-            var wanted = (await GetFolderAsync(commitSha, ct).ConfigureAwait(false)).Where(kv => IsRuntime(kv.Key)).ToDictionary(kv => kv.Key, kv => kv.Value);
+            var wanted = (await GetFolderAsync(g, commitSha, ct).ConfigureAwait(false)).Where(kv => IsRuntime(g, kv.Key)).ToDictionary(kv => kv.Key, kv => kv.Value);
             if (!wanted.ContainsKey("index.html")) throw new Exception("bad-remote");
             return wanted;
         }
 
-        // Player-facing patch notes and game info ("Son Durak/news.json") at a commit; null if missing.
-        public static async Task<string> NewsJsonAsync(string commitSha, CancellationToken ct)
+        // Player-facing patch notes and game info ("<game folder>/news.json") at a commit; null if missing.
+        public static async Task<string> NewsJsonAsync(GameDef g, string commitSha, CancellationToken ct)
         {
-            var path = string.Join("/", (Config.Folder + "/news.json").Split('/').Select(Uri.EscapeDataString));
+            var path = string.Join("/", (g.Folder + "/news.json").Split('/').Select(Uri.EscapeDataString));
             var url = !string.IsNullOrEmpty(Config.Token) ? Api($"/contents/{path}?ref={commitSha}") : $"https://raw.githubusercontent.com/{Config.Owner}/{Config.Repo}/{commitSha}/{path}";
             using (var req = new HttpRequestMessage(HttpMethod.Get, url))
             {
@@ -367,12 +364,12 @@ namespace SonDurakLauncher
         }
 
         // Which runtime files differ from what is installed.
-        static List<string> ComputeTodo(Dictionary<string, (string sha, long size)> wanted, LocalState state)
+        static List<string> ComputeTodo(GameDef g, Dictionary<string, (string sha, long size)> wanted, LocalState state)
         {
             var todo = new List<string>();
             foreach (var kv in wanted)
             {
-                var local = LocalPath(kv.Key);
+                var local = LocalPath(g, kv.Key);
                 string have = null;
                 if (File.Exists(local))
                 {
@@ -387,30 +384,30 @@ namespace SonDurakLauncher
         public class Plan { public int Files; public long Bytes; public bool Removals; }
 
         // What an update to `info` would download (0 files = only non-game files changed).
-        public static async Task<Plan> PlanAsync(RemoteInfo info, CancellationToken ct)
+        public static async Task<Plan> PlanAsync(GameDef g, RemoteInfo info, CancellationToken ct)
         {
-            var wanted = await GetWantedAsync(info.Sha, ct).ConfigureAwait(false);
-            var state = LoadState();
-            var todo = ComputeTodo(wanted, state);
+            var wanted = await GetWantedAsync(g, info.Sha, ct).ConfigureAwait(false);
+            var state = LoadState(g);
+            var todo = ComputeTodo(g, wanted, state);
             return new Plan { Files = todo.Count, Bytes = todo.Sum(k => wanted[k].size), Removals = state.files != null && state.files.Keys.Any(k => !wanted.ContainsKey(k)) };
         }
 
         // The commit changed nothing the game uses (e.g. launcher sources): just record it.
-        public static void MarkCurrent(RemoteInfo info)
+        public static void MarkCurrent(GameDef g, RemoteInfo info)
         {
-            var s = LoadState();
+            var s = LoadState(g);
             s.sha = info.Sha; s.message = info.Message; s.date = info.Date;
-            SaveState(s);
+            SaveState(g, s);
         }
 
         // verify: hash every installed file instead of trusting the recorded ones ("repair the game":
         // re-downloads anything changed or damaged on disk, removes files that do not belong)
-        public static async Task InstallAsync(RemoteInfo info, IProgress<Progress> progress, CancellationToken ct, bool verify = false)
+        public static async Task InstallAsync(GameDef g, RemoteInfo info, IProgress<Progress> progress, CancellationToken ct, bool verify = false)
         {
-            var wanted = await GetWantedAsync(info.Sha, ct).ConfigureAwait(false);
-            var state = LoadState();
-            Directory.CreateDirectory(Config.GameDir);
-            var todo = ComputeTodo(wanted, verify ? new LocalState() : state);
+            var wanted = await GetWantedAsync(g, info.Sha, ct).ConfigureAwait(false);
+            var state = LoadState(g);
+            Directory.CreateDirectory(g.Dir);
+            var todo = ComputeTodo(g, wanted, verify ? new LocalState() : state);
 
             var p = new Progress { Total = todo.Sum(k => wanted[k].size), FilesTotal = todo.Count };
             progress?.Report(p);
@@ -423,10 +420,10 @@ namespace SonDurakLauncher
                     var (sha, size) = wanted[rel];
                     long got = 0;
                     lock (p) p.Current = rel;
-                    var data = await DownloadAsync(info.Sha, rel, sha, ct, null,
+                    var data = await DownloadAsync(info.Sha, g.Folder + "/" + rel, sha, ct, null,
                         n => { lock (p) { p.Done += n; got += n; } p.Tick(progress); }).ConfigureAwait(false);
                     if (GitBlobSha(data) != sha) throw new Exception("checksum " + rel);
-                    var local = LocalPath(rel);
+                    var local = LocalPath(g, rel);
                     Directory.CreateDirectory(Path.GetDirectoryName(local));
                     var tmp = local + ".part";
                     File.WriteAllBytes(tmp, data);
@@ -441,29 +438,29 @@ namespace SonDurakLauncher
             await Task.WhenAll(tasks).ConfigureAwait(false);
 
             // remove files that are no longer part of the game
-            foreach (var file in Directory.GetFiles(Config.GameDir, "*", SearchOption.AllDirectories))
+            foreach (var file in Directory.GetFiles(g.Dir, "*", SearchOption.AllDirectories))
             {
-                var rel = file.Substring(Config.GameDir.Length + 1).Replace('\\', '/');
+                var rel = file.Substring(g.Dir.Length + 1).Replace('\\', '/');
                 if (!wanted.ContainsKey(rel)) { try { File.Delete(file); } catch { } }
             }
-            foreach (var dir in Directory.GetDirectories(Config.GameDir, "*", SearchOption.AllDirectories).OrderByDescending(d => d.Length))
+            foreach (var dir in Directory.GetDirectories(g.Dir, "*", SearchOption.AllDirectories).OrderByDescending(d => d.Length))
                 if (!Directory.EnumerateFileSystemEntries(dir).Any()) { try { Directory.Delete(dir); } catch { } }
 
-            SaveState(new LocalState { sha = info.Sha, message = info.Message, date = info.Date, files = wanted.ToDictionary(k => k.Key, k => k.Value.sha) });
+            SaveState(g, new LocalState { sha = info.Sha, message = info.Message, date = info.Date, files = wanted.ToDictionary(k => k.Key, k => k.Value.sha) });
         }
 
-        static string LocalPath(string rel) => Path.Combine(Config.GameDir, rel.Replace('/', Path.DirectorySeparatorChar));
+        static string LocalPath(GameDef g, string rel) => Path.Combine(g.Dir, rel.Replace('/', Path.DirectorySeparatorChar));
 
         // The anti-cheat's check before every ride: the installed game files that differ (changed, missing or
         // added). Online they are compared with the repository's list for the installed commit (so a changed
         // state file cannot hide a changed game file), offline with the hashes recorded at install.
-        public static async Task<List<string>> TamperedFilesAsync(bool online, CancellationToken ct)
+        public static async Task<List<string>> TamperedFilesAsync(GameDef g, bool online, CancellationToken ct)
         {
-            var s = LoadState();
+            var s = LoadState(g);
             Dictionary<string, string> want = null;
             if (online && !string.IsNullOrEmpty(s.sha))
             {
-                try { want = (await GetWantedAsync(s.sha, ct).ConfigureAwait(false)).ToDictionary(k => k.Key, k => k.Value.sha); }
+                try { want = (await GetWantedAsync(g, s.sha, ct).ConfigureAwait(false)).ToDictionary(k => k.Key, k => k.Value.sha); }
                 catch { want = null; } // (the network went away: the recorded hashes then)
             }
             want = want ?? s.files ?? new Dictionary<string, string>();
@@ -471,22 +468,22 @@ namespace SonDurakLauncher
             if (want.Count == 0) { bad.Add("(no file list)"); return bad; }
             foreach (var kv in want)
             {
-                var f = LocalPath(kv.Key);
+                var f = LocalPath(g, kv.Key);
                 if (!File.Exists(f) || GitBlobSha(File.ReadAllBytes(f)) != kv.Value) bad.Add(kv.Key);
             }
-            if (Directory.Exists(Config.GameDir))
-                foreach (var f in Directory.GetFiles(Config.GameDir, "*", SearchOption.AllDirectories))
+            if (Directory.Exists(g.Dir))
+                foreach (var f in Directory.GetFiles(g.Dir, "*", SearchOption.AllDirectories))
                 {
-                    var rel = f.Substring(Config.GameDir.Length + 1).Replace('\\', '/');
+                    var rel = f.Substring(g.Dir.Length + 1).Replace('\\', '/');
                     if (!want.ContainsKey(rel)) bad.Add(rel);
                 }
             return bad;
         }
 
-        // repo = null: the game repository (paths are relative to its "Son Durak" folder);
-        // otherwise paths are relative to that repository's root.
+        // path: relative to the repository's root (a game file = "<game folder>/<file>");
+        // repo = null: the game repository, otherwise that repository.
         // onBytes: called with each chunk's size as it arrives (negative to take back a failed attempt).
-        static async Task<byte[]> DownloadAsync(string commitSha, string rel, string blobSha, CancellationToken ct, string repo = null, Action<long> onBytes = null)
+        static async Task<byte[]> DownloadAsync(string commitSha, string repoPath, string blobSha, CancellationToken ct, string repo = null, Action<long> onBytes = null)
         {
             string url;
             var req = new HttpRequestMessage(HttpMethod.Get, "https://x");
@@ -498,7 +495,7 @@ namespace SonDurakLauncher
             }
             else
             {
-                var path = string.Join("/", (repo == null ? Config.Folder + "/" + rel : rel).Split('/').Select(Uri.EscapeDataString));
+                var path = string.Join("/", repoPath.Split('/').Select(Uri.EscapeDataString));
                 url = $"https://raw.githubusercontent.com/{Config.Owner}/{repo ?? Config.Repo}/{commitSha}/{path}";
             }
             req.RequestUri = new Uri(url);

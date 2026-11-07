@@ -36,7 +36,16 @@ namespace SonDurakLauncher
 
             if (Array.IndexOf(args, "--uninstall") >= 0) { Uninstaller.Run(); return; }
             int a;
-            if ((a = Array.IndexOf(args, "--selftest-install")) >= 0) { Environment.Exit(SelfTest.Install(args[a + 1])); return; }
+            if ((a = Array.IndexOf(args, "--selftest-install")) >= 0)
+            {
+                // --selftest-install <json> [--game <id>] (Games.cs; default Son Durak)
+                var gi = Array.IndexOf(args, "--game");
+                var g = gi >= 0 && gi + 1 < args.Length ? Games.Get(args[gi + 1]) : Games.SonDurak;
+                if (g == null) { Environment.Exit(2); return; }
+                Environment.Exit(SelfTest.Install(args[a + 1], g));
+                return;
+            }
+            if ((a = Array.IndexOf(args, "--selftest-games")) >= 0) { Environment.Exit(SelfTest.GamesCheck(args[a + 1])); return; }
             if ((a = Array.IndexOf(args, "--shot-launcher")) >= 0) { SelfTest.Shot(args[a + 1], false); return; }
             if ((a = Array.IndexOf(args, "--shot-game")) >= 0) { SelfTest.Shot(args[a + 1], true); return; }
 

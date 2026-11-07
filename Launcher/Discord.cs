@@ -1,8 +1,9 @@
 // Discord Rich Presence: the player's Discord profile shows "Playing Son Durak" while the launcher is
 // open ("In the launcher"), and while the game window is open where they are: main menu, a co-op
 // lobby, the line + round, single player or co-op (party size), the end; plus the time and a link to
-// the game's site. The launcher talks to the Discord desktop app over its local IPC pipe
-// (\\.\pipe\discord-ipc-N; each frame = opcode + length + JSON), no library and nothing sent anywhere
+// the game's site. Fırtına Teknesi shows its name and what the crew does (menu / at sea / island / fishing /
+// cooking, crew size) from its own "stat:" reports. The launcher talks to the Discord desktop app over its local
+// IPC pipe (\\.\pipe\discord-ipc-N; each frame = opcode + length + JSON), no library and nothing sent anywhere
 // else. Off when the "discord" option is off or Discord is not running (then retried every 15 s).
 using System;
 using System.Collections.Generic;
@@ -18,6 +19,9 @@ namespace SonDurakLauncher
         // the "Son Durak" application in the Discord Developer Portal (public; its name is what
         // "Playing ..." shows)
         const string AppId = "1561390026669953126";
+        // A Discord application named "Fırtına Teknesi" makes the profile say "Playing Fırtına Teknesi"; until
+        // one exists (empty) the game is shown through the Son Durak application with its name in the details.
+        const string FirtinaAppId = "";
         const string Site = "https://son-durak.pages.dev";
         static readonly JavaScriptSerializer json = new JavaScriptSerializer();
         static readonly object gate = new object();
@@ -29,7 +33,10 @@ namespace SonDurakLauncher
         static long started; // since when the current status counts (unix seconds)
         static Dictionary<string, object> where; // the game's last "where" report
         static string map = "tram";
+        static GameDef game = Games.SonDurak; // the game whose window is open
+        static Dictionary<string, object> boat; // Fırtına Teknesi's last "stat:" report
         static string sent; // the activity JSON Discord has now
+        static string connectedApp; // the application id the pipe was opened with
 
         // (automated launcher tests set SONDURAK_NO_DISCORD=1 so they do not change the tester's status)
         public static bool Available => AppId.Length > 0 && Environment.GetEnvironmentVariable("SONDURAK_NO_DISCORD") != "1";
@@ -39,27 +46,34 @@ namespace SonDurakLauncher
         static long Now => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
         public static void LauncherOpened() { lock (gate) { launcher = true; if (!running) started = Now; } Kick(); }
-        public static void GameOpened()
+        public static void GameOpened(GameDef g)
         {
-            lock (gate) { running = true; started = Now; where = null; map = Options.Map; }
+            lock (gate) { running = true; game = g; started = Now; where = null; boat = null; map = Options.Map; }
             Kick();
         }
         public static void GameClosed() { lock (gate) { running = false; started = Now; } Kick(); }
         public static void SetMap(string m) { lock (gate) map = m == "metro" ? "metro" : "tram"; Kick(); }
 
-        // a "stat:" report from the game: "where" (menu / lobby / round n, players, single or co-op)
-        // and "start" carry the line
+        // a "stat:" report from the game. Son Durak: "where" (menu / lobby / round n, players, single or
+        // co-op) and "start" carry the line. Fırtına Teknesi: every report is where the crew is
+        // ({e: menu|sail|island|fish|cook, crew}).
         public static void FromGame(string statJson)
         {
             Dictionary<string, object> ev;
             try { ev = json.Deserialize<Dictionary<string, object>>(statJson); } catch { return; }
             if (ev == null || !(ev.TryGetValue("e", out var e) && e is string kind)) return;
+            bool changed;
             lock (gate)
             {
-                if (ev.TryGetValue("map", out var m) && m is string ms) map = ms == "metro" ? "metro" : "tram";
-                if (kind == "where") where = ev;
+                if (game == Games.Firtina) { boat = ev; changed = true; }
+                else
+                {
+                    if (ev.TryGetValue("map", out var m) && m is string ms) map = ms == "metro" ? "metro" : "tram";
+                    if (kind == "where") where = ev;
+                    changed = kind == "where" || kind == "start";
+                }
             }
-            if (kind == "where" || kind == "start") Kick();
+            if (changed) Kick();
         }
 
         // something changed (the game, settings, the language): the worker brings Discord up to date
@@ -77,13 +91,13 @@ namespace SonDurakLauncher
         {
             while (true)
             {
-                bool on; string activity;
-                lock (gate) { on = (launcher || running) && Options.Discord; activity = on ? json.Serialize(Build()) : null; }
+                bool on; string activity, app;
+                lock (gate) { on = (launcher || running) && Options.Discord; activity = on ? json.Serialize(Build()) : null; app = App(); }
                 try
                 {
-                    // closing the connection clears the status in Discord
-                    if (!on) Close();
-                    else if (pipe != null || Connect())
+                    // closing the connection clears the status in Discord (and another game may have its own application)
+                    if (!on || (pipe != null && connectedApp != app)) Close();
+                    if (on && (pipe != null || Connect(app)))
                     {
                         if (activity != sent) { SetActivity(activity); sent = activity; }
                     }
@@ -96,8 +110,12 @@ namespace SonDurakLauncher
 
         static int Num(object o) { try { return Convert.ToInt32(o); } catch { return 0; } }
 
+        // the Discord application the status is shown with (under the gate)
+        static string App() => running && game == Games.Firtina && FirtinaAppId.Length > 0 ? FirtinaAppId : AppId;
+
         static Dictionary<string, object> Build()
         {
+            if (running && game == Games.Firtina) return BuildFirtina();
             var tr = Lang.Current != "en";
             var line = map == "metro" ? (tr ? "M2 Gece Metrosu" : "M2 Night Metro") : (tr ? "T9 Gece Tramvayı" : "T9 Night Tram");
             string details, state = null;
@@ -146,8 +164,35 @@ namespace SonDurakLauncher
             return a;
         }
 
+        // Fırtına Teknesi: "Fırtına Teknesi · Out at sea" / "Crew of 3"
+        static Dictionary<string, object> BuildFirtina()
+        {
+            var tr = Lang.Current != "en";
+            var b = boat ?? new Dictionary<string, object>();
+            var e = b.TryGetValue("e", out var eo) ? eo as string : "menu";
+            int crew = Math.Max(1, b.TryGetValue("crew", out var c) ? Num(c) : 1);
+            string what;
+            switch (e)
+            {
+                case "sail": what = tr ? "Denize açıldı" : "Out at sea"; break;
+                case "island": what = tr ? "Bir adada" : "On an island"; break;
+                case "fish": what = tr ? "Balık tutuyor" : "Fishing"; break;
+                case "cook": what = tr ? "Yemek pişiriyor" : "Cooking"; break;
+                default: what = tr ? "Ana menüde" : "In the main menu"; e = "menu"; break;
+            }
+            var a = new Dictionary<string, object>
+            {
+                // (through the Son Durak application the game's name has to be in the text)
+                ["details"] = FirtinaAppId.Length > 0 ? what : Games.Firtina.Name + " · " + what,
+                ["timestamps"] = new Dictionary<string, object> { ["start"] = started },
+                ["buttons"] = new object[] { new Dictionary<string, object> { ["label"] = tr ? "Launcher'ı indir" : "Get the launcher", ["url"] = Site } },
+            };
+            if (e != "menu") a["state"] = crew > 1 ? (tr ? "Mürettebat · " + crew + " kişi" : "Crew of " + crew) : (tr ? "Tek başına" : "Solo");
+            return a;
+        }
+
         // ---- IPC
-        static bool Connect()
+        static bool Connect(string app)
         {
             for (int i = 0; i < 10; i++)
             {
@@ -156,9 +201,9 @@ namespace SonDurakLauncher
                 pipe = p;
                 try
                 {
-                    Write(0, json.Serialize(new { v = 1, client_id = AppId }));
+                    Write(0, json.Serialize(new { v = 1, client_id = app }));
                     var (op, body) = Read();
-                    if (op == 1 && body.Contains("\"READY\"")) { sent = null; LastError = null; return true; }
+                    if (op == 1 && body.Contains("\"READY\"")) { sent = null; LastError = null; connectedApp = app; return true; }
                     LastError = body; // e.g. an unknown application id
                 }
                 catch (Exception ex) { LastError = ex.Message; }
@@ -217,34 +262,37 @@ namespace SonDurakLauncher
         {
             if (pipe == null) return;
             try { pipe.Dispose(); } catch { }
-            pipe = null; sent = null;
+            pipe = null; sent = null; connectedApp = null;
         }
 
         // --selftest-discord <json> [seconds]: shows every kind of status for `seconds` each (launcher,
-        // menu, co-op lobby, single player round, co-op round, the end) and reports Discord's answers
+        // menu, co-op lobby, single player round, co-op round, the end, Fırtına Teknesi at sea) and reports
+        // Discord's answers
         public static Dictionary<string, object> Test(int seconds)
         {
             var report = new Dictionary<string, object> { ["available"] = Available };
             if (!Available) return report;
             var steps = new List<object>();
+            var sd = Games.SonDurak;
             var cases = new[]
             {
-                new { name = "launcher", game = false, w = (Dictionary<string, object>)null, m = "tram" },
-                new { name = "menu", game = true, w = new Dictionary<string, object> { ["mode"] = "menu", ["role"] = "single", ["players"] = 1 }, m = "tram" },
-                new { name = "lobby", game = true, w = new Dictionary<string, object> { ["mode"] = "lobby", ["role"] = "host", ["players"] = 3 }, m = "metro" },
-                new { name = "single", game = true, w = new Dictionary<string, object> { ["mode"] = "play", ["role"] = "single", ["round"] = 4, ["total"] = 10, ["players"] = 1 }, m = "tram" },
-                new { name = "coop", game = true, w = new Dictionary<string, object> { ["mode"] = "play", ["role"] = "guest", ["round"] = 7, ["total"] = 10, ["players"] = 3 }, m = "metro" },
-                new { name = "end", game = true, w = new Dictionary<string, object> { ["mode"] = "end", ["role"] = "host", ["round"] = 10, ["total"] = 10, ["players"] = 2 }, m = "metro" },
+                new { name = "launcher", game = false, g = sd, w = (Dictionary<string, object>)null, m = "tram" },
+                new { name = "menu", game = true, g = sd, w = new Dictionary<string, object> { ["mode"] = "menu", ["role"] = "single", ["players"] = 1 }, m = "tram" },
+                new { name = "lobby", game = true, g = sd, w = new Dictionary<string, object> { ["mode"] = "lobby", ["role"] = "host", ["players"] = 3 }, m = "metro" },
+                new { name = "single", game = true, g = sd, w = new Dictionary<string, object> { ["mode"] = "play", ["role"] = "single", ["round"] = 4, ["total"] = 10, ["players"] = 1 }, m = "tram" },
+                new { name = "coop", game = true, g = sd, w = new Dictionary<string, object> { ["mode"] = "play", ["role"] = "guest", ["round"] = 7, ["total"] = 10, ["players"] = 3 }, m = "metro" },
+                new { name = "end", game = true, g = sd, w = new Dictionary<string, object> { ["mode"] = "end", ["role"] = "host", ["round"] = 10, ["total"] = 10, ["players"] = 2 }, m = "metro" },
+                new { name = "firtina-sail", game = true, g = Games.Firtina, w = new Dictionary<string, object> { ["e"] = "sail", ["crew"] = 3 }, m = "tram" },
             };
             try
             {
-                report["connected"] = Connect();
+                report["connected"] = Connect(AppId);
                 bool all = pipe != null;
                 foreach (var c in cases)
                 {
                     if (pipe == null) break;
                     string activity;
-                    lock (gate) { launcher = true; running = c.game; where = c.w; map = c.m; started = Now; activity = json.Serialize(Build()); }
+                    lock (gate) { launcher = true; running = c.game; game = c.g; where = c.g == sd ? c.w : null; boat = c.g == sd ? null : c.w; map = c.m; started = Now; activity = json.Serialize(Build()); }
                     SetActivity(activity);
                     steps.Add(new { c.name, activity, ok = LastError == null, reply = LastReply });
                     all &= LastError == null;

@@ -1,8 +1,9 @@
 // Launcher preferences and play statistics, saved in %LOCALAPPDATA%\SonDurak\launcher.json:
 //   lang         tr / en (default: the Windows display language); shared with the game, which is
 //                opened as index.html?lang=.. and reports back when it is changed there
-//   playSeconds  total time the game window was open
-//   lastPlayed   when the game window was last closed (UTC, ISO 8601)
+//   playSeconds  total time the game window was open (Son Durak; other games: playSeconds.<id>)
+//   lastPlayed   when the game window was last closed (UTC, ISO 8601; other games: lastPlayed.<id>)
+//   game         the game selected in the launcher's library (Games.cs id)
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -80,16 +81,17 @@ namespace SonDurakLauncher
         }
     }
 
+    // per game (GameDef.PrefKey: Son Durak keeps "playSeconds" / "lastPlayed", others add ".<id>")
     static class PlayStats
     {
-        public static double Seconds { get { try { return Convert.ToDouble(Prefs.Get("playSeconds") ?? 0, CultureInfo.InvariantCulture); } catch { return 0; } } }
-        public static string LastPlayed => Prefs.Get("lastPlayed") as string;
+        public static double Seconds(GameDef g) { try { return Convert.ToDouble(Prefs.Get(g.PrefKey("playSeconds")) ?? 0, CultureInfo.InvariantCulture); } catch { return 0; } }
+        public static string LastPlayed(GameDef g) => Prefs.Get(g.PrefKey("lastPlayed")) as string;
 
-        public static void Add(TimeSpan played)
+        public static void Add(GameDef g, TimeSpan played)
         {
             if (played.TotalSeconds < 1) return;
-            Prefs.Set("playSeconds", Math.Round(Seconds + played.TotalSeconds));
-            Prefs.Set("lastPlayed", DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture));
+            Prefs.Set(g.PrefKey("playSeconds"), Math.Round(Seconds(g) + played.TotalSeconds));
+            Prefs.Set(g.PrefKey("lastPlayed"), DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture));
         }
     }
 }

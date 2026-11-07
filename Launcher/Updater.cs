@@ -454,6 +454,35 @@ namespace SonDurakLauncher
 
         static string LocalPath(string rel) => Path.Combine(Config.GameDir, rel.Replace('/', Path.DirectorySeparatorChar));
 
+        // The anti-cheat's check before every ride: the installed game files that differ (changed, missing or
+        // added). Online they are compared with the repository's list for the installed commit (so a changed
+        // state file cannot hide a changed game file), offline with the hashes recorded at install.
+        public static async Task<List<string>> TamperedFilesAsync(bool online, CancellationToken ct)
+        {
+            var s = LoadState();
+            Dictionary<string, string> want = null;
+            if (online && !string.IsNullOrEmpty(s.sha))
+            {
+                try { want = (await GetWantedAsync(s.sha, ct).ConfigureAwait(false)).ToDictionary(k => k.Key, k => k.Value.sha); }
+                catch { want = null; } // (the network went away: the recorded hashes then)
+            }
+            want = want ?? s.files ?? new Dictionary<string, string>();
+            var bad = new List<string>();
+            if (want.Count == 0) { bad.Add("(no file list)"); return bad; }
+            foreach (var kv in want)
+            {
+                var f = LocalPath(kv.Key);
+                if (!File.Exists(f) || GitBlobSha(File.ReadAllBytes(f)) != kv.Value) bad.Add(kv.Key);
+            }
+            if (Directory.Exists(Config.GameDir))
+                foreach (var f in Directory.GetFiles(Config.GameDir, "*", SearchOption.AllDirectories))
+                {
+                    var rel = f.Substring(Config.GameDir.Length + 1).Replace('\\', '/');
+                    if (!want.ContainsKey(rel)) bad.Add(rel);
+                }
+            return bad;
+        }
+
         // repo = null: the game repository (paths are relative to its "Son Durak" folder);
         // otherwise paths are relative to that repository's root.
         // onBytes: called with each chunk's size as it arrives (negative to take back a failed attempt).

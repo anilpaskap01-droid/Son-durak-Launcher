@@ -40,6 +40,7 @@ namespace SonDurakLauncher
             if ((a = Array.IndexOf(args, "--shot-launcher")) >= 0) { SelfTest.Shot(args[a + 1], false); return; }
             if ((a = Array.IndexOf(args, "--shot-game")) >= 0) { SelfTest.Shot(args[a + 1], true); return; }
 
+            if ((a = Array.IndexOf(args, "--selftest-anticheat")) >= 0) { Environment.Exit(SelfTest.AntiCheatCheck(args[a + 1])); return; }
             if ((a = Array.IndexOf(args, "--selftest-selfupdate")) >= 0) { Environment.Exit(SelfTest.SelfUpdate(args[a + 1])); return; }
             if ((a = Array.IndexOf(args, "--selftest-discord")) >= 0)
             {
@@ -49,6 +50,10 @@ namespace SonDurakLauncher
                 Environment.Exit(r.TryGetValue("set", out var ok) && ok is bool b && b ? 0 : 1);
                 return;
             }
+
+            // anti-cheat: no way in for a debugger before any WebView2 starts (AntiCheat.cs)
+            var refused = AntiCheat.Harden();
+            if (refused != null) { MessageBox.Show(refused, "Son Durak", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
 
             // "--updated": started by the previous launcher version right after it replaced itself;
             // wait until that process has exited and released the single-instance mutex.

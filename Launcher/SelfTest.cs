@@ -19,6 +19,20 @@ namespace SonDurakLauncher
 {
     static class SelfTest
     {
+        // --selftest-anticheat <json>: the release anti-cheat (AntiCheat.cs) as it would run: the WEBVIEW2_*
+        // variables dropped, no debugging policy, and the installed game files that differ from the repository.
+        public static int AntiCheatCheck(string log)
+        {
+            var report = new System.Collections.Generic.Dictionary<string, object>();
+            report["enforced"] = AntiCheat.Enforced;
+            report["refused"] = AntiCheat.Harden();
+            report["argsLeft"] = Environment.GetEnvironmentVariable("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS");
+            var bad = Updater.TamperedFilesAsync(true, CancellationToken.None).GetAwaiter().GetResult();
+            report["tampered"] = bad;
+            File.WriteAllText(log, new JavaScriptSerializer().Serialize(report));
+            return report["refused"] == null && bad.Count == 0 ? 0 : 1;
+        }
+
         public static int Install(string log)
         {
             var report = new System.Collections.Generic.Dictionary<string, object>();

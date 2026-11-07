@@ -44,7 +44,7 @@ namespace SonDurakLauncher
                 cw.Settings.AreDefaultContextMenusEnabled = false;
                 cw.Settings.IsZoomControlEnabled = false;
                 cw.Settings.IsStatusBarEnabled = false;
-                cw.Settings.AreDevToolsEnabled = Environment.GetEnvironmentVariable("SONDURAK_DEVTOOLS") == "1";
+                cw.Settings.AreDevToolsEnabled = !AntiCheat.Enforced && Environment.GetEnvironmentVariable("SONDURAK_DEVTOOLS") == "1"; // (never in release builds: a cheat would run in DevTools)
                 // no browser shortcuts in the game (Ctrl is crouch: Ctrl+R / Ctrl+P / Ctrl+F must not reload, print or search)
                 cw.Settings.AreBrowserAcceleratorKeysEnabled = false;
                 cw.SetVirtualHostNameToFolderMapping("sondurak.game", Config.GameDir, CoreWebView2HostResourceAccessKind.Allow);

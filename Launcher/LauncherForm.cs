@@ -82,7 +82,7 @@ namespace SonDurakLauncher
             cw.Settings.AreDefaultContextMenusEnabled = false;
             cw.Settings.IsZoomControlEnabled = false;
             cw.Settings.IsStatusBarEnabled = false;
-            cw.Settings.AreDevToolsEnabled = Environment.GetEnvironmentVariable("SONDURAK_DEVTOOLS") == "1";
+            cw.Settings.AreDevToolsEnabled = !AntiCheat.Enforced && Environment.GetEnvironmentVariable("SONDURAK_DEVTOOLS") == "1"; // (never in release builds: a cheat would run in DevTools)
             cw.WebMessageReceived += OnMessage;
             cw.NewWindowRequested += (o, e) => { e.Handled = true; OpenUrl(e.Uri); };
             Ui.Prepare();
@@ -255,7 +255,24 @@ namespace SonDurakLauncher
                     if (UpdateWaiting) return; // the download failed: the page shows why
                 }
             }
+            if (game == null && !await AntiCheatOkAsync()) return;
             Play(join, host);
+        }
+
+        // Anti-cheat before a ride (AntiCheat.cs): no debugger on the browser, the game files as the repository
+        // has them (changed or added files are repaired first; offline, a changed game does not start).
+        async Task<bool> AntiCheatOkAsync()
+        {
+            if (!AntiCheat.Enforced) return true;
+            if (await Task.Run(() => AntiCheat.BrowserDebuggable())) { error = AntiCheat.DebuggerMessage; SendState(); return false; }
+            var bad = await Updater.TamperedFilesAsync(!offline, CancellationToken.None);
+            if (bad.Count == 0) return true;
+            if (offline || remote == null) { error = AntiCheat.FilesMessage; SendState(); return false; }
+            await InstallAsync(true); // "repair the game": re-downloads what differs, removes what does not belong
+            bad = await Updater.TamperedFilesAsync(true, CancellationToken.None);
+            if (bad.Count == 0) return true;
+            error = AntiCheat.RepairFailedMessage; SendState();
+            return false;
         }
 
         // join: a room code from an accepted invite or the party leader; host: the party leader's game

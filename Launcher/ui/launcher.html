@@ -757,8 +757,41 @@
     S.found[id] = (S.found[id] || 0) + 1;
     if (!S.foundAt[id]) { S.foundAt[id] = Date.now(); S.lastFound = id; }
   }
+  // Anti-cheat: the game's reports must follow a ride the way rides really go, at a human pace; anything else
+  // (a cheat posting made-up rides, wins, finds, chats) is not counted. A ride the game's own anti-cheat
+  // caught comes as { e: 'flag' } and the game reports nothing more of it.
+  const ROUND_MIN_MS = 3000; // the shortest round: the fade (2.2 s) and the walk from the start to a door
+  let gate = null, lastTalk = 0; // gate: the ride as the reports tell it { at, round, ok }
+  function statPlausible(ev) {
+    const now = Date.now();
+    switch (ev.e) {
+      case 'flag': if (gate) gate.ok = false; S.flags = (S.flags | 0) + 1; saveS(); return false;
+      case 'start':
+        if (gate && now - gate.began < ROUND_MIN_MS) return false; // (rides do not start every few milliseconds)
+        gate = { at: now, began: now, round: Math.max(1, Math.min(10, ev.round | 0 || 1)), ok: true };
+        return true;
+      case 'round': {
+        if (!gate || !gate.ok) return false;
+        const from = ev.from | 0, to = ev.round | 0;
+        const ok = from === gate.round && to === (ev.correct ? from + 1 : 1) && to <= 10 && now - gate.at >= ROUND_MIN_MS
+          && (!ev.anomaly || !CAT.length || CAT.some((a) => a.id === ev.anomaly));
+        if (!ok) { gate.ok = false; return false; }
+        gate.round = to; gate.at = now;
+        return true;
+      }
+      case 'end': {
+        const ok = !!gate && gate.ok && gate.round === 10 && now - gate.at >= ROUND_MIN_MS && (ev.time | 0) >= ROUND_MIN_MS * 9
+          && (!ev.anomaly || !CAT.length || CAT.some((a) => a.id === ev.anomaly));
+        gate = null;
+        return ok;
+      }
+      case 'talk': if (now - lastTalk < 1500) return false; lastTalk = now; return true;
+      default: return true;
+    }
+  }
   function onStat(ev) {
     if (!ev || typeof ev !== 'object') return;
+    if (!statPlausible(ev)) return;
     const players = Math.max(1, Math.min(6, ev.players | 0));
     if (ev.e === 'start' || ev.e === 'round' || ev.e === 'end') S.maxPlayers = Math.max(S.maxPlayers, players);
     switch (ev.e) {

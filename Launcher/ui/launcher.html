@@ -1390,6 +1390,10 @@
       const type = e && e.type;
       if (type === 'peer-unavailable') { const m = /sondurak-fr-[a-z0-9]+/i.exec((e && e.message) || ''); const code = m && codeOf(m[0]); if (code) { delete dialing[code]; unavail[code] = Date.now(); } return; }
       if (type === 'unavailable-id') { setNet('taken'); setTimeout(() => { if (p === peer) startPeer(); }, 20000); return; }
+      // an error of one connection (PeerJS reports e.g. 'webrtc' when an offer / answer is cut short)
+      // leaves the broker connection up: stay online (going "connecting" here stopped every message
+      // and status to friends until the launcher was restarted)
+      if (p.open && !p.disconnected && !p.destroyed) return;
       setNet('connecting');
       setTimeout(() => { if (p === peer && (p.destroyed || p.disconnected)) startPeer(); }, 8000);
     });
@@ -1419,14 +1423,20 @@
     };
     if (c.peerConnection) watch(); else c.on('open', watch);
   }
+  function dropConn(code) {
+    const c = conns[code]; try { if (c) c.close(); } catch { /* ignore */ }
+    delete conns[code]; delete authed[code]; delete live[code]; renderFriends(); if (chatWith === code) renderChat();
+  }
   // heartbeat: every 10 s a ping to each verified friend; silence for 35 s = gone
   let shownOnline = '';
   setInterval(() => {
+    // watchdog: the broker connection is up but we still say "connecting" (missed 'open' after a hiccup)
+    if (net === 'connecting' && peer && peer.open && !peer.disconnected && !peer.destroyed) { setNet('online'); poll(); }
     const now = Object.keys(F.friends).filter(isOnline).join();
     if (now !== shownOnline) { shownOnline = now; renderFriends(); if (chatWith) renderChat(); }
     for (const code of Object.keys(conns)) {
       if (!authed[code]) continue;
-      if (Date.now() - (heard[code] || 0) > 35000) { const c = conns[code]; try { c.close(); } catch { /* ignore */ } delete conns[code]; delete authed[code]; delete live[code]; renderFriends(); if (chatWith === code) renderChat(); continue; }
+      if (Date.now() - (heard[code] || 0) > 35000) { dropConn(code); continue; }
       raw(code, { t: 'ping' });
     }
   }, 10000);
@@ -1510,6 +1520,9 @@
         return;
       }
       if (d.t === 'rm') { await onFriendData(code, d, fr); return; }
+      // they reach us through the broker, so their side has no direct line to us: one we still
+      // count as open but have not heard on lately is dead (their launcher restarted); drop it
+      if (isDirect(code) && Date.now() - (heard[code] || 0) > 15000) dropConn(code);
       const was = isOnline(code);
       postSeen[code] = Date.now();
       if (F.accOut[code]) { delete F.accOut[code]; saveF(); } // they have the key: our acceptance arrived
@@ -1522,7 +1535,22 @@
     switch (p.t) {
       case 'req': {
         const pk = pubJwk(p.pk), name = clean(p.name) || '?';
-        if (fr) return; // already friends (an old request still on its way)
+        if (fr) {
+          // a friend asks again: an old request still on its way (our acceptance is too), or they lost
+          // us (removed us while we were away, or a new install) - we still count them as a friend, so
+          // take them back at once with a new key instead of leaving both sides stuck "offline"
+          if (F.accOut[code] || !pk || Date.now() - (fr.since || 0) < 120000) return;
+          post(code, { p: { t: 'rcv' } });
+          const pair = await ecdhPair();
+          if (F.friends[code] !== fr || F.accOut[code] || Date.now() - (fr.since || 0) < 120000) return; // re-accepted directly meanwhile
+          fr.key = await ecdhKey(pair.sk, pk); fr.since = Date.now(); fr.name = name !== '?' ? name : fr.name;
+          F.accOut[code] = { t: Date.now(), pk: pair.pk };
+          delete postSeen[code]; delete live[code]; saveF();
+          if (conns[code]) dropConn(code);
+          post(code, { p: { t: 'acc', name: F.me.name, pk: pair.pk } });
+          renderFriends();
+          return;
+        }
         if (F.rmOut[code]) { delete F.rmOut[code]; saveF(); } // one we removed asks again: they know
         post(code, { p: { t: 'rcv' } }); // "your request arrived"
         if (F.outReq[code]) { F.inReq[code] = { name, t: Date.now(), pk }; await acceptFriend(code, name); return; } // both asked
@@ -1582,7 +1610,9 @@
         return;
       }
       case 'req':
-        if (fr) { raw(code, { t: 'acc', name: F.me.name, key: fr.key }); return; } // they lost their list: re-accept
+        // they lost their list: re-accept with our key (and the same request coming through the broker
+        // right after must not make a second, different key - see onPost 'req')
+        if (fr) { raw(code, { t: 'acc', name: F.me.name, key: fr.key }); fr.since = Date.now(); saveF(); return; }
         if (F.rmOut[code]) { delete F.rmOut[code]; saveF(); } // one we removed asks again: they know
         if (F.outReq[code]) { F.inReq[code] = { name: clean(d.name) || '?', t: Date.now(), pk: pubJwk(d.pk) }; await acceptFriend(code, clean(d.name)); return; } // both asked: friends
         if (!F.inReq[code]) { F.inReq[code] = { name: clean(d.name) || '?', t: Date.now(), pk: pubJwk(d.pk) }; saveF(); renderFriends(); notify({ title: fmt(L.tReq, F.inReq[code].name), kind: 'req', code }); }
@@ -2000,7 +2030,7 @@
   startPeer();
   send('ready');
   // test hooks (the automated two-launcher test drives these)
-  window.__fr = { F, isDirect, postSeen, addFriendCode: (c) => { $('addIn').value = c; return addFriend(); }, acceptFriend, sendTo: (c, t) => { openChat(c); $('msgIn').value = t; sendChat(); }, inviteFriend, fromGame, isOnline, get net() { return net; }, live, get party() { return party; }, partyInvite, partyGo, partyLeave };
+  window.__fr = { F, isDirect, postSeen, addFriendCode: (c) => { $('addIn').value = c; return addFriend(); }, acceptFriend, sendTo: (c, t) => { openChat(c); $('msgIn').value = t; sendChat(); }, inviteFriend, fromGame, isOnline, get net() { return net; }, get peer() { return peer; }, live, get party() { return party; }, partyInvite, partyGo, partyLeave };
   window.__games = { selectGame, get game() { return GAME; }, get running() { return running; }, gachOf, showTab, get tab() { return tab; } }; // (game library tests)
 </script>
 </body>

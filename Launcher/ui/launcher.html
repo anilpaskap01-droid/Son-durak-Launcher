@@ -1449,7 +1449,7 @@
   function poll() {
     for (const c of new Set([...Object.keys(F.friends), ...Object.keys(F.outReq), ...Object.keys(F.accOut)])) dial(c);
     for (const [c, r] of Object.entries(F.outReq)) if (!r.sent && r.pk) post(c, { p: { t: 'req', name: F.me.name, pk: r.pk } });
-    for (const [c, a] of Object.entries(F.accOut)) if (a.pk && !isDirect(c)) post(c, { p: { t: 'acc', name: F.me.name, pk: a.pk } });
+    for (const [c, a] of Object.entries(F.accOut)) if (a.pk && !isDirect(c)) post(c, { p: { t: 'acc', name: F.me.name, pk: a.pk, to: a.to } });
     for (const c of Object.keys(F.friends)) if (!isDirect(c)) postSigned(c, { t: 'st', name: F.me.name, st: myStatus(), room: myRoom, pr: myPresence() });
     // removals that have not arrived yet: tried until the other launcher confirms (or for 60 days)
     for (const [c, r] of Object.entries(F.rmOut)) { if (Date.now() - r.t > 60 * 86400000) { delete F.rmOut[c]; saveF(); } else sendRm(c); }
@@ -1525,7 +1525,7 @@
       if (isDirect(code) && Date.now() - (heard[code] || 0) > 15000) dropConn(code);
       const was = isOnline(code);
       postSeen[code] = Date.now();
-      if (F.accOut[code]) { delete F.accOut[code]; saveF(); } // they have the key: our acceptance arrived
+      if (F.accOut[code] || fr.pend) { delete F.accOut[code]; delete fr.pend; saveF(); } // they have the key: our acceptance arrived
       if (!was) { status(code); sendSum(code); flush(code); renderFriends(); if (chatWith === code) renderChat(); }
       if (RELAY.has(d.t)) await onFriendData(code, d, fr);
       return;
@@ -1544,23 +1544,26 @@
           const pair = await ecdhPair();
           if (F.friends[code] !== fr || F.accOut[code] || Date.now() - (fr.since || 0) < 120000) return; // re-accepted directly meanwhile
           fr.key = await ecdhKey(pair.sk, pk); fr.since = Date.now(); fr.name = name !== '?' ? name : fr.name;
-          F.accOut[code] = { t: Date.now(), pk: pair.pk };
+          F.accOut[code] = { t: Date.now(), pk: pair.pk, to: pk.x };
           delete postSeen[code]; delete live[code]; saveF();
           if (conns[code]) dropConn(code);
-          post(code, { p: { t: 'acc', name: F.me.name, pk: pair.pk } });
+          post(code, { p: { t: 'acc', name: F.me.name, pk: pair.pk, to: pk.x } });
           renderFriends();
           return;
         }
         if (F.rmOut[code]) { delete F.rmOut[code]; saveF(); } // one we removed asks again: they know
         post(code, { p: { t: 'rcv' } }); // "your request arrived"
         if (F.outReq[code]) { F.inReq[code] = { name, t: Date.now(), pk }; await acceptFriend(code, name); return; } // both asked
-        if (!F.inReq[code]) { F.inReq[code] = { name, t: Date.now(), pk }; saveF(); renderFriends(); notify({ title: fmt(L.tReq, name), kind: 'req', code }); }
-        else if (pk && !F.inReq[code].pk) { F.inReq[code].pk = pk; saveF(); }
+        gotReq(code, name, pk);
         return;
       }
+      case 'cxl': dropReq(code, typeof p.x === 'string' && p.x); return;
+      case 'nack': nack(code); return;
       case 'rcv': if (F.outReq[code] && !F.outReq[code].sent) { F.outReq[code].sent = true; saveF(); renderFriends(); } return;
       case 'acc': {
         const pk = pubJwk(p.pk), mine = F.outReq[code];
+        // an answer to a request we took back (none open, or an older one than the open one)
+        if (!fr && (!mine || (typeof p.to === 'string' && mine.pk && p.to !== mine.pk.x))) { post(code, { p: { t: 'nack' } }); return; }
         if (fr || !pk || !mine || !mine.sk) return;
         F.friends[code] = { name: clean(p.name) || '?', key: await ecdhKey(mine.sk, pk), since: Date.now() };
         delete F.outReq[code]; delete F.inReq[code]; saveF();
@@ -1606,7 +1609,7 @@
       case 'proof': {
         if (!fr || typeof d.p !== 'string' || authed[code]) return;
         for (const n of nonces[code] || []) if (d.p === await sha(fr.key + ':' + n + ':' + code)) { authed[code] = true; break; }
-        if (authed[code]) { status(code); sendSum(code); flush(code); renderFriends(); if (chatWith === code) renderChat(); }
+        if (authed[code]) { if (fr.pend) { delete fr.pend; saveF(); } status(code); sendSum(code); flush(code); renderFriends(); if (chatWith === code) renderChat(); }
         return;
       }
       case 'req':
@@ -1615,14 +1618,15 @@
         if (fr) { raw(code, { t: 'acc', name: F.me.name, key: fr.key }); fr.since = Date.now(); saveF(); return; }
         if (F.rmOut[code]) { delete F.rmOut[code]; saveF(); } // one we removed asks again: they know
         if (F.outReq[code]) { F.inReq[code] = { name: clean(d.name) || '?', t: Date.now(), pk: pubJwk(d.pk) }; await acceptFriend(code, clean(d.name)); return; } // both asked: friends
-        if (!F.inReq[code]) { F.inReq[code] = { name: clean(d.name) || '?', t: Date.now(), pk: pubJwk(d.pk) }; saveF(); renderFriends(); notify({ title: fmt(L.tReq, F.inReq[code].name), kind: 'req', code }); }
-        else if (d.pk && !F.inReq[code].pk) { F.inReq[code].pk = pubJwk(d.pk); saveF(); }
+        gotReq(code, clean(d.name) || '?', pubJwk(d.pk));
         return;
+      case 'cxl': dropReq(code, typeof d.x === 'string' && d.x); return;
+      case 'nack': nack(code); return;
       case 'acc':
         if (typeof d.key !== 'string' || d.key.length < 16) return;
         // both accepted each other's request at once: the side with the smaller code wins the key
         if (fr) { if (fr.key !== d.key && F.me.code > code) { fr.key = d.key.slice(0, 64); delete authed[code]; saveF(); greet(code); } return; }
-        if (!F.outReq[code]) return; // we never asked
+        if (!F.outReq[code]) { raw(code, { t: 'nack' }); return; } // we never asked, or took it back
         F.friends[code] = { name: clean(d.name) || '?', key: d.key.slice(0, 64), since: Date.now() };
         delete F.outReq[code]; delete F.inReq[code]; saveF();
         notify({ title: fmt(L.tAcc, F.friends[code].name), kind: 'acc', code });
@@ -1691,21 +1695,46 @@
   // our public key goes back in the acceptance. Older launchers get a random key over the direct line.
   async function acceptFriend(code, name) {
     const req = F.inReq[code], mine = F.outReq[code], theirs = req && pubJwk(req.pk);
+    if (!req) return; // taken back meanwhile (an old notification's button)
     let key = hex(48), pk = null;
     if (theirs) {
       const pair = mine && mine.sk ? { sk: mine.sk, pk: mine.pk } : await ecdhPair();
       key = await ecdhKey(pair.sk, theirs); pk = pair.pk;
     }
-    F.friends[code] = { name: clean(name) || '?', key, since: Date.now() };
+    // pend: until they confirm (a signed message or a verified direct line) - a 'nack' (they took the
+    // request back) can still undo it
+    F.friends[code] = { name: clean(name) || '?', key, since: Date.now(), pend: true };
     delete F.inReq[code]; delete F.outReq[code]; delete F.rmOut[code];
-    F.accOut[code] = { t: Date.now(), pk };
+    F.accOut[code] = { t: Date.now(), pk, to: theirs && theirs.x }; // to: which of their requests this answers
     saveF();
     if (conns[code]) greet(code); else dial(code);
-    if (pk) post(code, { p: { t: 'acc', name: F.me.name, pk } });
+    if (pk) post(code, { p: { t: 'acc', name: F.me.name, pk, to: theirs.x } });
     renderFriends();
   }
   function declineFriend(code) { delete F.inReq[code]; saveF(); if (!raw(code, { t: 'dec' })) post(code, { p: { t: 'dec' } }); renderFriends(); }
-  function cancelRequest(code) { delete F.outReq[code]; saveF(); renderFriends(); }
+  // taking a request back tells them (it used to stay in their list; accepting it then made a friendship
+  // only they had, and a new request from us was swallowed by the old entry)
+  function cancelRequest(code) {
+    const r = F.outReq[code], x = r && r.pk && r.pk.x;
+    delete F.outReq[code]; saveF();
+    if (!raw(code, { t: 'cxl', x })) post(code, { p: { t: 'cxl', x } });
+    renderFriends();
+  }
+  // a request, or the same one again: a new key pair means a new request (after a removal or a taken
+  // back one) - it replaces the old entry and is announced again instead of being swallowed by it
+  function gotReq(code, name, pk) {
+    const old = F.inReq[code];
+    if (old && (!pk || !old.pk || (old.pk.x === pk.x && old.pk.y === pk.y))) { if (pk && !old.pk) { old.pk = pk; saveF(); } return; }
+    F.inReq[code] = { name, t: Date.now(), pk }; saveF(); renderFriends();
+    notify({ title: fmt(L.tReq, name), kind: 'req', code });
+  }
+  function dropReq(code, x) { const q = F.inReq[code]; if (q && (!x || !q.pk || q.pk.x === x)) { delete F.inReq[code]; saveF(); renderFriends(); } }
+  // they took back the request we accepted: drop the friendship they never confirmed
+  function nack(code) {
+    const fr = F.friends[code]; if (!fr || !fr.pend) return;
+    delete F.friends[code]; delete F.accOut[code]; delete live[code]; delete authed[code]; saveF();
+    if (chatWith === code) closeChat(); renderFriends();
+  }
   // the other launcher hears it now or (when it is closed) the next time it is online, and drops us too
   function removeFriend(code) {
     const fr = F.friends[code]; if (!fr || !confirm(fmt(L.removeQ, fr.name))) return;
@@ -2030,7 +2059,7 @@
   startPeer();
   send('ready');
   // test hooks (the automated two-launcher test drives these)
-  window.__fr = { F, isDirect, postSeen, addFriendCode: (c) => { $('addIn').value = c; return addFriend(); }, acceptFriend, sendTo: (c, t) => { openChat(c); $('msgIn').value = t; sendChat(); }, inviteFriend, fromGame, isOnline, get net() { return net; }, get peer() { return peer; }, live, get party() { return party; }, partyInvite, partyGo, partyLeave };
+  window.__fr = { F, isDirect, postSeen, addFriendCode: (c) => { $('addIn').value = c; return addFriend(); }, acceptFriend, sendTo: (c, t) => { openChat(c); $('msgIn').value = t; sendChat(); }, inviteFriend, fromGame, isOnline, get net() { return net; }, get peer() { return peer; }, live, get party() { return party; }, partyInvite, partyGo, partyLeave, cancelRequest };
   window.__games = { selectGame, get game() { return GAME; }, get running() { return running; }, gachOf, showTab, get tab() { return tab; } }; // (game library tests)
 </script>
 </body>

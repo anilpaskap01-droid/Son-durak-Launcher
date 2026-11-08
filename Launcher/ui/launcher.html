@@ -1344,7 +1344,8 @@
     f.me = f.me || {};
     if (!/^[A-Z2-9]{8}$/.test(f.me.code || '')) f.me.code = rand(8);
     if (!f.me.name) f.me.name = 'Yolcu' + (10 + Math.floor(Math.random() * 90));
-    for (const k of ['friends', 'inReq', 'outReq', 'accOut', 'chats', 'unread']) if (!f[k] || typeof f[k] !== 'object') f[k] = {};
+    // rmOut: friends we removed whose launcher has not heard it yet (kept with the old key until it has)
+    for (const k of ['friends', 'inReq', 'outReq', 'accOut', 'chats', 'unread', 'rmOut']) if (!f[k] || typeof f[k] !== 'object') f[k] = {};
     return f;
   }
   const F = loadF();
@@ -1387,7 +1388,7 @@
     p.on('error', (e) => {
       if (p !== peer) return;
       const type = e && e.type;
-      if (type === 'peer-unavailable') { const m = /sondurak-fr-[a-z0-9]+/i.exec((e && e.message) || ''); const code = m && codeOf(m[0]); if (code) delete dialing[code]; return; }
+      if (type === 'peer-unavailable') { const m = /sondurak-fr-[a-z0-9]+/i.exec((e && e.message) || ''); const code = m && codeOf(m[0]); if (code) { delete dialing[code]; unavail[code] = Date.now(); } return; }
       if (type === 'unavailable-id') { setNet('taken'); setTimeout(() => { if (p === peer) startPeer(); }, 20000); return; }
       setNet('connecting');
       setTimeout(() => { if (p === peer && (p.destroyed || p.disconnected)) startPeer(); }, 8000);
@@ -1440,6 +1441,8 @@
     for (const [c, r] of Object.entries(F.outReq)) if (!r.sent && r.pk) post(c, { p: { t: 'req', name: F.me.name, pk: r.pk } });
     for (const [c, a] of Object.entries(F.accOut)) if (a.pk && !isDirect(c)) post(c, { p: { t: 'acc', name: F.me.name, pk: a.pk } });
     for (const c of Object.keys(F.friends)) if (!isDirect(c)) postSigned(c, { t: 'st', name: F.me.name, st: myStatus(), room: myRoom, pr: myPresence() });
+    // removals that have not arrived yet: tried until the other launcher confirms (or for 60 days)
+    for (const [c, r] of Object.entries(F.rmOut)) { if (Date.now() - r.t > 60 * 86400000) { delete F.rmOut[c]; saveF(); } else sendRm(c); }
   }
   setInterval(poll, 20000);
 
@@ -1466,10 +1469,20 @@
     setTimeout(() => { try { c.close(); } catch { /* gone */ } }, 15000); // the offer is out; the channel is not needed
     return true;
   }
-  async function postSigned(code, obj) {
-    const fr = F.friends[code]; if (!fr) return;
+  async function postSigned(code, obj, key) {
+    key = key || (F.friends[code] && F.friends[code].key); if (!key) return false;
     const b = JSON.stringify({ ...obj, ts: Date.now(), pid: hex(12) });
-    post(code, { b, s: await sha(fr.key + '|' + F.me.code + '|' + code + '|' + b) });
+    return post(code, { b, s: await sha(key + '|' + F.me.code + '|' + code + '|' + b) });
+  }
+  // "we are no longer friends", signed with the old key; repeated (poll, their next message) until they
+  // confirm. Older launchers drop the friend but never confirm: after a few tries that reached their
+  // launcher (no "peer unavailable" from the broker) we stop.
+  const unavail = {};
+  function sendRm(code) {
+    const r = F.rmOut[code]; if (!r || !r.key) return;
+    if (r.last && !(unavail[code] > r.last)) r.n = (r.n || 0) + 1;
+    if (r.n >= 6) { delete F.rmOut[code]; saveF(); return; }
+    postSigned(code, { t: 'rm' }, r.key).then((ok) => { if (ok && F.rmOut[code] === r) { r.last = Date.now(); saveF(); } }).catch(() => {});
   }
   const pubJwk = (k) => (k && typeof k === 'object' && k.kty === 'EC' && typeof k.x === 'string' && typeof k.y === 'string' ? { kty: 'EC', crv: 'P-256', x: k.x.slice(0, 64), y: k.y.slice(0, 64) } : null);
   async function ecdhPair() {
@@ -1485,11 +1498,18 @@
   async function onPost(code, md) {
     const fr = F.friends[code];
     if (typeof md.b === 'string' && typeof md.s === 'string') {
-      // from a friend: check the signature, the time and that we have not seen it yet
-      if (!fr || md.b.length > 4000 || md.s !== await sha(fr.key + '|' + code + '|' + F.me.code + '|' + md.b)) return;
+      // from a friend (or one we removed): check the signature, the time and that we have not seen it yet
+      const rmd = !fr && F.rmOut[code], key = fr ? fr.key : rmd && rmd.key;
+      if (!key || md.b.length > 4000 || md.s !== await sha(key + '|' + code + '|' + F.me.code + '|' + md.b)) return;
       let d; try { d = JSON.parse(md.b); } catch { return; }
       if (!d || typeof d !== 'object' || !(Math.abs(Date.now() - d.ts) < 600000) || seenPosts.has(d.pid)) return;
       seenPosts.add(d.pid);
+      if (rmd) { // we removed them: they confirm, removed us too, or have not heard it yet
+        if (d.t === 'rm') postSigned(code, { t: 'rmok' }, rmd.key).catch(() => {});
+        if (d.t === 'rm' || d.t === 'rmok') { delete F.rmOut[code]; saveF(); } else sendRm(code);
+        return;
+      }
+      if (d.t === 'rm') { await onFriendData(code, d, fr); return; }
       const was = isOnline(code);
       postSeen[code] = Date.now();
       if (F.accOut[code]) { delete F.accOut[code]; saveF(); } // they have the key: our acceptance arrived
@@ -1501,8 +1521,9 @@
     if (!p || typeof p !== 'object') return;
     switch (p.t) {
       case 'req': {
-        if (fr) return; // already friends (an old request still on its way)
         const pk = pubJwk(p.pk), name = clean(p.name) || '?';
+        if (fr) return; // already friends (an old request still on its way)
+        if (F.rmOut[code]) { delete F.rmOut[code]; saveF(); } // one we removed asks again: they know
         post(code, { p: { t: 'rcv' } }); // "your request arrived"
         if (F.outReq[code]) { F.inReq[code] = { name, t: Date.now(), pk }; await acceptFriend(code, name); return; } // both asked
         if (!F.inReq[code]) { F.inReq[code] = { name, t: Date.now(), pk }; saveF(); renderFriends(); notify({ title: fmt(L.tReq, name), kind: 'req', code }); }
@@ -1562,6 +1583,7 @@
       }
       case 'req':
         if (fr) { raw(code, { t: 'acc', name: F.me.name, key: fr.key }); return; } // they lost their list: re-accept
+        if (F.rmOut[code]) { delete F.rmOut[code]; saveF(); } // one we removed asks again: they know
         if (F.outReq[code]) { F.inReq[code] = { name: clean(d.name) || '?', t: Date.now(), pk: pubJwk(d.pk) }; await acceptFriend(code, clean(d.name)); return; } // both asked: friends
         if (!F.inReq[code]) { F.inReq[code] = { name: clean(d.name) || '?', t: Date.now(), pk: pubJwk(d.pk) }; saveF(); renderFriends(); notify({ title: fmt(L.tReq, F.inReq[code].name), kind: 'req', code }); }
         else if (d.pk && !F.inReq[code].pk) { F.inReq[code].pk = pubJwk(d.pk); saveF(); }
@@ -1610,7 +1632,9 @@
         if (room) notify({ title: fmt(L.tInv, fr.name), sub: `${L.room}: ${room}`, kind: 'inv', code, room });
         break;
       }
-      case 'rm': if (amLeader() && inParty(code)) partyRemove(code, false); delete F.friends[code]; delete F.chats[code]; delete F.unread[code]; delete live[code]; delete authed[code]; saveF(); if (chatWith === code) closeChat(); renderFriends(); break;
+      case 'rm':
+        postSigned(code, { t: 'rmok' }).catch(() => {}); // (signed with the key before it is deleted below)
+        if (amLeader() && inParty(code)) partyRemove(code, false); delete F.friends[code]; delete F.accOut[code]; delete F.chats[code]; delete F.unread[code]; delete live[code]; delete authed[code]; saveF(); if (chatWith === code) closeChat(); renderFriends(); break;
     }
   }
 
@@ -1625,6 +1649,7 @@
     if (F.outReq[code]) return note(L.reqExists, true);
     $('addIn').value = '';
     const pair = await ecdhPair();
+    delete F.rmOut[code]; // asked again after removing them: the request replaces the removal
     F.outReq[code] = { t: Date.now(), sent: false, sk: pair.sk, pk: pair.pk }; saveF();
     note(L.queuedReq);
     if (conns[code]) greet(code); else dial(code);
@@ -1642,7 +1667,7 @@
       key = await ecdhKey(pair.sk, theirs); pk = pair.pk;
     }
     F.friends[code] = { name: clean(name) || '?', key, since: Date.now() };
-    delete F.inReq[code]; delete F.outReq[code];
+    delete F.inReq[code]; delete F.outReq[code]; delete F.rmOut[code];
     F.accOut[code] = { t: Date.now(), pk };
     saveF();
     if (conns[code]) greet(code); else dial(code);
@@ -1651,10 +1676,13 @@
   }
   function declineFriend(code) { delete F.inReq[code]; saveF(); if (!raw(code, { t: 'dec' })) post(code, { p: { t: 'dec' } }); renderFriends(); }
   function cancelRequest(code) { delete F.outReq[code]; saveF(); renderFriends(); }
+  // the other launcher hears it now or (when it is closed) the next time it is online, and drops us too
   function removeFriend(code) {
     const fr = F.friends[code]; if (!fr || !confirm(fmt(L.removeQ, fr.name))) return;
-    if (isOnline(code)) raw(code, { t: 'rm' });
+    if (isDirect(code)) raw(code, { t: 'rm' });
+    F.rmOut[code] = { key: fr.key, t: Date.now() };
     delete F.friends[code]; delete F.chats[code]; delete F.unread[code]; delete F.accOut[code]; delete live[code]; delete authed[code]; saveF();
+    sendRm(code);
     closeChat(); renderFriends();
   }
   function sendChat() {

@@ -1548,6 +1548,7 @@
           delete postSeen[code]; delete live[code]; saveF();
           if (conns[code]) dropConn(code);
           post(code, { p: { t: 'acc', name: F.me.name, pk: pair.pk, to: pk.x } });
+          frLog('acc', code, fr.name);
           renderFriends();
           return;
         }
@@ -1672,6 +1673,14 @@
     }
   }
 
+  // ---- friend request steps also go to the site's admin panel (see the privacy page); off on a dev
+  // server unless ?api= points somewhere
+  const FR_API = new URLSearchParams(location.search).get('api') || (/^(localhost|127.0.0.1)$/.test(location.hostname) ? '' : 'https://son-durak.pages.dev/api');
+  function frLog(a, code, name) {
+    if (!FR_API) return;
+    try { fetch(FR_API + '/fr', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ a, me: F.me.code, mn: F.me.name, to: code, tn: name || '' }) }).catch(() => {}); } catch { /* offline */ }
+  }
+
   // ---- actions
   async function addFriend() {
     const code = normCode($('addIn').value);
@@ -1685,6 +1694,7 @@
     const pair = await ecdhPair();
     delete F.rmOut[code]; // asked again after removing them: the request replaces the removal
     F.outReq[code] = { t: Date.now(), sent: false, sk: pair.sk, pk: pair.pk }; saveF();
+    frLog('req', code, '');
     note(L.queuedReq);
     if (conns[code]) greet(code); else dial(code);
     post(code, { p: { t: 'req', name: F.me.name, pk: pair.pk } });
@@ -1707,16 +1717,17 @@
     delete F.inReq[code]; delete F.outReq[code]; delete F.rmOut[code];
     F.accOut[code] = { t: Date.now(), pk, to: theirs && theirs.x }; // to: which of their requests this answers
     saveF();
+    frLog('acc', code, F.friends[code].name);
     if (conns[code]) greet(code); else dial(code);
     if (pk) post(code, { p: { t: 'acc', name: F.me.name, pk, to: theirs.x } });
     renderFriends();
   }
-  function declineFriend(code) { delete F.inReq[code]; saveF(); if (!raw(code, { t: 'dec' })) post(code, { p: { t: 'dec' } }); renderFriends(); }
+  function declineFriend(code) { frLog('dec', code, F.inReq[code] && F.inReq[code].name); delete F.inReq[code]; saveF(); if (!raw(code, { t: 'dec' })) post(code, { p: { t: 'dec' } }); renderFriends(); }
   // taking a request back tells them (it used to stay in their list; accepting it then made a friendship
   // only they had, and a new request from us was swallowed by the old entry)
   function cancelRequest(code) {
     const r = F.outReq[code], x = r && r.pk && r.pk.x;
-    delete F.outReq[code]; saveF();
+    delete F.outReq[code]; saveF(); frLog('cxl', code, '');
     if (!raw(code, { t: 'cxl', x })) post(code, { p: { t: 'cxl', x } });
     renderFriends();
   }
@@ -1740,6 +1751,7 @@
     const fr = F.friends[code]; if (!fr || !confirm(fmt(L.removeQ, fr.name))) return;
     if (isDirect(code)) raw(code, { t: 'rm' });
     F.rmOut[code] = { key: fr.key, t: Date.now() };
+    frLog('rm', code, fr.name);
     delete F.friends[code]; delete F.chats[code]; delete F.unread[code]; delete F.accOut[code]; delete live[code]; delete authed[code]; saveF();
     sendRm(code);
     closeChat(); renderFriends();

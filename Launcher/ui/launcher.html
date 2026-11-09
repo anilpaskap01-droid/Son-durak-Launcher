@@ -24,6 +24,10 @@
   .titlebar .win { width: 44px; font-size: 15px; }
   .titlebar .x:hover { background: #c42b1c; }
   .langs { display: flex; margin-right: 6px; }
+  /* the studio's Discord server (opens in the default browser through NewWindowRequested) */
+  .titlebar .disc { display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; margin-right: 4px; color: #aab4ff; text-decoration: none; font-size: 11px; font-weight: 700; letter-spacing: .08em; }
+  .titlebar .disc svg { width: 16px; height: 16px; fill: currentColor; }
+  .titlebar .disc:hover { background: #5865f2; color: #fff; }
   .langs button { width: 38px; font-weight: 700; font-size: 11px; letter-spacing: .08em; }
   .langs button.sel { color: var(--blue); box-shadow: inset 0 -2px 0 var(--blue); }
 
@@ -327,6 +331,7 @@
 <div class="app">
   <div class="titlebar" id="bar">
     <div class="brand"><i></i>SON DURAK</div>
+    <a class="disc" id="discord" href="https://discord.gg/r9FeVBTy7w" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.74 19.74 0 0 0 3.677 4.37a.07.07 0 0 0-.032.028C.533 9.046-.32 13.58.099 18.058a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.1 14.1 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.1 13.1 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.182 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>DISCORD</a>
     <div class="langs" id="langs"><button data-l="tr">TR</button><button data-l="en">EN</button></div>
     <button class="win" id="min" title="—">&#8211;</button><button class="win x" id="close" title="×">&#10005;</button>
   </div>
@@ -476,7 +481,7 @@
       sQuests: 'GÖREV', sMetro: 'METRO ZAFER',
       errors: { 'repo-not-found': 'Güncelleme sunucusuna ulaşılamadı.', 'auth': 'Güncelleme sunucusuna bağlanılamadı. Launcher\'ın en yeni sürümünü kur.', 'rate-limit': 'Sunucu şu an meşgul, biraz sonra tekrar dene.', 'launcher-update': 'Launcher güncellenemedi, bu sürümle devam ediliyor.', other: 'Güncelleme alınamadı, biraz sonra tekrar dene.' },
       // friends
-      lCode: 'KODUN', copy: 'Kodu kopyala', copied: 'Kod kopyalandı', addPh: 'Arkadaş kodu, ör. K7Q2-9XMB', add: 'Ekle', editName: 'Adını değiştir',
+      lCode: 'KODUN', copy: 'Kodu kopyala', copied: 'Kod kopyalandı', addPh: 'Arkadaş kodu, ör. K7Q2-9XMB', add: 'Ekle', editName: 'Adını değiştir', discord: 'Son Vagon Studios Discord sunucusu',
       reqIn: 'GELEN İSTEKLER', reqOut: 'GÖNDERİLEN İSTEKLER', secOnline: 'ÇEVRİMİÇİ', secOffline: 'ÇEVRİMDIŞI',
       stOnline: 'Çevrimiçi', stIngame: 'Oyunda', stOffline: 'Çevrimdışı', stWaiting: 'Yanıt bekleniyor', room: 'Oda',
       netOnline: 'Çevrimiçi', netConnecting: 'Bağlanıyor…', netOffline: 'Çevrimdışı', netTaken: 'Bu kod başka bir launcher\'da açık',
@@ -549,7 +554,7 @@
       },
       sQuests: 'QUESTS', sMetro: 'METRO WINS',
       errors: { 'repo-not-found': 'Could not reach the update server.', 'auth': 'Could not connect to the update server. Please install the latest launcher.', 'rate-limit': 'The server is busy, try again in a bit.', 'launcher-update': 'The launcher could not update itself; continuing with this version.', other: 'Could not get the update, try again in a bit.' },
-      lCode: 'YOUR CODE', copy: 'Copy code', copied: 'Code copied', addPh: 'Friend code, e.g. K7Q2-9XMB', add: 'Add', editName: 'Change your name',
+      lCode: 'YOUR CODE', copy: 'Copy code', copied: 'Code copied', addPh: 'Friend code, e.g. K7Q2-9XMB', add: 'Add', editName: 'Change your name', discord: 'Son Vagon Studios Discord server',
       reqIn: 'FRIEND REQUESTS', reqOut: 'SENT REQUESTS', secOnline: 'ONLINE', secOffline: 'OFFLINE',
       stOnline: 'Online', stIngame: 'In game', stOffline: 'Offline', stWaiting: 'Waiting for an answer', room: 'Room',
       netOnline: 'Online', netConnecting: 'Connecting…', netOffline: 'Offline', netTaken: 'This code is open in another launcher',
@@ -626,7 +631,7 @@
     $('opts').title = L.opts;
     renderHero(); renderGameBar(); if ($('optsModal').classList.contains('show')) renderOpts();
     tabBadges();
-    $('recheck').title = L.recheck; $('folder').title = L.folder; $('copyCode').title = L.copy; $('editName').title = L.editName;
+    $('recheck').title = L.recheck; $('folder').title = L.folder; $('copyCode').title = L.copy; $('editName').title = L.editName; $('discord').title = L.discord;
     $('addIn').placeholder = L.addPh; $('addBtn').textContent = L.add; $('msgIn').placeholder = L.msgPh; $('msgSend').textContent = L.send;
     for (const b of $('langs').children) b.classList.toggle('sel', b.dataset.l === lang);
   }

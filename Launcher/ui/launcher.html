@@ -1686,6 +1686,14 @@
     try { fetch(FR_API + '/fr', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ a, me: F.me.code, mn: F.me.name, to: code, tn: name || '' }) }).catch(() => {}); } catch { /* offline */ }
   }
 
+  // the launcher's friend code, name and version go to the admin panel on start, every 10 min and on a new name
+  let LVER = '';
+  function lHit() {
+    if (!FR_API) return;
+    try { fetch(FR_API + '/hit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ k: 'launcher', c: F.me.code, n: F.me.name, ver: LVER }) }).catch(() => {}); } catch { /* offline */ }
+  }
+  setTimeout(lHit, 4000); setInterval(lHit, 600000);
+
   // ---- actions
   async function addFriend() {
     const code = normCode($('addIn').value);
@@ -1899,7 +1907,7 @@
   function setMyName(name, fromUser) {
     name = clean(name); if (!name || name === F.me.name) { renderMe(); return; }
     F.me.name = name; saveF();
-    send('profile', { name });
+    send('profile', { name }); lHit();
     if (fromUser) toGame({ type: 'name', name });
     broadcastStatus();
     renderTab();
@@ -2055,7 +2063,7 @@
   $('main').onclick = () => { if (action === 'partygo') partyGo(); else if (action) send(action, { game: GAME }); };
   HOST.addEventListener('message', (e) => {
     const m = e.data;
-    if (m.type === 'state') { if (m.lang && m.lang !== lang && STR[m.lang]) { lang = m.lang; L = STR[lang]; applyStatic(); renderFriends(); } render(m); }
+    if (m.type === 'state') { if (m.version) LVER = String(m.version); if (m.lang && m.lang !== lang && STR[m.lang]) { lang = m.lang; L = STR[lang]; applyStatic(); renderFriends(); } render(m); }
     else if (m.type === 'progress') progress(m);
     else if (m.type === 'from-game') fromGame(m.msg, m.game || 'sondurak');
     else if (m.type === 'game-state') {

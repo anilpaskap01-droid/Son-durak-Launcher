@@ -61,6 +61,20 @@
   .logo { margin: 0; font-family: Consolas, "Courier New", monospace; font-weight: 800; font-size: 52px; letter-spacing: .2em; color: var(--amber); text-shadow: 0 0 26px rgba(255,176,32,.5); }
   .sub { margin: 2px 0 12px; color: #c9d1d8; letter-spacing: .06em; }
   .tags span { display: inline-block; font-size: 11px; padding: 3px 9px; margin-right: 6px; border-radius: 3px; background: rgba(103,193,245,.16); color: var(--blue); }
+  /* 200 players celebration (Y200_FROM..Y200_TO): a badge on the hero + a short confetti burst (finite: no animation keeps running).
+     Own "y200-" prefix: short launcher.html class names collide (.dl, .ach, .st happened) */
+  .y200-tag, .y200-fx { display: none; }
+  .hero.y200-live .y200-tag { display: flex; }
+  .hero.y200-live .y200-fx { display: block; }
+  .y200-tag { position: absolute; top: 16px; right: 30px; z-index: 2; align-items: center; gap: 9px; padding: 6px 15px 6px 9px; border-radius: 5px; cursor: default;
+    border: 1px solid rgba(255,176,32,.55); background: linear-gradient(90deg, rgba(43,35,18,.9), rgba(8,12,17,.78)); backdrop-filter: blur(4px);
+    box-shadow: 0 0 18px rgba(255,176,32,.22), inset 0 0 0 1px rgba(255,211,107,.08); color: #fff; font: 700 12px "Segoe UI", sans-serif; letter-spacing: .16em; white-space: nowrap; }
+  .y200-tag .y200-pop { font-size: 16px; letter-spacing: 0; }
+  .y200-tag .y200-num { font: 800 21px Consolas, "Courier New", monospace; letter-spacing: .06em; color: var(--amber); text-shadow: 0 0 14px rgba(255,176,32,.6); }
+  .y200-fx { position: absolute; inset: 0; z-index: 1; overflow: hidden; pointer-events: none; }
+  .y200-fx i { position: absolute; top: -18px; border-radius: 1px; animation: y200fall 6s cubic-bezier(.3,.1,.6,1) 0s 2 both; }
+  @keyframes y200fall { 0% { opacity: .95; transform: translate3d(0, 0, 0) rotate(0deg); } 80% { opacity: .9; } 100% { opacity: 0; transform: translate3d(var(--sx), 236px, 0) rotate(var(--rot)); } }
+  @media (prefers-reduced-motion: reduce) { .hero.y200-live .y200-fx { display: none; } }
 
   /* action bar */
   .actionbar { flex: none; position: relative; z-index: 3; margin: -26px 22px 0; display: flex; align-items: center; gap: 20px; padding: 14px 16px;
@@ -339,7 +353,8 @@
     <div class="main">
       <nav class="gamebar" id="gamebar"></nav>
       <header class="hero" id="hero"><div class="txt"><h1 class="logo" id="logo">SON DURAK</h1><p class="sub" id="sub"></p><div class="tags" id="tags"></div></div>
-        <div class="linepick sd"><span class="lh" id="lLine"></span><div class="row" id="linePick"></div></div></header>
+        <div class="linepick sd"><span class="lh" id="lLine"></span><div class="row" id="linePick"></div></div>
+        <div class="y200-fx" id="y200Fx" aria-hidden="true"></div><div class="y200-tag" id="y200Tag" role="note"></div></header>
       <div class="actionbar">
         <button class="main-btn play" id="main" disabled></button>
         <div class="astatus">
@@ -460,7 +475,10 @@
         first_slap: ['İlk Tokat', 'Birine tokat at.'], slapper: ['Tokatçı', '50 tokat at.'], slapped: ['Şamar Oğlanı', 'Bir arkadaşından tokat ye.'],
         underground: ['Yeraltı', "Gece Metrosu'nda Son Durak'a ulaş."], both_lines: ['İki Hat', "İki hatta da Son Durak'a ulaş."], dark_tunnel: ['Karanlık Tünel', "Metroda hiç hata yapmadan Son Durak'a ulaş."],
         tunnel_rat: ['Tünel Faresi', 'Metroda 25 anomali bul.'], questor: ['Görev Adamı', '10 günlük görev tamamla.'], loyal: ['Sadık Yolcu', '7 farklı günde oyna.'], veteran: ['Kıdemli Yolcu', "Seviye 10'a ulaş."],
+        first_200: ['İlk 200 Yolcu', '200 yolcu kutlamasında (23 Kasım – 7 Aralık) bir sefere çık.'],
       },
+      // 200 players celebration badge on the hero: [text after "200", tooltip]
+      y200: ['YOLCU · TEŞEKKÜRLER!', 'Son Vagon Studios 200 yolcuya ulaştı. Bizimle yolculuk ettiğin için teşekkürler! 7 Aralık\'a kadar bir sefere çık, "İlk 200 Yolcu" başarımı senin olsun.'],
       // line picker, settings, daily quests
       lLine: 'HAT', lines: { tram: 'Gece Tramvayı', metro: 'Gece Metrosu' }, subFor: { tram: 'T9 Gece Hattı · Anomali Avı', metro: 'M2 Gece Metrosu · Anomali Avı' },
       opts: 'Ayarlar', optsTitle: 'LAUNCHER AYARLARI', close: 'Kapat', repairBtn: 'Onar', folderBtn: 'Klasörü aç',
@@ -535,7 +553,9 @@
         first_slap: ['First Slap', 'Slap someone.'], slapper: ['Slapper', 'Hand out 50 slaps.'], slapped: ['Punching Bag', 'Get slapped by a friend.'],
         underground: ['Underground', 'Reach the Last Stop on the Night Metro.'], both_lines: ['Two Lines', 'Reach the Last Stop on both lines.'], dark_tunnel: ['Dark Tunnel', 'Reach the Last Stop on the metro without a mistake.'],
         tunnel_rat: ['Tunnel Rat', 'Find 25 anomalies on the metro.'], questor: ['Quest Taker', 'Complete 10 daily quests.'], loyal: ['Loyal Rider', 'Play on 7 different days.'], veteran: ['Veteran', 'Reach level 10.'],
+        first_200: ['First 200 Players', 'Ride during the 200 players celebration (23 Nov – 7 Dec).'],
       },
+      y200: ['PLAYERS · THANK YOU!', 'Son Vagon Studios reached 200 players. Thank you for riding with us! Take a ride by 7 December to earn the "First 200 Players" achievement.'],
       lLine: 'LINE', lines: { tram: 'Night Tram', metro: 'Night Metro' }, subFor: { tram: 'T9 Night Line · Anomaly Hunt', metro: 'M2 Night Metro · Anomaly Hunt' },
       opts: 'Settings', optsTitle: 'LAUNCHER SETTINGS', close: 'Close', repairBtn: 'Repair', folderBtn: 'Open folder',
       oAuto: ['Automatic updates', 'The launcher downloads new versions by itself; PLAY always starts the newest one.'],
@@ -609,6 +629,44 @@
   const fit = () => { const k = Math.min(innerWidth / 1200, innerHeight / 700); document.documentElement.style.zoom = Math.abs(k - 1) < 0.01 ? '' : String(k); };
   addEventListener('resize', fit); fit();
 
+  // ---- 200 players celebration: Son Vagon Studios reached 200 players. From 23 Nov to 7 Dec 2026 (both days, this
+  // computer's date) the hero shows a "200 YOLCU · TEŞEKKÜRLER!" badge with a confetti burst, and a ride started
+  // in that window earns the "first_200" achievement (onStat 'start'). After it, the badge is gone and the
+  // achievement shows only to those who have it (LIMITED).
+  const Y200_FROM = 20261123, Y200_TO = 20261207;
+  const ymd = (d = new Date()) => d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+  const y200On = () => { const k = ymd(); return k >= Y200_FROM && k <= Y200_TO; };
+  const y200Over = () => ymd() > Y200_TO;
+  const Y200_COLORS = ['#ffb020', '#ffd36b', '#67c1f5', '#8bd34b', '#ff7aa8', '#eef2f5'];
+  let y200Was = null; // the window's state at the last check (null: not checked yet)
+  // ~20 pieces fall twice over the hero, then stop (on open, when the game closes, on a click on the badge)
+  function y200Burst() {
+    const fx = $('y200Fx');
+    if (!y200On()) { fx.innerHTML = ''; return; }
+    let h = '';
+    for (let i = 0; i < 22; i++) {
+      const w = 5 + Math.floor(Math.random() * 4), x = (i + Math.random()) / 22 * 100;
+      h += `<i style="left:${x.toFixed(1)}%;width:${w}px;height:${Math.round(w * 1.7)}px;background:${Y200_COLORS[i % Y200_COLORS.length]};`
+        + `animation-delay:${(Math.random() * 3.2).toFixed(2)}s;animation-duration:${(4.6 + Math.random() * 2.4).toFixed(2)}s;`
+        + `--sx:${Math.round(Math.random() * 60 - 30)}px;--rot:${Math.round((Math.random() < .5 ? -1 : 1) * (300 + Math.random() * 420))}deg"></i>`;
+    }
+    fx.innerHTML = h;
+  }
+  function renderY200() {
+    const on = y200On();
+    $('hero').classList.toggle('y200-live', on);
+    if (on) {
+      const tag = $('y200Tag');
+      tag.innerHTML = `<span class="y200-pop">🎉</span><span class="y200-num">200</span><span>${esc(L.y200[0])}</span>`;
+      tag.title = L.y200[1]; tag.setAttribute('aria-label', '200 ' + L.y200[0]);
+    }
+    if (on && y200Was !== true) y200Burst(); else if (!on) $('y200Fx').innerHTML = '';
+    if (y200Was !== null && on !== y200Was && tab === 'ach') renderTab(); // (the achievement list changes with the window)
+    y200Was = on;
+  }
+  $('y200Tag').addEventListener('click', y200Burst);
+  setInterval(renderY200, 60000); // (the launcher stays open for days: the window starts / ends at midnight)
+
   const ICON = {
     play: '<svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg>',
     dl: '<svg viewBox="0 0 24 24"><path d="M11 3h2v10l4-4 1.4 1.4L12 16.8 5.6 10.4 7 9l4 4zM4 19h16v2H4z"/></svg>',
@@ -646,6 +704,7 @@
     $('sub').textContent = sd ? L.subFor[OPT.map] || L.sub : L.fSub;
     $('tags').innerHTML = (sd ? L.tags : L.fTags).map((t) => `<span>${esc(t)}</span>`).join('');
     renderLines();
+    renderY200();
   }
   // the library cards: each game with its state (installed, update, coming soon, running …)
   function renderGameBar() {
@@ -928,7 +987,8 @@
         endRide(false, {});
         S.runs++; if (players > 1) S.coopRuns++;
         if (new Date().getHours() < 5) S.nightOwl = true;
-        ride = { ts: Date.now(), top: ev.round | 0 || 1, players, mistakes: 0, map: ev.map === 'metro' ? 'metro' : 'tram' };
+        if (y200On() && !S.y200) S.y200 = Date.now(); // a ride in the 200 players celebration ("first_200")
+        ride ={ ts: Date.now(), top: ev.round | 0 || 1, players, mistakes: 0, map: ev.map === 'metro' ? 'metro' : 'tram' };
         S.days[dayKey()] = 1;
         if (players > 1) questAdd('coop', 1);
         break;
@@ -984,6 +1044,8 @@
   // ---- achievements: [id, icon, () => [value, needed]]; checked whenever stats, play time or friends change
   const foundInGame = () => CAT.filter((a) => S.found[a.id]).length;
   const ACH = [
+    // 1.9.7: the 200 players celebration (first in the list while it can be earned)
+    ['first_200', '🎉', () => [S.y200 ? 1 : 0, 1]],
     ['first_ride', '🚋', () => [S.runs, 1]], ['first_find', '👁️', () => [uniqueFound(), 1]], ['halfway', '🚏', () => [S.maxRound, 5]],
     ['last_stop', '🏁', () => [S.wins, 1]], ['flawless', '✨', () => [S.perfect, 1]], ['express', '⚡', () => [S.bestTime && S.bestTime <= 300000 ? 1 : 0, 1]],
     ['sharp_eye', '🎯', () => [S.bestStreak, 25]], ['collector', '📔', () => [uniqueFound(), 10]], ['hunter', '🔍', () => [uniqueFound(), 30]],
@@ -999,7 +1061,9 @@
   ];
   // achievements that can no longer be earned (game 1.9.0 removed slapping): shown only to those who have them
   const RETIRED = new Set(['first_slap', 'slapper', 'slapped']);
-  const shownAch = () => ACH.filter(([id]) => !RETIRED.has(id) || S.ach[id]);
+  // time-limited achievements (id → can it still be earned?): once their time is over, shown only to those who have them
+  const LIMITED = { first_200: () => !y200Over() };
+  const shownAch = () => ACH.filter(([id]) => (!RETIRED.has(id) && (!LIMITED[id] || LIMITED[id]())) || S.ach[id]);
   // before the host's first state (play time, the anomaly list) unlocks are silent: what was already
   // true before this launcher version should not pop up as a burst of notifications
   let achLive = false;
@@ -2069,6 +2133,7 @@
     else if (m.type === 'game-state') {
       const gid = m.game || 'sondurak';
       running = m.open ? gid : running === gid ? null : running;
+      if (!m.open) y200Burst(); // (back from the game: a little confetti while the celebration is on)
       // gameOpen: Son Durak's window (friends see "in game", invites, rides)
       if (gid === 'sondurak') {
         gameOpen = !!m.open;
